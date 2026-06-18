@@ -28,6 +28,7 @@ Page({
   onPullDownRefresh: function () {
     this.refreshLeads(() => {
       wx.stopPullDownRefresh();
+      wx.showToast({ title: '已刷新', icon: 'none', duration: 1200 });
     });
   },
 
@@ -101,5 +102,27 @@ Page({
         url: `/pages/detail/detail?id=${id}`
       });
     }
+  },
+
+  // 从咨询记录拨打统一顾问电话
+  onCallAdvisorFromLead: function () {
+    getApp().callAdvisor('18888888888');
+  },
+
+  // 再次咨询（跳转 apply，可带 projectId 回填）
+  onReConsult: function (e) {
+    const pid = e.currentTarget.dataset.projectId;
+    const url = pid ? `/pages/apply/apply?projectId=${pid}` : '/pages/apply/apply';
+    wx.navigateTo({ url });
+  },
+
+  // 复制本条线索手机号（header 或列表项）
+  onCopyLeadPhone: function (e) {
+    let phone = (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.phone) || this.data.phone || '';
+    if (!phone) return;
+    wx.setClipboardData({
+      data: phone,
+      success: () => wx.showToast({ title: '电话已复制', icon: 'success' })
+    });
   }
 });

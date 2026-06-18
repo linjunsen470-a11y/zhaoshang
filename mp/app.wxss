@@ -90,6 +90,32 @@ view, scroll-view, text, button, input, textarea, form, navigator {
   background-color: rgba(59, 130, 246, 0.08);
 }
 
+/* 通用可点击元素按压反馈（用于非 button 的 view 卡片/分类/菜单等） */
+.category-item:active,
+.recommended-item:active,
+.latest-card:active,
+.project-card:active,
+.menu-item:active,
+.filter-tab-item:active,
+.need-consult-card:active,
+.contact-block:active,
+.timeline-toggle-bar:active,
+.lead-project-title:active {
+  opacity: 0.82;
+  transform: scale(0.985);
+  transition: transform 0.08s ease, opacity 0.08s ease;
+}
+
+.need-consult-card:active,
+.contact-block:active {
+  filter: brightness(0.92);
+}
+
+/* 小尺寸收藏快速按钮按压 */
+.fav-mini:active {
+  transform: scale(0.9);
+}
+
 /* 状态标签样式 */
 .badge {
   display: inline-block;

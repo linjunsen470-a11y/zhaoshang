@@ -3,43 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>学校商铺招商管理后台</title>
-  <!-- 引入 Google Fonts (Inter) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>校园商铺招商管理后台</title>
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
-  <!-- 主体外层容器 -->
   <div class="admin-container">
-    
-    <!-- 1. 侧边栏 Navigation -->
     <aside class="sidebar">
       <div class="sidebar-logo">
-        <span class="logo-icon">🏢</span>
-        <h1 class="logo-text">学校商铺招商宝</h1>
+        <span class="logo-icon">商</span>
+        <h1 class="logo-text">校园招商平台</h1>
       </div>
-      
+
       <nav class="sidebar-menu">
         <a href="#dashboard" class="menu-item active" data-view="dashboard-view">
-          <span class="menu-icon">📊</span>
+          <span class="menu-icon">▦</span>
           <span class="menu-label">数据看板</span>
         </a>
         <a href="#projects" class="menu-item" data-view="projects-view">
-          <span class="menu-icon">🏪</span>
-          <span class="menu-label">招商项目管理</span>
+          <span class="menu-icon">□</span>
+          <span class="menu-label">机会管理</span>
         </a>
         <a href="#leads" class="menu-item" data-view="leads-view">
-          <span class="menu-icon">📁</span>
-          <span class="menu-label">咨询线索跟进</span>
+          <span class="menu-icon">◎</span>
+          <span class="menu-label">线索跟进</span>
         </a>
       </nav>
 
       <div class="sidebar-footer">
         <div class="user-profile">
-          <div class="avatar">M</div>
+          <div class="avatar">A</div>
           <div class="info">
             <div class="name">系统管理员</div>
             <div class="role">招商运营主管</div>
@@ -48,127 +40,108 @@
       </div>
     </aside>
 
-    <!-- 2. 右侧主体内容区 -->
     <main class="main-content">
-      
-      <!-- 头部 Header -->
       <header class="top-header">
         <div class="header-left">
           <h2 id="view-title">数据看板</h2>
         </div>
         <div class="header-right">
-          <div class="server-time" id="server-time">加载时间中...</div>
+          <div class="server-time" id="server-time">加载中...</div>
           <span class="divider">|</span>
-          <div class="logout-btn" id="logout-btn">🔒 锁定后台</div>
+          <div class="logout-btn" id="logout-btn">刷新后台</div>
         </div>
       </header>
 
-      <!-- 视图层容器 -->
       <div class="view-container">
-        
-        <!-- ==================== 视图一：数据看板 ==================== -->
         <section id="dashboard-view" class="view-section active">
-          <!-- 核心指标卡片组 -->
           <div class="stats-grid">
             <div class="stat-card" data-filter="all">
-              <div class="stat-icon bg-blue">🏪</div>
+              <div class="stat-icon bg-blue">铺</div>
               <div class="stat-info">
-                <span class="stat-label">招商项目总数</span>
+                <span class="stat-label">机会总数</span>
                 <span class="stat-value" id="stat-total-projects">-</span>
               </div>
             </div>
             <div class="stat-card" data-filter="online">
-              <div class="stat-icon bg-green">🟢</div>
+              <div class="stat-icon bg-green">开</div>
               <div class="stat-info">
-                <span class="stat-label">招商中项目数</span>
+                <span class="stat-label">开放中</span>
                 <span class="stat-value" id="stat-online-projects">-</span>
               </div>
             </div>
-            <div class="stat-card" data-filter="new">
-              <div class="stat-icon bg-purple">📥</div>
+            <div class="stat-card" data-filter="transfer">
+              <div class="stat-icon bg-purple">转</div>
               <div class="stat-info">
-                <span class="stat-label">今日新增咨询</span>
-                <span class="stat-value" id="stat-today-leads">-</span>
+                <span class="stat-label">转让机会</span>
+                <span class="stat-value" id="stat-transfer-projects">-</span>
               </div>
             </div>
-            <div class="stat-card" data-filter="month">
-              <div class="stat-icon bg-yellow">📅</div>
+            <div class="stat-card" data-filter="equipment">
+              <div class="stat-icon bg-yellow">设</div>
               <div class="stat-info">
-                <span class="stat-label">本月新增咨询</span>
-                <span class="stat-value" id="stat-month-leads">-</span>
+                <span class="stat-label">设备线索</span>
+                <span class="stat-value" id="stat-equipment-leads">-</span>
               </div>
             </div>
             <div class="stat-card" data-filter="pending">
-              <div class="stat-icon bg-orange">⏳</div>
+              <div class="stat-icon bg-orange">待</div>
               <div class="stat-info">
-                <span class="stat-label">待联系客户数</span>
+                <span class="stat-label">待联系线索</span>
                 <span class="stat-value text-orange" id="stat-pending-leads">-</span>
               </div>
             </div>
             <div class="stat-card" data-filter="closed">
-              <div class="stat-icon bg-emerald">🤝</div>
+              <div class="stat-icon bg-emerald">成</div>
               <div class="stat-info">
-                <span class="stat-label">已签约成交客户</span>
+                <span class="stat-label">已成交线索</span>
                 <span class="stat-value text-emerald" id="stat-closed-leads">-</span>
               </div>
             </div>
           </div>
 
-          <!-- 看板底栏 -->
           <div class="dashboard-details">
-            <!-- 热门项目排行 -->
             <div class="glass-panel ranking-panel">
-              <h3 class="panel-title">🔥 热门招商项目线索排行</h3>
+              <h3 class="panel-title">热门机会线索排行</h3>
               <div class="table-responsive">
                 <table class="table">
                   <thead>
                     <tr>
                       <th>名次</th>
-                      <th>项目标题</th>
-                      <th>所属学校</th>
-                      <th class="text-right">线索意向数</th>
+                      <th>标题</th>
+                      <th>学校</th>
+                      <th class="text-right">线索数</th>
                     </tr>
                   </thead>
-                  <tbody id="popular-projects-tbody">
-                    <!-- 动态加载 -->
-                  </tbody>
+                  <tbody id="popular-projects-tbody"></tbody>
                 </table>
               </div>
             </div>
-            
-            <!-- 漏斗分析/跟进成效比例 -->
             <div class="glass-panel funnel-panel">
-              <h3 class="panel-title">📈 咨询线索状态漏斗</h3>
-              <div class="funnel-container" id="funnel-container">
-                <!-- 动态渲染 CSS 漏斗图 -->
-              </div>
+              <h3 class="panel-title">线索类型分布</h3>
+              <div class="funnel-container" id="funnel-container"></div>
             </div>
           </div>
         </section>
 
-        <!-- ==================== 视图二：招商项目管理 ==================== -->
         <section id="projects-view" class="view-section">
           <div class="table-controls">
             <div class="controls-left">
-              <input type="text" class="input-search" id="project-search" placeholder="搜索项目标题/学校名称..." />
-              <select class="select-filter" id="project-filter-type">
-                <option value="全部">全部类型</option>
-                <option value="食堂档口">食堂档口</option>
-                <option value="校园商业街">校园商业街</option>
-                <option value="校内铺位">校内铺位</option>
-                <option value="校外临校铺位">校外临校铺位</option>
-                <option value="校园服务点">校园服务点</option>
+              <input type="text" class="input-search" id="project-search" placeholder="搜索标题/学校/区域..." />
+              <select class="select-filter" id="project-filter-opportunity">
+                <option value="全部">全部业务</option>
+                <option value="leasing">招商铺位</option>
+                <option value="transfer">店铺转让</option>
               </select>
               <select class="select-filter" id="project-filter-status">
                 <option value="全部">全部状态</option>
                 <option value="draft">草稿</option>
-                <option value="online">招商中</option>
+                <option value="online">开放中</option>
                 <option value="coming">即将开放</option>
-                <option value="full">已满租</option>
+                <option value="full">已满/已转</option>
                 <option value="offline">已下架</option>
               </select>
             </div>
-            <button class="btn btn-primary" id="btn-add-project">➕ 发布新项目</button>
+            <button class="btn btn-primary" id="btn-refresh-projects">刷新机会</button>
           </div>
 
           <div class="glass-panel table-panel">
@@ -177,106 +150,102 @@
                 <thead>
                   <tr>
                     <th>封面</th>
-                    <th width="30%">项目标题</th>
-                    <th>所属学校</th>
-                    <th>区域</th>
-                    <th>项目类型</th>
-                    <th>租金费用</th>
-                    <th>招商状态</th>
+                    <th width="30%">标题</th>
+                    <th>业务</th>
+                    <th>学校/区域</th>
+                    <th>类型</th>
+                    <th>费用</th>
+                    <th>状态</th>
                     <th>推荐</th>
-                    <th class="text-center" width="200">操作</th>
                   </tr>
                 </thead>
-                <tbody id="projects-tbody">
-                  <!-- 动态加载 -->
-                </tbody>
+                <tbody id="projects-tbody"></tbody>
               </table>
             </div>
           </div>
         </section>
 
-        <!-- ==================== 视图三：咨询线索跟进 ==================== -->
         <section id="leads-view" class="view-section">
           <div class="leads-split-layout">
-            
-            <!-- 左侧线索列表 -->
             <div class="leads-left-panel glass-panel">
               <div class="panel-header-search">
                 <input type="text" class="input-search block-search" id="lead-search" placeholder="搜索称呼或手机号..." />
+                <select class="select-filter block-search" id="lead-type-filter">
+                  <option value="全部">全部业务线索</option>
+                  <option value="leasing">找铺咨询</option>
+                  <option value="transfer">店铺转让</option>
+                  <option value="equipment_sell">出售设备</option>
+                  <option value="equipment_buy">求购设备</option>
+                  <option value="equipment_recycle">回收咨询</option>
+                  <option value="brand_cooperation">品牌合作</option>
+                </select>
                 <div class="leads-status-tabs" id="leads-status-tabs">
                   <span class="status-tab active" data-status="全部">全部</span>
                   <span class="status-tab" data-status="new">待联系</span>
                   <span class="status-tab" data-status="contacted">已联系</span>
-                  <span class="status-tab" data-status="viewing_scheduled">已约看铺</span>
+                  <span class="status-tab" data-status="viewing_scheduled">已约看</span>
                   <span class="status-tab" data-status="negotiating">谈判中</span>
                   <span class="status-tab" data-status="closed">已成交</span>
                 </div>
               </div>
-              
-              <div class="leads-list-scroll" id="leads-list-scroll">
-                <!-- 动态列表 -->
+              <div class="leads-list-scroll" id="leads-list-scroll"></div>
+            </div>
+
+            <div class="leads-right-panel glass-panel" id="lead-detail-placeholder">
+              <div class="detail-empty flex flex-col align-center justify-center">
+                <span style="font-size: 64px; margin-bottom: 20px;">◎</span>
+                <h3>请选择需要跟进的线索</h3>
+                <p>左侧线索会按业务类型和状态筛选。</p>
               </div>
             </div>
 
-            <!-- 右侧详情与跟进时间轴 -->
-            <div class="leads-right-panel glass-panel" id="lead-detail-placeholder">
-              <div class="detail-empty flex flex-col align-center justify-center">
-                <span style="font-size: 80px; margin-bottom: 20px;">📂</span>
-                <h3>请在左侧选择需要跟进的咨询线索</h3>
-                <p>点击客户卡片即可查看详细经营预算信息与跟进日志</p>
-              </div>
-            </div>
-            
-            <!-- 实体的详情展现，默认隐藏 -->
             <div class="leads-right-panel glass-panel" id="lead-detail-panel" style="display:none;">
               <div class="detail-scroll-container">
                 <div class="detail-header">
                   <div class="customer-title-block">
                     <h3 id="lead-det-name">-</h3>
-                    <span class="badge" id="lead-det-status-badge">新咨询</span>
+                    <span class="badge" id="lead-det-status-badge">新线索</span>
                   </div>
                   <div class="lead-meta-date" id="lead-det-date">-</div>
                 </div>
 
-                <!-- 经营需求表格 -->
                 <div class="info-section">
-                  <h4 class="section-title-mini">📋 意向经营要求</h4>
+                  <h4 class="section-title-mini">需求信息</h4>
                   <div class="detail-grid">
-                    <div class="grid-cell"><span class="lbl">手机号码</span><span class="val font-bold text-blue" id="lead-det-phone">-</span></div>
-                    <div class="grid-cell"><span class="lbl">经营品类</span><span class="val" id="lead-det-business">-</span></div>
-                    <div class="grid-cell"><span class="lbl">投资预算</span><span class="val text-red font-bold" id="lead-det-budget">-</span></div>
-                    <div class="grid-cell"><span class="lbl">意向区域</span><span class="val" id="lead-det-region">-</span></div>
-                    <div class="grid-cell"><span class="lbl">校园经验</span><span class="val" id="lead-det-experience">-</span></div>
-                    <div class="grid-cell"><span class="lbl">意向铺位</span><span class="val link-val" id="lead-det-project" data-project-id="">-</span></div>
+                    <div class="grid-cell"><span class="lbl">手机号</span><span class="val font-bold text-blue" id="lead-det-phone">-</span></div>
+                    <div class="grid-cell"><span class="lbl">业务类型</span><span class="val" id="lead-det-type">-</span></div>
+                    <div class="grid-cell"><span class="lbl">品类/设备</span><span class="val" id="lead-det-business">-</span></div>
+                    <div class="grid-cell"><span class="lbl">预算/价格</span><span class="val text-red font-bold" id="lead-det-budget">-</span></div>
+                    <div class="grid-cell"><span class="lbl">区域</span><span class="val" id="lead-det-region">-</span></div>
+                    <div class="grid-cell"><span class="lbl">关联机会</span><span class="val link-val" id="lead-det-project" data-project-id="">-</span></div>
                   </div>
-                  <div class="note-row"><span class="lbl">客户备注说明</span><p class="val" id="lead-det-remark">-</p></div>
+                  <div class="note-row"><span class="lbl">备注</span><p class="val" id="lead-det-remark">-</p></div>
                 </div>
 
-                <!-- 跟进录入表单 -->
                 <div class="info-section bg-light-panel">
-                  <h4 class="section-title-mini">✍️ 记录本次跟进情况</h4>
+                  <h4 class="section-title-mini">记录跟进</h4>
                   <div class="form-grid">
                     <div class="form-group flex-1">
-                      <label>沟通内容纪实</label>
-                      <textarea class="form-input text-textarea" id="follow-content" placeholder="记录此次跟进详情，例如：客户嫌弃石牌校区租金贵，已介绍华商学院档口..."></textarea>
+                      <label>沟通内容</label>
+                      <textarea class="form-input text-textarea" id="follow-content" placeholder="记录本次跟进情况"></textarea>
                     </div>
                     <div class="form-row">
                       <div class="form-group">
-                        <label>变更客户跟进状态</label>
+                        <label>线索状态</label>
                         <select class="form-input" id="follow-status">
-                          <option value="new">新咨询 (待联系)</option>
-                          <option value="contacted">已联系 (沟通中)</option>
-                          <option value="interested">有意向 (跟进中)</option>
-                          <option value="viewing_scheduled">已预约看铺</option>
-                          <option value="viewed">已带看铺</option>
-                          <option value="negotiating">合同谈判中</option>
-                          <option value="closed">已签约成交</option>
-                          <option value="invalid">无效线索/放弃</option>
-                          <option value="paused">已暂缓/待续</option>
+                          <option value="new">新线索</option>
+                          <option value="contacted">已联系</option>
+                          <option value="interested">意向明确</option>
+                          <option value="viewing_scheduled">已约看</option>
+                          <option value="viewed">已看铺/已核实</option>
+                          <option value="negotiating">谈判中</option>
+                          <option value="closed">已成交</option>
+                          <option value="invalid">无效</option>
+                          <option value="paused">暂缓</option>
                         </select>
                       </div>
                       <div class="form-group">
-                        <label>下一次跟进时间</label>
+                        <label>下次跟进</label>
                         <input type="date" class="form-input" id="follow-next-date" />
                       </div>
                     </div>
@@ -286,177 +255,17 @@
                   </div>
                 </div>
 
-                <!-- 跟进历史 Timeline -->
                 <div class="info-section">
-                  <h4 class="section-title-mini">⏳ 历史跟进记录时间轴</h4>
-                  <div class="admin-timeline" id="lead-det-timeline">
-                    <!-- 动态时间轴 -->
-                  </div>
+                  <h4 class="section-title-mini">历史跟进</h4>
+                  <div class="admin-timeline" id="lead-det-timeline"></div>
                 </div>
               </div>
             </div>
-
           </div>
         </section>
-
       </div>
     </main>
-
   </div>
-
-  <!-- ==================== 模态框：项目发布/编辑 ==================== -->
-  <div class="modal-backdrop" id="project-modal" style="display:none;">
-    <div class="modal-box">
-      <div class="modal-header">
-        <h3 id="modal-project-title">发布新招商项目</h3>
-        <span class="modal-close" id="btn-close-project-modal">✕</span>
-      </div>
-      <div class="modal-body">
-        <form id="project-form">
-          <input type="hidden" id="form-project-id" />
-          
-          <div class="form-row">
-            <div class="form-group flex-2">
-              <label><span class="req">*</span>项目标题</label>
-              <input type="text" class="form-input" id="form-title" placeholder="如：华南师范大学商业街茶饮店铺" required />
-            </div>
-            <div class="form-group">
-              <label><span class="req">*</span>项目类型</label>
-              <select class="form-input" id="form-type" required>
-                <option value="食堂档口">食堂档口</option>
-                <option value="校园商业街">校园商业街</option>
-                <option value="校内铺位">校内铺位</option>
-                <option value="校外临校铺位">校外临校铺位</option>
-                <option value="校园服务点">校园服务点</option>
-                <option value="其他">其他</option>
-              </select>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label><span class="req">*</span>城市</label>
-              <input type="text" class="form-input" id="form-city" value="广州" placeholder="如：广州" required />
-            </div>
-            <div class="form-group">
-              <label><span class="req">*</span>区/县</label>
-              <input type="text" class="form-input" id="form-district" placeholder="如：增城 / 天河" required />
-            </div>
-            <div class="form-group flex-2">
-              <label>详细物理地址</label>
-              <input type="text" class="form-input" id="form-address" placeholder="如：第一食堂2层楼A05档口" />
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group flex-2">
-              <label><span class="req">*</span>学校名称</label>
-              <input type="text" class="form-input" id="form-school" placeholder="如：广州华商学院" required />
-            </div>
-            <div class="form-group">
-              <label>学校简称</label>
-              <input type="text" class="form-input" id="form-school-alias" placeholder="如：华商学院" />
-            </div>
-            <div class="form-group flex-align-end">
-              <label class="flex align-center cursor-pointer" style="margin-bottom:12px;">
-                <input type="checkbox" id="form-show-full-school" checked />
-                <span style="margin-left:6px; font-size:13px;">前端显示完整校名</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label><span class="req">*</span>面积大小</label>
-              <input type="text" class="form-input" id="form-area" placeholder="如：15㎡" required />
-            </div>
-            <div class="form-group flex-2">
-              <label><span class="req">*</span>租金/费用说明</label>
-              <input type="text" class="form-input" id="form-fee" placeholder="如：3万元/年 或 1.2万元/月" required />
-            </div>
-            <div class="form-group">
-              <label>排序值 (越大越靠前)</label>
-              <input type="number" class="form-input" id="form-sort" value="0" />
-            </div>
-          </div>
-
-          <!-- 业态勾选 -->
-          <div class="form-group">
-            <label><span class="req">*</span>适合经营品类 (可多选)</label>
-            <div class="checkbox-grid" id="form-suitable-businesses-grid">
-              <!-- JS动态渲染 -->
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label>不适合经营品类 (可多选)</label>
-            <div class="checkbox-grid" id="form-unsuitable-businesses-grid">
-              <!-- JS动态渲染 -->
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group flex-1">
-              <label>项目亮点 (以英文逗号分割多个)</label>
-              <input type="text" class="form-input" id="form-highlights" placeholder="免转让费,学生人流大,带水电排烟" />
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label>客群说明</label>
-              <textarea class="form-input textarea-small" id="form-customer-info" placeholder="如：覆盖师生1.2万人，就餐集中..."></textarea>
-            </div>
-            <div class="form-group">
-              <label>合作模式</label>
-              <textarea class="form-input textarea-small" id="form-cooperation" placeholder="如：流水抽成15%，押二付一..."></textarea>
-            </div>
-            <div class="form-group">
-              <label>看铺安排说明</label>
-              <textarea class="form-input textarea-small" id="form-viewing-time" placeholder="如：工作日14点至17点，提前一天约..."></textarea>
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group flex-2">
-              <label>项目封面图 URL</label>
-              <input type="text" class="form-input" id="form-cover-image" placeholder="http:// 开头的图片链接" />
-            </div>
-            <div class="form-group flex-2">
-              <label>轮播图 URL (以英文逗号分割多个)</label>
-              <input type="text" class="form-input" id="form-images" placeholder="逗号分隔图片链接" />
-            </div>
-            <div class="form-group">
-              <label>项目招商状态</label>
-              <select class="form-input" id="form-status">
-                <option value="draft">草稿</option>
-                <option value="online">招商中 (上线)</option>
-                <option value="coming">即将开放</option>
-                <option value="full">已满租</option>
-                <option value="offline">已下架</option>
-              </select>
-            </div>
-            <div class="form-group flex-align-end">
-              <label class="flex align-center cursor-pointer" style="margin-bottom:12px;">
-                <input type="checkbox" id="form-is-recommended" />
-                <span style="margin-left:6px; font-weight:600; color:#ef4444; font-size:13px;">设为推荐项目</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="form-group border-none">
-            <label>备注说明 (仅后台管理可见)</label>
-            <input type="text" class="form-input" id="form-remark" placeholder="补充记事" />
-          </div>
-
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" id="btn-cancel-project">取消</button>
-        <button class="btn btn-primary" id="btn-save-project">保存发布</button>
-      </div>
-    </div>
-  </div>
-
+  <script src="app.js"></script>
 </body>
 </html>

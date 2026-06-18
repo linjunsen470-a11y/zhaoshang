@@ -5,7 +5,7 @@
   <view class="leads-header flex align-center justify-between">
     <view class="phone-tip">
       <text class="phone-label">当前查询电话：</text>
-      <text class="phone-number">{{phone}}</text>
+      <text class="phone-number" bindtap="onCopyLeadPhone" data-phone="{{phone}}">{{phone}}</text>
     </view>
     <navigator url="/pages/my/my" open-type="switchTab" class="change-phone-btn">修改电话</navigator>
   </view>
@@ -65,6 +65,13 @@
           <view class="lead-time-footer flex justify-between align-center">
             <text class="lead-id-lbl">线索号：{{item.id}}</text>
             <text class="lead-time-lbl">提交于：{{item.formattedTime}}</text>
+          </view>
+
+          <!-- 快捷操作按钮（完整反馈演示） -->
+          <view class="lead-actions flex" style="margin-top:16rpx; gap:16rpx;">
+            <button class="btn btn-outline" style="flex:1; font-size:24rpx; padding:12rpx 0; height:auto;" bindtap="onCallAdvisorFromLead">📞 联系顾问</button>
+            <button class="btn btn-secondary" style="flex:1; font-size:24rpx; padding:12rpx 0; height:auto;" bindtap="onReConsult" data-project-id="{{item.projectId}}" data-title="{{item.projectTitle}}">再次咨询</button>
+            <text class="lead-phone-copy" bindtap="onCopyLeadPhone" data-phone="{{item.phone}}" style="align-self:center; font-size:22rpx; color:#3b82f6; padding:0 8rpx;">复制电话</text>
           </view>
 
           <!-- 招商跟进记录 (Timeline 折叠面板) -->

@@ -96,7 +96,7 @@
   <view class="list-body">
     
     <!-- 筛选提示条 -->
-    <view class="filter-tip flex justify-between align-center" wx:if="{{selectedDistrict !== '全部' || selectedType !== '全部' || selectedBudget !== '全部' || selectedBusiness !== '全部' || selectedStatus !== '全部' || keyword || isRecommendedOnly}}">
+    <view class="filter-tip flex justify-between align-center" wx:if="{{selectedDistrict !== '全部' || selectedType !== '全部' || selectedBudget !== '全部' || selectedBusiness !== '全部' || selectedStatus !== '全部' || keyword || isRecommendedOnly || isFavoritesOnly}}">
       <text class="tip-text">已启用筛选条件</text>
       <text class="reset-btn-link" bindtap="onResetFilters">重置筛选</text>
     </view>
@@ -112,8 +112,15 @@
       <view class="list-container" wx:if="{{projectList.length > 0}}">
         <view class="project-card card" wx:for="{{projectList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}">
           
-          <view class="card-top flex">
-            <image src="{{item.coverImage}}" mode="aspectFill" class="project-img" />
+          <view class="card-top flex" style="position:relative;">
+            <view style="position:relative; flex-shrink:0;">
+              <image src="{{item.coverImage}}" mode="aspectFill" class="project-img" />
+              <!-- 列表快捷收藏 -->
+              <view class="fav-mini" catchtap="onToggleFavInList" data-id="{{item.id}}" 
+                    style="position:absolute; top:8rpx; right:8rpx; font-size:28rpx; line-height:1; z-index:5; padding:4rpx 6rpx; background:rgba(255,255,255,0.9); border-radius:50%;">
+                {{item.isFav ? '★' : '☆'}}
+              </view>
+            </view>
             
             <view class="project-main flex-1 flex flex-col justify-between">
               <view>

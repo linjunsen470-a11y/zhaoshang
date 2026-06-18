@@ -1,0 +1,57 @@
+<view class="container">
+  <view class="form-header">
+    <view class="header-title">餐饮设备供需撮合</view>
+    <view class="header-desc">提交设备出售、求购或回收需求，平台顾问人工匹配本地资源。</view>
+  </view>
+
+  <view class="form-body">
+    <view class="type-tabs">
+      <view class="type-tab {{leadType === 'equipment_sell' ? 'active' : ''}}" bindtap="onTypeTap" data-type="equipment_sell">出售设备</view>
+      <view class="type-tab {{leadType === 'equipment_buy' ? 'active' : ''}}" bindtap="onTypeTap" data-type="equipment_buy">求购设备</view>
+      <view class="type-tab {{leadType === 'equipment_recycle' ? 'active' : ''}}" bindtap="onTypeTap" data-type="equipment_recycle">回收咨询</view>
+    </view>
+
+    <view class="card form-card">
+      <view class="form-item">
+        <view class="item-label flex align-center"><text class="required-star">*</text>联系人称呼</view>
+        <input class="item-input" type="text" placeholder="例如：王老板" bindinput="onInputName" value="{{name}}" />
+      </view>
+
+      <view class="form-item">
+        <view class="item-label flex align-center"><text class="required-star">*</text>联系电话</view>
+        <input class="item-input" type="number" maxlength="11" placeholder="用于顾问联系匹配" bindinput="onInputPhone" value="{{phone}}" />
+      </view>
+
+      <view class="form-item">
+        <view class="item-label flex align-center"><text class="required-star">*</text>设备名称</view>
+        <input class="item-input" type="text" placeholder="例如：冷藏柜、制冰机、炸炉、操作台" bindinput="onInputEquipmentName" value="{{equipmentName}}" />
+      </view>
+
+      <view class="form-item">
+        <view class="item-label">设备数量/规格</view>
+        <input class="item-input" type="text" placeholder="例如：2 台，1.8 米操作台，三相电" bindinput="onInputSpec" value="{{specText}}" />
+      </view>
+
+      <view class="form-item">
+        <view class="item-label">{{leadType === 'equipment_buy' ? '采购预算' : '期望价格'}}</view>
+        <input class="item-input" type="text" placeholder="例如：3000-5000 元，可面议" bindinput="onInputBudget" value="{{budgetRange}}" />
+      </view>
+
+      <view class="form-item">
+        <view class="item-label">所在区域</view>
+        <input class="item-input" type="text" placeholder="例如：广州增城、番禺大学城" bindinput="onInputRegion" value="{{regionPreference}}" />
+      </view>
+
+      <view class="form-item border-none">
+        <view class="item-label">补充说明</view>
+        <textarea class="item-textarea" placeholder="可填写品牌、购买年份、新旧程度、是否可试机、是否需要拆装运输等"
+                  bindinput="onInputRemark" value="{{remark}}" maxlength="300" />
+        <view class="char-count">{{remark.length}}/300</view>
+      </view>
+    </view>
+
+    <button class="btn btn-primary submit-btn" bindtap="onSubmitForm" disabled="{{submitting}}">
+      {{submitting ? '提交中...' : '提交设备需求'}}
+    </button>
+  </view>
+</view>

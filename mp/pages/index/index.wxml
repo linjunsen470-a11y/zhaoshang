@@ -1,44 +1,54 @@
-<!-- pages/index/index.wxml -->
 <view class="container">
-  
-  <!-- 头部背景与搜索框 -->
   <view class="header-bg">
-    <view class="welcome-text">寻找校园黄金商铺</view>
+    <view class="welcome-text">校园开店资源撮合平台</view>
     <view class="search-bar">
       <icon type="search" size="16" color="#94a3b8" class="search-icon"></icon>
-      <input type="text" placeholder="搜索学校、区域、业态，如：奶茶 / 快餐" 
+      <input type="text" placeholder="搜索学校、区域、业态，如：奶茶 / 快餐"
              confirm-type="search" bindconfirm="onSearch" bindinput="onSearchInput" value="{{searchKeyword}}" />
       <button class="search-btn" bindtap="onSearch">搜索</button>
     </view>
   </view>
 
-  <!-- 快捷金刚区分类 -->
+  <view class="service-grid card">
+    <view class="service-item" wx:for="{{serviceEntrances}}" wx:key="id"
+          bindtap="onServiceTap" data-action="{{item.action}}">
+      <text class="service-icon">{{item.icon}}</text>
+      <view class="service-title">{{item.name}}</view>
+      <view class="service-desc">{{item.desc}}</view>
+    </view>
+  </view>
+
   <view class="categories-card card">
     <view class="category-grid">
-      <view class="category-item" wx:for="{{categories}}" wx:key="id" 
-            bindtap="onCategoryTap" data-type="{{item.type}}" data-val="{{item.val}}">
+      <view class="category-item" wx:for="{{categories}}" wx:key="id"
+            bindtap="onCategoryTap"
+            data-type="{{item.type}}" data-val="{{item.val}}"
+            hover-class="category-active" hover-start-time="50" hover-stay-time="100">
         <text class="category-icon">{{item.icon}}</text>
         <text class="category-name">{{item.name}}</text>
       </view>
     </view>
   </view>
 
-  <!-- 推荐项目列表 (横向滚动) -->
   <view class="section-container" wx:if="{{recommendedList.length > 0}}">
     <view class="section-header flex align-center justify-between">
-      <view class="section-title">⭐ 重点推荐项目</view>
-      <navigator url="/pages/list/list?recommended=true" class="section-more">查看全部</navigator>
+      <view class="section-title">重点推荐</view>
+      <text class="section-more" bindtap="onViewRecommended">查看全部</text>
     </view>
-    
+
     <scroll-view class="recommended-scroll" scroll-x="true">
       <view class="recommended-track flex">
-        <view class="recommended-item" wx:for="{{recommendedList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}">
+        <view class="recommended-item" wx:for="{{recommendedList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" style="position:relative;">
           <image src="{{item.coverImage}}" mode="aspectFill" class="rec-cover" />
+          <view class="fav-mini" catchtap="onToggleFav" data-id="{{item.id}}"
+                style="position:absolute; top:12rpx; right:12rpx; font-size:28rpx; padding:4rpx 8rpx; background:rgba(255,255,255,0.85); border-radius:50%; z-index:2;">
+            {{item.isFav ? '★' : '☆'}}
+          </view>
           <view class="rec-info">
-            <view class="rec-badge badge badge-online">重点招商</view>
+            <view class="rec-badge badge badge-online">{{item.opportunityType === 'transfer' ? '委托转让' : '重点招商'}}</view>
             <view class="rec-title ellipsis">{{item.title}}</view>
             <view class="rec-sub flex justify-between">
-              <text class="rec-loc">📍 {{item.city}}·{{item.district}}</text>
+              <text class="rec-loc">{{item.city}} · {{item.district}}</text>
               <text class="rec-price">{{item.feeText}}</text>
             </view>
           </view>
@@ -47,25 +57,29 @@
     </scroll-view>
   </view>
 
-  <!-- 找不到商铺的横幅引导 -->
   <view class="need-consult-card card flex align-center justify-between" bindtap="onApplyCustom">
     <view class="consult-text-group">
-      <view class="consult-main-title">找不到满意的铺位？</view>
-      <view class="consult-sub-title">提交您的经营需求，由专业顾问为您配铺</view>
+      <view class="consult-main-title">没有匹配的铺位？</view>
+      <view class="consult-sub-title">提交需求，由顾问为你匹配招商、转让和设备资源</view>
     </view>
-    <view class="consult-go-btn">快速提交 ➜</view>
+    <view class="consult-go-btn">快速提交</view>
   </view>
 
-  <!-- 最新发布项目 (列表) -->
   <view class="section-container">
     <view class="section-header flex align-center justify-between">
-      <view class="section-title">🆕 最新招商项目</view>
+      <view class="section-title">最新机会</view>
       <navigator url="/pages/list/list" open-type="switchTab" class="section-more">查看全部</navigator>
     </view>
 
     <view class="latest-list" wx:if="{{latestList.length > 0}}">
-      <view class="latest-card card flex" wx:for="{{latestList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}">
-        <image src="{{item.coverImage}}" mode="aspectFill" class="latest-cover" />
+      <view class="latest-card card flex" wx:for="{{latestList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" style="position:relative;">
+        <view style="position:relative; flex-shrink:0;">
+          <image src="{{item.coverImage}}" mode="aspectFill" class="latest-cover" />
+          <view class="fav-mini" catchtap="onToggleFav" data-id="{{item.id}}"
+                style="position:absolute; top:8rpx; right:8rpx; font-size:26rpx; padding:2rpx 6rpx; background:rgba(255,255,255,0.9); border-radius:50%; z-index:2;">
+            {{item.isFav ? '★' : '☆'}}
+          </view>
+        </view>
         <view class="latest-info flex-1 flex flex-col justify-between">
           <view>
             <view class="latest-title ellipsis">{{item.title}}</view>
@@ -76,7 +90,7 @@
             </view>
           </view>
           <view class="latest-bottom flex align-center justify-between">
-            <view class="latest-loc">📍 {{item.schoolAlias || item.schoolName || item.district}}</view>
+            <view class="latest-loc">{{item.schoolAlias || item.schoolName || item.district}}</view>
             <view class="latest-price">{{item.feeText}}</view>
           </view>
         </view>
@@ -85,16 +99,14 @@
     <view class="empty-tip" wx:else>暂无发布项目</view>
   </view>
 
-  <!-- 联系客服快捷悬浮 -->
   <view class="contact-block card flex align-center justify-between" bindtap="onContactAdvisor">
     <view class="flex align-center">
-      <text class="advisor-avatar">📞</text>
+      <text class="advisor-avatar">☎</text>
       <view class="advisor-info">
         <view class="advisor-title">招商顾问专线</view>
-        <view class="advisor-desc">直接拨打电话咨询，沟通更高效</view>
+        <view class="advisor-desc">找铺、转让、设备资源均可咨询</view>
       </view>
     </view>
     <view class="call-btn badge">立即联系</view>
   </view>
-
 </view>

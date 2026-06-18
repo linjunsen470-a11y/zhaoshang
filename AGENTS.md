@@ -1,0 +1,43 @@
+# Repository Guidelines
+
+## Project Structure & Module Organization
+
+This repository has four main surfaces:
+
+- `mp/`: WeChat mini-program client. Pages live in `mp/pages/<page>/` with matching `.js`, `.wxml`, `.wxss`, and `.json` files. Shared API calls are in `mp/services/api.js`; images are in `mp/images/`. Core user flows include finding campus shops, submitting transfer requests, and submitting equipment supply/demand leads.
+- `backend/`: Payload CMS + Next.js backend and public website. App routes are in `backend/app/`, collections in `backend/collections/`, and CMS configuration in `backend/payload.config.ts`.
+- Root mock/admin tooling: `server.js` runs the local Node server, `admin/` contains the static admin UI, and `data.json` stores mock data.
+- Deployment tooling: `docker-compose.yml`, root `.env.example`, `backend/Dockerfile`, and `backend/.env.example` support production builds.
+
+Docs belong in `docs/`. Deployment configuration is in `docker-compose.yml` and `.env.example`.
+
+## Build, Test, and Development Commands
+
+- `pnpm dev`: starts the root `server.js` mock API/admin workflow.
+- `pnpm backend:dev`: starts the Next/Payload backend from the repository root.
+- `pnpm backend:build`: builds the backend from the repository root.
+- `pnpm backend:lint`: runs backend ESLint from the repository root.
+- `pnpm --dir backend install`: installs backend dependencies using the lockfile.
+- `docker compose up -d --build`: from the root, builds and starts the Payload service plus Postgres.
+
+Open the mini-program with WeChat DevTools using `mp/project.config.json`.
+
+## Coding Style & Naming Conventions
+
+Use JavaScript modules at the root and in `mp/`; use TypeScript in `backend/`. Follow the existing 2-space indentation style and keep semicolons consistent with nearby files. Name mini-program pages by route directory, such as `pages/detail/detail.js`. Name Payload collection files with PascalCase, for example `Projects.ts`.
+
+Run `pnpm backend:lint` before backend changes. Keep client API logic centralized in `mp/services/api.js` rather than duplicating request code in pages. Demo mini-program mode defaults to local storage mock data through `useLocalMock`; disable it only when intentionally testing the local request API.
+
+## Testing Guidelines
+
+No automated test suite is currently configured. For backend changes, run `pnpm backend:lint` and `pnpm backend:build`. For mini-program changes, verify affected pages in WeChat DevTools, including navigation, form submission, local mock behavior, and API error states. If tests are added, place them near the code they cover and use clear names such as `leads.test.ts` or `api.spec.js`.
+
+## Commit & Pull Request Guidelines
+
+Git history currently only shows `init`, so use short imperative commit messages, for example `Add lead status validation` or `Fix mini-program detail loading`. Keep commits focused by area.
+
+Pull requests should include a brief summary, affected areas (`mp`, `backend`, `admin`, or deployment), validation steps run, linked issues if any, and screenshots for UI changes.
+
+## Security & Configuration Tips
+
+Do not commit real secrets. Copy `.env.example` to `.env` for deployment settings, set a strong `PAYLOAD_SECRET`, and use a real HTTPS `PAYLOAD_PUBLIC_SERVER_URL` in production. Commit env examples, lockfiles, Dockerfiles, and compose files; do not commit `.env`, `.next/`, `node_modules/`, upload folders, or logs.

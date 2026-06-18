@@ -119,6 +119,14 @@
       <!-- 留白防遮挡 -->
       <view class="safe-bottom-space"></view>
 
+      <!-- 辅助操作：复制 + 分享（每个按钮都有反馈） -->
+      <view class="bottom-extra flex align-center justify-center" style="padding:0 20rpx 12rpx; font-size:24rpx; gap:32rpx; color:#64748b; margin-bottom: 8rpx;">
+        <text bindtap="onCopyPhone" style="padding:8rpx 12rpx;">📋 复制电话</text>
+        <text bindtap="onCopyAddress" style="padding:8rpx 12rpx;">📍 复制地址</text>
+        <button class="btn btn-outline" style="font-size:24rpx; padding:8rpx 20rpx; height:auto; line-height:1.4;" 
+                open-type="share" bindtap="onShareTap">📤 分享项目</button>
+      </view>
+
     </view>
 
     <!-- 底部固定动作条 -->

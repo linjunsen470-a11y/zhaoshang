@@ -1,0 +1,48 @@
+# dependencies
+node_modules/
+backend/node_modules/
+.pnpm-store/
+
+# environment files
+.env
+.env.*
+backend/.env
+backend/.env.*
+!.env.example
+!backend/.env.example
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# build and cache output
+dist/
+build/
+coverage/
+.next/
+backend/.next/
+backend/out/
+backend/build/
+backend/next-env.d.ts
+*.tsbuildinfo
+
+# Payload / uploads runtime data
+backend/media/
+backend/uploads/
+uploads/
+
+# local IDE and OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# WeChat DevTools local files
+project.private.config.json
+mp/project.private.config.json
+
+# deployment tool state
+.vercel/

@@ -1,0 +1,37 @@
+# dependencies
+node_modules/
+.pnp/
+.pnp.*
+
+# testing
+coverage/
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# production build output
+build/
+
+# Payload runtime files
+media/
+uploads/
+
+# environment
+.env
+.env.*
+!.env.example
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# misc
+.DS_Store
+*.pem
+.vercel/

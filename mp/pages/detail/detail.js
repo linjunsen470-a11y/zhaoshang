@@ -87,13 +87,9 @@ Page({
     this.setData({ isFavorited: isFav });
   },
 
-  // 拨打顾问电话
+  // 拨打顾问电话（统一反馈）
   onCallAdvisor: function () {
-    wx.makePhoneCall({
-      phoneNumber: '18888888888',
-      success: () => console.log('拨打成功'),
-      fail: () => console.log('取消拨打')
-    });
+    getApp().callAdvisor('18888888888');
   },
 
   // 我要咨询跳转
@@ -103,6 +99,35 @@ Page({
         url: `/pages/apply/apply?projectId=${this.data.projectId}`
       });
     }
+  },
+
+  // 显式分享（open-type 也会触发 onShareAppMessage）
+  onShareTap: function () {
+    // 提示用户使用右上角或点击分享按钮
+    wx.showToast({ title: '请点击右上角分享或使用下方按钮', icon: 'none' });
+  },
+
+  // 复制地址
+  onCopyAddress: function () {
+    const p = this.data.project;
+    const text = p.addressText || `${p.city || ''}${p.district || ''}${p.schoolName || ''}`;
+    if (!text) {
+      wx.showToast({ title: '暂无地址', icon: 'none' });
+      return;
+    }
+    wx.setClipboardData({
+      data: text,
+      success: () => wx.showToast({ title: '地址已复制', icon: 'success' })
+    });
+  },
+
+  // 复制顾问电话
+  onCopyPhone: function () {
+    const phone = '18888888888';
+    wx.setClipboardData({
+      data: phone,
+      success: () => wx.showToast({ title: '电话已复制', icon: 'success' })
+    });
   },
 
   // 分享功能

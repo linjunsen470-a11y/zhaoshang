@@ -1,0 +1,74 @@
+<view class="container">
+  <view class="form-header">
+    <view class="header-title">委托店铺转让</view>
+    <view class="header-desc">提交店铺情况后，平台先做人工审核，再决定公开展示或定向撮合。</view>
+  </view>
+
+  <view class="form-body">
+    <view class="card hint-card">
+      校园店铺转让通常受合同和校方准入限制影响。请尽量填写真实信息，顾问会先协助核对可转让条件。
+    </view>
+
+    <view class="card form-card">
+      <view class="form-item">
+        <view class="item-label flex align-center"><text class="required-star">*</text>联系人称呼</view>
+        <input class="item-input" type="text" placeholder="例如：张老板" bindinput="onInputName" value="{{name}}" />
+      </view>
+
+      <view class="form-item">
+        <view class="item-label flex align-center"><text class="required-star">*</text>联系电话</view>
+        <input class="item-input" type="number" maxlength="11" placeholder="用于顾问联系核实" bindinput="onInputPhone" value="{{phone}}" />
+      </view>
+
+      <view class="form-item">
+        <view class="item-label flex align-center"><text class="required-star">*</text>店铺位置</view>
+        <input class="item-input" type="text" placeholder="学校/校区/食堂或商业街位置" bindinput="onInputLocation" value="{{locationText}}" />
+      </view>
+
+      <view class="form-item">
+        <view class="item-label flex align-center"><text class="required-star">*</text>当前业态</view>
+        <input class="item-input" type="text" placeholder="例如：轻食、奶茶、粉面、小吃" bindinput="onInputBusiness" value="{{businessType}}" />
+      </view>
+
+      <view class="form-item">
+        <view class="item-label">面积与费用</view>
+        <input class="item-input" type="text" placeholder="例如：45㎡，月租 9000 元，管理费另计" bindinput="onInputFee" value="{{feeText}}" />
+      </view>
+
+      <view class="form-item">
+        <view class="item-label">转让费预期</view>
+        <input class="item-input" type="text" placeholder="例如：6 万元，可谈" bindinput="onInputTransferFee" value="{{transferFee}}" />
+      </view>
+
+      <view class="form-item">
+        <view class="item-label">剩余合同期</view>
+        <input class="item-input" type="text" placeholder="例如：剩余 18 个月，是否可续约" bindinput="onInputTerm" value="{{remainingTerm}}" />
+      </view>
+
+      <view class="form-item">
+        <view class="item-label">是否含设备</view>
+        <radio-group class="experience-group flex align-center" bindchange="onEquipmentIncludedChange">
+          <label class="radio-label flex align-center">
+            <radio value="true" checked="{{includesEquipment === true}}" color="#3b82f6" />
+            <text class="radio-text">含设备</text>
+          </label>
+          <label class="radio-label flex align-center" style="margin-left: 60rpx;">
+            <radio value="false" checked="{{includesEquipment === false}}" color="#3b82f6" />
+            <text class="radio-text">不含/待定</text>
+          </label>
+        </radio-group>
+      </view>
+
+      <view class="form-item border-none">
+        <view class="item-label">补充说明</view>
+        <textarea class="item-textarea" placeholder="可填写流水区间、装修情况、校方是否允许转让、希望保密的信息等"
+                  bindinput="onInputRemark" value="{{remark}}" maxlength="300" />
+        <view class="char-count">{{remark.length}}/300</view>
+      </view>
+    </view>
+
+    <button class="btn btn-primary submit-btn" bindtap="onSubmitForm" disabled="{{submitting}}">
+      {{submitting ? '提交中...' : '提交委托转让'}}
+    </button>
+  </view>
+</view>

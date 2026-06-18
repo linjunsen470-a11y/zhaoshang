@@ -93,18 +93,15 @@ Page({
 
   // 我的收藏 (复用项目列表页，传入 favs=true)
   onGoToFavorites: function () {
-    wx.navigateTo({
-      url: '/pages/list/list?favs=true'
+    wx.setStorageSync('pendingListFilter', { favs: true });
+    wx.switchTab({
+      url: '/pages/list/list'
     });
   },
 
-  // 联系客服
+  // 联系客服（统一反馈）
   onCallService: function () {
-    wx.makePhoneCall({
-      phoneNumber: '18888888888',
-      success: () => console.log('拨打成功'),
-      fail: () => console.log('取消拨打')
-    });
+    getApp().callAdvisor('18888888888');
   },
 
   // 显示关于平台

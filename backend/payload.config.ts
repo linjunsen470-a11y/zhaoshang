@@ -1,0 +1,50 @@
+import { buildConfig, type SharpDependency } from 'payload'
+import { postgresAdapter } from '@payloadcms/db-postgres'
+import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import sharp from 'sharp'
+
+import { Projects } from './collections/Projects'
+import { Leads } from './collections/Leads'
+import { FollowRecords } from './collections/FollowRecords'
+import { Media } from './collections/Media'
+import { Users } from './collections/Users'
+import { MerchantProfiles } from './collections/MerchantProfiles'
+
+// For Docker / VPS deployment we will use Postgres
+// Local dev can use env var or fallback
+
+const filename = fileURLToPath(import.meta.url)
+const dirname = path.dirname(filename)
+
+export default buildConfig({
+  admin: {
+    user: 'users',
+    importMap: {
+      baseDir: dirname,
+    },
+  },
+  collections: [
+    Projects,
+    Leads,
+    FollowRecords,
+    MerchantProfiles,
+    Media,
+    Users,
+  ],
+  editor: lexicalEditor({}),
+  secret: process.env.PAYLOAD_SECRET || 'your-strong-secret-here-change-in-prod',
+  typescript: {
+    outputFile: path.resolve(dirname, 'payload-types.ts'),
+  },
+  db: postgresAdapter({
+    pool: {
+      connectionString: process.env.DATABASE_URI || 'postgres://payload:payload@localhost:5432/payload',
+    },
+  }),
+  sharp: sharp as unknown as SharpDependency,
+  plugins: [
+    // add plugins later e.g. for cloud storage
+  ],
+})

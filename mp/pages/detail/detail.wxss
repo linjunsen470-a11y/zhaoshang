@@ -1,7 +1,7 @@
 /* pages/detail/detail.wxss */
 
 .container {
-  padding-bottom: 120rpx; /* 留出底部动作条的空间 */
+  padding-bottom: 160rpx; /* 留出底部动作条 + 辅助操作空间 */
 }
 
 .loading-layout {
@@ -164,7 +164,7 @@
 }
 
 .safe-bottom-space {
-  height: 60rpx;
+  height: 90rpx;
 }
 
 /* 底部固定动作条 */
