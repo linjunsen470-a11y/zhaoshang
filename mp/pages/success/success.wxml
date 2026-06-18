@@ -1,0 +1,29 @@
+<!-- pages/success/success.wxml -->
+<view class="container success-container">
+  
+  <view class="success-card card flex flex-col align-center">
+    <icon type="success" size="80" color="#10b981" class="success-icon"></icon>
+    <view class="success-title">提交成功</view>
+    <view class="success-desc">
+      招商顾问会根据你的经营品类和预算，为你匹配合适的学校商业项目。我们将于24小时内联系您。
+    </view>
+  </view>
+
+  <view class="btn-group">
+    <!-- 查看我的咨询 -->
+    <button class="btn btn-primary action-btn" hover-class="btn-primary-active" bindtap="onViewLeads">
+      查看我的咨询记录
+    </button>
+    
+    <!-- 返回首页 -->
+    <button class="btn btn-secondary action-btn" hover-class="btn-secondary-active" bindtap="onGoHome">
+      返回招商首页
+    </button>
+
+    <!-- 电话咨询 -->
+    <button class="btn btn-outline action-btn" hover-class="btn-outline-active" bindtap="onCallAdvisor">
+      📞 拨打紧急专线
+    </button>
+  </view>
+
+</view>

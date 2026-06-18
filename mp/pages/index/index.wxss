@@ -1,0 +1,305 @@
+/* pages/index/index.wxss */
+
+.container {
+  padding-bottom: 40rpx;
+}
+
+/* 顶部搜索背景区 */
+.header-bg {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  padding: 40rpx 30rpx 60rpx 30rpx;
+  border-bottom-left-radius: 40rpx;
+  border-bottom-right-radius: 40rpx;
+  color: #ffffff;
+}
+
+.welcome-text {
+  font-size: 38rpx;
+  font-weight: 700;
+  margin-bottom: 24rpx;
+  letter-spacing: 2rpx;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border-radius: 100rpx;
+  padding: 8rpx 10rpx 8rpx 30rpx;
+  box-shadow: 0 10rpx 20rpx rgba(15, 23, 42, 0.15);
+}
+
+.search-icon {
+  margin-right: 16rpx;
+}
+
+.search-bar input {
+  flex: 1;
+  color: #1e293b;
+  font-size: 26rpx;
+  height: 64rpx;
+}
+
+.search-btn {
+  background-color: #3b82f6;
+  color: #ffffff;
+  font-size: 26rpx;
+  font-weight: 600;
+  border-radius: 100rpx;
+  padding: 12rpx 32rpx;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 金刚区快捷分类 */
+.categories-card {
+  margin: -30rpx 30rpx 30rpx 30rpx;
+  position: relative;
+  z-index: 10;
+}
+
+.category-grid {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.category-item {
+  width: 25%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24rpx;
+}
+
+.category-item:nth-last-child(-n+4) {
+  margin-bottom: 0;
+}
+
+.category-icon {
+  font-size: 48rpx;
+  margin-bottom: 8rpx;
+}
+
+.category-name {
+  font-size: 24rpx;
+  color: #475569;
+  font-weight: 500;
+}
+
+/* 板块通用头部 */
+.section-container {
+  padding: 0 30rpx;
+  margin-bottom: 30rpx;
+}
+
+.section-header {
+  margin-bottom: 16rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.section-more {
+  font-size: 24rpx;
+  color: #3b82f6;
+  font-weight: 500;
+}
+
+/* 推荐项目横向滑动 */
+.recommended-scroll {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.recommended-track {
+  display: inline-flex;
+  padding: 10rpx 0;
+}
+
+.recommended-item {
+  width: 480rpx;
+  background-color: #ffffff;
+  border-radius: 20rpx;
+  margin-right: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
+
+.rec-cover {
+  width: 100%;
+  height: 260rpx;
+  background-color: #e2e8f0;
+}
+
+.rec-info {
+  padding: 20rpx;
+  position: relative;
+}
+
+.rec-badge {
+  position: absolute;
+  top: -24rpx;
+  left: 20rpx;
+  box-shadow: 0 4rpx 8rpx rgba(59, 130, 246, 0.2);
+}
+
+.rec-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1e293b;
+  margin-top: 10rpx;
+  margin-bottom: 12rpx;
+}
+
+.rec-sub {
+  font-size: 24rpx;
+}
+
+.rec-loc {
+  color: #64748b;
+}
+
+.rec-price {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* 需求引导条 */
+.need-consult-card {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  color: #ffffff;
+  margin: 10rpx 30rpx 40rpx 30rpx;
+  padding: 30rpx;
+}
+
+.consult-main-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  margin-bottom: 6rpx;
+}
+
+.consult-sub-title {
+  font-size: 22rpx;
+  opacity: 0.85;
+}
+
+.consult-go-btn {
+  background-color: #ffffff;
+  color: #1d4ed8;
+  font-size: 24rpx;
+  font-weight: 700;
+  padding: 10rpx 20rpx;
+  border-radius: 30rpx;
+  box-shadow: 0 4rpx 10rpx rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+/* 最新列表 */
+.latest-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.latest-card {
+  padding: 20rpx;
+}
+
+.latest-cover {
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 12rpx;
+  margin-right: 20rpx;
+  background-color: #e2e8f0;
+  flex-shrink: 0;
+}
+
+.latest-info {
+  height: 180rpx;
+  overflow: hidden;
+}
+
+.latest-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 8rpx;
+}
+
+.latest-tags {
+  display: flex;
+}
+
+.latest-tag {
+  font-size: 20rpx;
+  background-color: #f1f5f9;
+  color: #475569;
+  padding: 2rpx 10rpx;
+  border-radius: 4rpx;
+  margin-right: 8rpx;
+  margin-bottom: 8rpx;
+}
+
+.latest-bottom {
+  margin-top: auto;
+}
+
+.latest-loc {
+  font-size: 22rpx;
+  color: #64748b;
+}
+
+.latest-price {
+  font-size: 26rpx;
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.empty-tip {
+  text-align: center;
+  color: #94a3b8;
+  padding: 40rpx;
+  font-size: 26rpx;
+}
+
+/* 联系顾问专线 */
+.contact-block {
+  margin: 10rpx 30rpx;
+  padding: 24rpx 30rpx;
+  border: 1rpx solid #e2e8f0;
+}
+
+.advisor-avatar {
+  font-size: 40rpx;
+  background-color: rgba(59, 130, 246, 0.1);
+  width: 72rpx;
+  height: 72rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  margin-right: 20rpx;
+}
+
+.advisor-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.advisor-desc {
+  font-size: 22rpx;
+  color: #64748b;
+}
+
+.call-btn {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  padding: 10rpx 20rpx;
+  border-radius: 30rpx;
+  font-size: 22rpx;
+  font-weight: 600;
+}

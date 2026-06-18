@@ -1,0 +1,148 @@
+<!-- pages/detail/detail.wxml -->
+<view class="container {{loading ? 'loading-layout' : ''}}">
+  
+  <!-- 加载状态 -->
+  <view class="loading-state" wx:if="{{loading}}">
+    <view class="spinner"></view>
+    <text>正在加载详情...</text>
+  </view>
+
+  <block wx:else>
+    <!-- 头部图片轮播 -->
+    <swiper class="detail-swiper" indicator-dots="true" autoplay="true" interval="4000" duration="500" 
+            indicator-color="rgba(255, 255, 255, 0.4)" indicator-active-color="#ffffff">
+      <swiper-item wx:for="{{project.images.length > 0 ? project.images : [project.coverImage]}}" wx:key="*this">
+        <image src="{{item}}" mode="aspectFill" class="swiper-image" />
+      </swiper-item>
+    </swiper>
+
+    <view class="detail-content">
+      
+      <!-- 标题和状态 -->
+      <view class="title-card card">
+        <view class="flex align-center justify-between m-b-20">
+          <view class="status-badge-container flex align-center">
+            <view class="badge badge-online" wx:if="{{project.status === 'online'}}">招商中</view>
+            <view class="badge badge-coming" wx:elif="{{project.status === 'coming'}}">即将开放</view>
+            <view class="badge badge-full" wx:elif="{{project.status === 'full'}}">已满租</view>
+            <view class="badge badge-offline" wx:else>已下架</view>
+            <view class="badge badge-online m-l-10" wx:if="{{project.isRecommended}}" style="background-color: #fef2f2; color: #ef4444; border: 1rpx solid #fee2e2;">强烈推荐</view>
+          </view>
+          <text class="update-lbl">更新：{{formattedUpdateTime}}</text>
+        </view>
+        <view class="project-title-large">{{project.title}}</view>
+      </view>
+
+      <!-- 核心参数列表 -->
+      <view class="params-card card">
+        <view class="card-section-title">📊 基础参数</view>
+        <view class="params-table">
+          <view class="param-row">
+            <text class="param-label">学校名称</text>
+            <text class="param-val font-bold">{{project.showFullSchoolName ? project.schoolName : project.schoolAlias || project.schoolName}}</text>
+          </view>
+          <view class="param-row">
+            <text class="param-label">项目类型</text>
+            <text class="param-val">{{project.projectType}}</text>
+          </view>
+          <view class="param-row">
+            <text class="param-label">面积大小</text>
+            <text class="param-val">{{project.areaText}}</text>
+          </view>
+          <view class="param-row">
+            <text class="param-label">费用说明</text>
+            <text class="param-val highlight-val">{{project.feeText}}</text>
+          </view>
+          <view class="param-row">
+            <text class="param-label">所在城市</text>
+            <text class="param-val">{{project.city}}</text>
+          </view>
+          <view class="param-row">
+            <text class="param-label">所在区域</text>
+            <text class="param-val">{{project.district}}</text>
+          </view>
+          <view class="param-row" wx:if="{{project.addressText}}">
+            <text class="param-label">详细地址</text>
+            <text class="param-val">{{project.addressText}}</text>
+          </view>
+        </view>
+      </view>
+
+      <!-- 业态兼容性 -->
+      <view class="business-card card">
+        <view class="flex flex-col">
+          <!-- 适合业态 -->
+          <view class="business-section m-b-20">
+            <view class="card-section-title green-title">✅ 适合业态</view>
+            <view class="biz-tag-container flex flex-wrap">
+              <text class="biz-tag tag-green" wx:for="{{project.suitableBusiness}}" wx:key="*this">{{item}}</text>
+            </view>
+          </view>
+
+          <!-- 不适合业态 -->
+          <view class="business-section" wx:if="{{project.unsuitableBusiness && project.unsuitableBusiness.length > 0}}">
+            <view class="card-section-title red-title">❌ 不适合业态</view>
+            <view class="biz-tag-container flex flex-wrap">
+              <text class="biz-tag tag-red" wx:for="{{project.unsuitableBusiness}}" wx:key="*this">{{item}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 项目亮点 -->
+      <view class="highlights-card card" wx:if="{{project.highlights && project.highlights.length > 0}}">
+        <view class="card-section-title">✨ 项目亮点</view>
+        <view class="highlight-item flex align-center" wx:for="{{project.highlights}}" wx:key="*this">
+          <text class="bullet-dot">✦</text>
+          <text class="highlight-text">{{item}}</text>
+        </view>
+      </view>
+
+      <!-- 客群与客流说明 -->
+      <view class="desc-card card" wx:if="{{project.customerInfo}}">
+        <view class="card-section-title">👥 客群说明</view>
+        <view class="desc-text">{{project.customerInfo}}</view>
+      </view>
+
+      <!-- 合作与租凭方式 -->
+      <view class="desc-card card" wx:if="{{project.cooperationMode}}">
+        <view class="card-section-title">🤝 合作方式</view>
+        <view class="desc-text">{{project.cooperationMode}}</view>
+      </view>
+
+      <!-- 看铺安排 -->
+      <view class="desc-card card" wx:if="{{project.viewingTimeText}}">
+        <view class="card-section-title">👀 看铺安排</view>
+        <view class="desc-text">{{project.viewingTimeText}}</view>
+      </view>
+
+      <!-- 留白防遮挡 -->
+      <view class="safe-bottom-space"></view>
+
+    </view>
+
+    <!-- 底部固定动作条 -->
+    <view class="bottom-action-bar flex align-center justify-between">
+      
+      <!-- 收藏 -->
+      <view class="favorite-action flex flex-col align-center justify-center" bindtap="onToggleFavorite">
+        <text class="fav-icon {{isFavorited ? 'fav-active' : ''}}">{{isFavorited ? '★' : '☆'}}</text>
+        <text class="fav-lbl">{{isFavorited ? '已收藏' : '收藏'}}</text>
+      </view>
+
+      <!-- 拨打顾问 -->
+      <button class="btn btn-outline flex-1 action-btn" hover-class="btn-outline-active" bindtap="onCallAdvisor">
+        📞 联系顾问
+      </button>
+
+      <!-- 我要咨询 -->
+      <button class="btn btn-primary flex-1 action-btn" hover-class="btn-primary-active" bindtap="onGoToConsult"
+              disabled="{{project.status === 'full' || project.status === 'offline'}}"
+              style="margin-left: 20rpx;">
+        {{project.status === 'full' ? '已满租' : (project.status === 'offline' ? '已下架' : '我要咨询')}}
+      </button>
+
+    </view>
+  </block>
+
+</view>

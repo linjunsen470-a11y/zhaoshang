@@ -1,0 +1,168 @@
+/* pages/my/my.wxss */
+
+/* 头部信息卡背景 */
+.user-header-bg {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  padding: 40rpx 30rpx 80rpx 30rpx;
+  border-bottom-left-radius: 40rpx;
+  border-bottom-right-radius: 40rpx;
+}
+
+.user-card {
+  background-color: #ffffff;
+  border-radius: 20rpx;
+  padding: 30rpx;
+  box-shadow: 0 10rpx 25rpx rgba(15, 23, 42, 0.15);
+}
+
+.user-avatar {
+  width: 110rpx;
+  height: 110rpx;
+  border-radius: 50%;
+  margin-right: 24rpx;
+  border: 4rpx solid #eff6ff;
+  background-color: #e2e8f0;
+}
+
+.user-name {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.user-role-badge {
+  font-size: 20rpx;
+  background-color: #eff6ff;
+  color: #3b82f6;
+  padding: 2rpx 10rpx;
+  border-radius: 6rpx;
+  margin-left: 12rpx;
+  font-weight: 600;
+}
+
+.user-phone {
+  font-size: 24rpx;
+  color: #64748b;
+  margin-top: 8rpx;
+}
+
+.edit-btn {
+  font-size: 24rpx;
+  color: #3b82f6;
+  border: 2rpx solid #3b82f6;
+  padding: 6rpx 20rpx;
+  border-radius: 30rpx;
+  font-weight: 600;
+}
+
+/* 选项列表 */
+.menu-list-container {
+  padding: 0 30rpx;
+  margin-top: -30rpx;
+}
+
+.menu-card {
+  padding: 0 30rpx !important;
+}
+
+.menu-item {
+  padding: 30rpx 0;
+  border-bottom: 1rpx solid #f1f5f9;
+}
+
+.menu-icon {
+  font-size: 34rpx;
+  margin-right: 20rpx;
+}
+
+.menu-text {
+  font-size: 28rpx;
+  color: #334155;
+  font-weight: 500;
+}
+
+.menu-hint-text {
+  font-size: 22rpx;
+  color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.08);
+  padding: 2rpx 12rpx;
+  border-radius: 20rpx;
+}
+
+.menu-arrow {
+  font-size: 22rpx;
+  color: #94a3b8;
+}
+
+/* 编辑模态框 */
+.edit-modal-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(15, 23, 42, 0.6);
+  z-index: 1000;
+}
+
+.edit-modal-box {
+  width: 620rpx;
+  padding: 40rpx !important;
+  margin-bottom: 0 !important;
+  animation: modalShow 0.2s ease-out;
+}
+
+@keyframes modalShow {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.modal-title {
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #0f172a;
+  text-align: center;
+  margin-bottom: 12rpx;
+}
+
+.modal-desc {
+  font-size: 22rpx;
+  color: #64748b;
+  text-align: center;
+  line-height: 1.5;
+  margin-bottom: 30rpx;
+}
+
+.modal-form {
+  border: 1rpx solid #e2e8f0;
+  border-radius: 12rpx;
+  background-color: #f8fafc;
+  padding: 0 24rpx;
+  margin-bottom: 30rpx;
+}
+
+.modal-form-item {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #e2e8f0;
+}
+
+.modal-label {
+  font-size: 26rpx;
+  color: #475569;
+  width: 140rpx;
+  font-weight: 600;
+}
+
+.modal-input {
+  flex: 1;
+  font-size: 26rpx;
+  color: #1e293b;
+}
+
+.modal-btn {
+  font-size: 26rpx;
+  height: 80rpx;
+  line-height: 1.5;
+}

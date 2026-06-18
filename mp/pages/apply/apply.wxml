@@ -1,0 +1,110 @@
+<!-- pages/apply/apply.wxml -->
+<view class="container">
+  
+  <!-- 表单头部横幅 -->
+  <view class="form-header">
+    <view class="header-title">填写咨询意向</view>
+    <view class="header-desc">留下您的经营需求，专业招商顾问将在24小时内与您电话沟通并匹配合适铺位</view>
+  </view>
+
+  <view class="form-body">
+    <!-- 自动关联的意向项目提示 -->
+    <view class="card project-info-card flex align-center" wx:if="{{projectTitle}}">
+      <text class="pin-icon">📍</text>
+      <view class="flex-1">
+        <view class="info-label">意向项目</view>
+        <view class="info-title ellipsis">{{projectTitle}}</view>
+      </view>
+    </view>
+
+    <!-- 表单核心区域 -->
+    <view class="card form-card">
+      
+      <!-- 称呼 -->
+      <view class="form-item">
+        <view class="item-label flex align-center">
+          <text class="required-star">*</text>您的称呼
+        </view>
+        <input class="item-input" type="text" placeholder="例如：张总、李老板" 
+               bindinput="onInputName" value="{{name}}" />
+      </view>
+
+      <!-- 手机号 -->
+      <view class="form-item">
+        <view class="item-label flex align-center">
+          <text class="required-star">*</text>联系手机号
+        </view>
+        <input class="item-input" type="number" maxlength="11" placeholder="用于招商顾问与您联系" 
+               bindinput="onInputPhone" value="{{phone}}" />
+      </view>
+
+      <!-- 经营品类 (Picker) -->
+      <view class="form-item">
+        <view class="item-label flex align-center">
+          <text class="required-star">*</text>经营品类
+        </view>
+        <picker mode="selector" range="{{businesses}}" bindchange="onBusinessChange" value="{{businessIndex}}">
+          <view class="picker-value flex justify-between align-center">
+            <text class="{{businessType ? 'value-set' : 'value-placeholder'}}">
+              {{businessType ? businessType : '请选择您的主营品类'}}
+            </text>
+            <text class="picker-arrow">❯</text>
+          </view>
+        </picker>
+      </view>
+
+      <!-- 投资预算 (Picker) -->
+      <view class="form-item">
+        <view class="item-label flex align-center">
+          <text class="required-star">*</text>投资预算
+        </view>
+        <picker mode="selector" range="{{budgets}}" bindchange="onBudgetChange" value="{{budgetIndex}}">
+          <view class="picker-value flex justify-between align-center">
+            <text class="{{budgetRange ? 'value-set' : 'value-placeholder'}}">
+              {{budgetRange ? budgetRange : '请选择您的预算空间'}}
+            </text>
+            <text class="picker-arrow">❯</text>
+          </view>
+        </picker>
+      </view>
+
+      <!-- 意向区域 -->
+      <view class="form-item">
+        <view class="item-label">意向区域 <text class="label-hint">(可选)</text></view>
+        <input class="item-input" type="text" placeholder="如：广州增城、天河" 
+               bindinput="onInputRegion" value="{{regionPreference}}" />
+      </view>
+
+      <!-- 经营经验 -->
+      <view class="form-item">
+        <view class="item-label">是否有校园经营经验 <text class="label-hint">(可选)</text></view>
+        <radio-group class="experience-group flex align-center" bindchange="onExperienceChange">
+          <label class="radio-label flex align-center">
+            <radio value="true" checked="{{hasCampusExperience === true}}" color="#3b82f6" />
+            <text class="radio-text">有经验</text>
+          </label>
+          <label class="radio-label flex align-center" style="margin-left: 60rpx;">
+            <radio value="false" checked="{{hasCampusExperience === false}}" color="#3b82f6" />
+            <text class="radio-text">无经验</text>
+          </label>
+        </radio-group>
+      </view>
+
+      <!-- 备注 -->
+      <view class="form-item border-none">
+        <view class="item-label">其他需求说明 <text class="label-hint">(可选)</text></view>
+        <textarea class="item-textarea" placeholder="请填写您对铺位硬件（如需380V动力电、给排水、隔油池、排烟风道）或加盟品牌等其他备注需求..."
+                  bindinput="onInputRemark" value="{{remark}}" maxlength="200" />
+        <view class="char-count">{{remark.length}}/200</view>
+      </view>
+
+    </view>
+
+    <!-- 提交按钮 -->
+    <button class="btn btn-primary submit-btn" hover-class="btn-primary-active" 
+            bindtap="onSubmitForm" disabled="{{submitting}}">
+      {{submitting ? '提交中...' : '确认提交咨询'}}
+    </button>
+  </view>
+
+</view>

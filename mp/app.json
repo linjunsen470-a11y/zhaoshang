@@ -1,0 +1,44 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/list/list",
+    "pages/detail/detail",
+    "pages/apply/apply",
+    "pages/success/success",
+    "pages/my/my",
+    "pages/leads/leads"
+  ],
+  "window": {
+    "backgroundTextStyle": "light",
+    "navigationBarBackgroundColor": "#0f172a",
+    "navigationBarTitleText": "学校商铺招商宝",
+    "navigationBarTextStyle": "white"
+  },
+  "tabBar": {
+    "color": "#94a3b8",
+    "selectedColor": "#3b82f6",
+    "borderStyle": "white",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "首页",
+        "iconPath": "images/tab_home.png",
+        "selectedIconPath": "images/tab_home_sel.png"
+      },
+      {
+        "pagePath": "pages/list/list",
+        "text": "招商项目",
+        "iconPath": "images/tab_list.png",
+        "selectedIconPath": "images/tab_list_sel.png"
+      },
+      {
+        "pagePath": "pages/my/my",
+        "text": "我的",
+        "iconPath": "images/tab_my.png",
+        "selectedIconPath": "images/tab_my_sel.png"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json"
+}

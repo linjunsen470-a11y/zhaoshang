@@ -1,0 +1,118 @@
+<!-- pages/leads/leads.wxml -->
+<view class="container">
+  
+  <!-- 提示当前查询电话 -->
+  <view class="leads-header flex align-center justify-between">
+    <view class="phone-tip">
+      <text class="phone-label">当前查询电话：</text>
+      <text class="phone-number">{{phone}}</text>
+    </view>
+    <navigator url="/pages/my/my" open-type="switchTab" class="change-phone-btn">修改电话</navigator>
+  </view>
+
+  <view class="leads-body">
+    <!-- 加载中 -->
+    <view class="loading-state" wx:if="{{loading}}">
+      <view class="spinner"></view>
+      <text>正在查询咨询状态...</text>
+    </view>
+
+    <!-- 列表主体 -->
+    <block wx:else>
+      <view class="leads-list" wx:if="{{leadsList.length > 0}}">
+        <view class="lead-card card" wx:for="{{leadsList}}" wx:key="id">
+          
+          <!-- 项目标题与状态 -->
+          <view class="lead-card-header flex justify-between align-start">
+            <view class="lead-project-title ellipsis-2 {{item.projectId ? 'link-text' : ''}}" 
+                  bindtap="onGoToProject" data-id="{{item.projectId}}">
+              {{item.projectTitle ? item.projectTitle : '【自主提交】配铺商铺咨询'}}
+            </view>
+            <view class="badge status-tag" 
+                  style="color: {{statusMap[item.status].color}}; background-color: {{statusMap[item.status].bg}}; border: 1rpx solid {{statusMap[item.status].color}}20">
+              {{statusMap[item.status].name}}
+            </view>
+          </view>
+
+          <!-- 需求规格参数 -->
+          <view class="lead-specs">
+            <view class="spec-grid flex flex-wrap">
+              <view class="spec-cell">
+                <text class="spec-lbl">意向品类：</text>
+                <text class="spec-val">{{item.businessType}}</text>
+              </view>
+              <view class="spec-cell">
+                <text class="spec-lbl">投资预算：</text>
+                <text class="spec-val">{{item.budgetRange}}</text>
+              </view>
+              <view class="spec-cell" wx:if="{{item.regionPreference}}">
+                <text class="spec-lbl">意向区域：</text>
+                <text class="spec-val">{{item.regionPreference}}</text>
+              </view>
+              <view class="spec-cell">
+                <text class="spec-lbl">经营经验：</text>
+                <text class="spec-val">{{item.hasCampusExperience ? '有校园经验' : '无校园经验'}}</text>
+              </view>
+            </view>
+            
+            <view class="spec-desc-row" wx:if="{{item.remark}}">
+              <text class="spec-lbl">留言备注：</text>
+              <text class="spec-val-desc">{{item.remark}}</text>
+            </view>
+          </view>
+
+          <!-- 提交时间 -->
+          <view class="lead-time-footer flex justify-between align-center">
+            <text class="lead-id-lbl">线索号：{{item.id}}</text>
+            <text class="lead-time-lbl">提交于：{{item.formattedTime}}</text>
+          </view>
+
+          <!-- 招商跟进记录 (Timeline 折叠面板) -->
+          <view class="follow-timeline-section" wx:if="{{item.follows && item.follows.length > 0}}">
+            <view class="timeline-toggle-bar flex align-center justify-between" 
+                  bindtap="onToggleExpand" data-id="{{item.id}}">
+              <view class="flex align-center">
+                <text class="timeline-icon">🔔</text>
+                <text class="timeline-summary-lbl">招商顾问跟进进度 ({{item.follows.length}}条记录)</text>
+              </view>
+              <text class="toggle-arrow">{{expandedMap[item.id] ? '▲' : '▼'}}</text>
+            </view>
+
+            <!-- 时间轴内容 -->
+            <view class="timeline-content" wx:if="{{expandedMap[item.id]}}">
+              <view class="timeline-node" wx:for="{{item.follows}}" wx:for-item="node" wx:key="id">
+                <view class="node-dot"></view>
+                <view class="node-body">
+                  <view class="node-time-header flex justify-between">
+                    <text class="node-operator">{{node.operatorName || '招商专员'}}</text>
+                    <text class="node-time">{{node.formattedTime}}</text>
+                  </view>
+                  <view class="node-message">{{node.content}}</view>
+                  <view class="node-next-follow" wx:if="{{node.nextFollowAt}}">
+                    💡 预约下次沟通：{{node.nextFollowAt}}
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+          
+          <view class="no-follow-tip" wx:else>
+            ⌛ 招商人员正在接入，请保持电话通畅...
+          </view>
+
+        </view>
+      </view>
+
+      <!-- 空历史状态 -->
+      <view class="empty-state" wx:else>
+        <text class="empty-icon">📝</text>
+        <text class="empty-title">暂无咨询记录</text>
+        <text class="empty-desc">您还没有提交过商铺咨询，或没有绑定手机号。</text>
+        <navigator url="/pages/list/list" open-type="switchTab" class="btn btn-primary reset-btn">
+          浏览招商项目
+        </navigator>
+      </view>
+    </block>
+  </view>
+
+</view>
