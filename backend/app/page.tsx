@@ -1,5 +1,7 @@
 import fs from 'fs'
 import path from 'path'
+import { getPayload } from 'payload'
+import config from '@/payload.config'
 
 type Opportunity = {
   id: string
@@ -22,14 +24,6 @@ type Opportunity = {
 async function submitWebsiteLead(formData: FormData) {
   'use server'
 
-  const dataPath = path.resolve(process.cwd(), '..', 'data.json')
-  const raw = (fs.existsSync(dataPath)
-    ? JSON.parse(fs.readFileSync(dataPath, 'utf8'))
-    : { projects: [], leads: [], followRecords: [] }) as {
-    leads?: Array<Record<string, unknown>>
-    projects?: Opportunity[]
-    followRecords?: Array<Record<string, unknown>>
-  }
   const name = String(formData.get('name') || '').trim()
   const phone = String(formData.get('phone') || '').trim()
   const leadType = String(formData.get('leadType') || 'leasing')
@@ -38,22 +32,57 @@ async function submitWebsiteLead(formData: FormData) {
 
   if (!name || !/^1[3-9]\d{9}$/.test(phone)) return
 
-  raw.leads = raw.leads || []
-  raw.leads.push({
-    id: `l${Math.random().toString(36).slice(2, 9)}`,
-    leadType,
-    sourceChannel: 'website',
-    name,
-    phone,
-    businessType: businessType || '网站提交需求',
-    budgetRange: '待沟通',
-    remark,
-    status: 'new',
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-  })
+  const dataPath = path.resolve(process.cwd(), '..', 'data.json')
+  let fileWriteSuccess = false
 
-  fs.writeFileSync(dataPath, JSON.stringify(raw, null, 2), 'utf8')
+  // 1. 尝试写入本地 data.json (本地 Mock / Demo 状态)
+  try {
+    if (fs.existsSync(dataPath)) {
+      const raw = JSON.parse(fs.readFileSync(dataPath, 'utf8')) as {
+        leads?: Array<Record<string, unknown>>
+      }
+      raw.leads = raw.leads || []
+      raw.leads.push({
+        id: `l${Math.random().toString(36).slice(2, 9)}`,
+        leadType,
+        sourceChannel: 'website',
+        name,
+        phone,
+        businessType: businessType || '网站提交需求',
+        budgetRange: '待沟通',
+        remark,
+        status: 'new',
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      })
+      fs.writeFileSync(dataPath, JSON.stringify(raw, null, 2), 'utf8')
+      fileWriteSuccess = true
+    }
+  } catch (err) {
+    console.warn('Failed to write to local data.json, falling back to Payload database...', err)
+  }
+
+  // 2. 如果文件写入失败（或不存在，如 Docker 容器环境），则写入 Payload 真实数据库
+  if (!fileWriteSuccess) {
+    try {
+      const payloadInstance = await getPayload({ config })
+      await payloadInstance.create({
+        collection: 'leads',
+        data: {
+          leadType: leadType as 'leasing' | 'transfer' | 'equipment_sell' | 'equipment_buy' | 'equipment_recycle' | 'brand_cooperation',
+          sourceChannel: 'website',
+          name,
+          phone,
+          businessType: businessType || '网站提交需求',
+          budgetRange: '待沟通',
+          remark,
+          status: 'new',
+        },
+      })
+    } catch (dbErr) {
+      console.error('Failed to write lead to Payload database:', dbErr)
+    }
+  }
 }
 
 const serviceCards = [
@@ -74,26 +103,67 @@ const serviceCards = [
   },
   {
     title: '品牌合作入口',
-    desc: '品牌方找校园点位、学校/物业引入品牌，先保留轻量表单和顾问对接。',
+    desc: '品牌方找校园点位、学校/物业引入品牌，先保留轻量表单 and 顾问对接。',
     stat: '轻量拓展',
   },
 ]
 
-function getOpportunities() {
+async function getOpportunities() {
   const dataPath = path.resolve(process.cwd(), '..', 'data.json')
+
+  // 1. 尝试从 local data.json 读取 (本地 Mock / Demo 状态优先)
   try {
-    const raw = JSON.parse(fs.readFileSync(dataPath, 'utf8')) as { projects?: Opportunity[] }
-    return (raw.projects || [])
-      .filter(item => item.status !== 'offline' && item.status !== 'draft')
-      .sort((a, b) => Number(b.isRecommended) - Number(a.isRecommended))
-      .slice(0, 6)
-  } catch {
+    if (fs.existsSync(dataPath)) {
+      const raw = JSON.parse(fs.readFileSync(dataPath, 'utf8')) as { projects?: Opportunity[] }
+      return (raw.projects || [])
+        .filter(item => item.status !== 'offline' && item.status !== 'draft')
+        .sort((a, b) => Number(b.isRecommended) - Number(a.isRecommended))
+        .slice(0, 6)
+    }
+  } catch (err) {
+    console.warn('Failed to read opportunities from local data.json, falling back to Payload database...', err)
+  }
+
+  // 2. 如果读取文件失败或不存在，从 Payload 真实数据库中查询
+  try {
+    const payloadInstance = await getPayload({ config })
+    const result = await payloadInstance.find({
+      collection: 'projects',
+      where: {
+        and: [
+          { status: { not_in: ['offline', 'draft'] } },
+          { auditStatus: { equals: 'approved' } }
+        ]
+      },
+      sort: '-isRecommended',
+      limit: 6,
+    })
+
+    return result.docs.map(doc => ({
+      id: doc.id,
+      opportunityType: doc.opportunityType as 'leasing' | 'transfer',
+      title: doc.title,
+      city: doc.city || undefined,
+      district: doc.district || undefined,
+      schoolName: doc.schoolName || undefined,
+      projectType: doc.projectType,
+      areaText: doc.areaText || undefined,
+      feeText: doc.feeText || undefined,
+      suitableBusiness: doc.suitableBusiness?.map((b: { item?: string | null }) => b.item).filter(Boolean) as string[] || [],
+      highlights: doc.highlights?.map((h: { item?: string | null }) => h.item).filter(Boolean) as string[] || [],
+      advisorTips: doc.advisorTips || undefined,
+      coverImage: typeof doc.coverImage === 'object' && doc.coverImage ? (doc.coverImage as { url?: string | null }).url || undefined : undefined,
+      status: doc.status,
+      isRecommended: doc.isRecommended || undefined,
+    }))
+  } catch (dbErr) {
+    console.error('Failed to read opportunities from Payload database:', dbErr)
     return []
   }
 }
 
-export default function Home() {
-  const opportunities = getOpportunities()
+export default async function Home() {
+  const opportunities = await getOpportunities()
   const leasingCount = opportunities.filter(item => (item.opportunityType || 'leasing') === 'leasing').length
   const transferCount = opportunities.filter(item => item.opportunityType === 'transfer').length
 

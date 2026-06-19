@@ -121,16 +121,34 @@ export const Leads: CollectionConfig = {
   ],
   hooks: {
     beforeChange: [
-      async ({ data, req, operation }) => {
-        if (operation === 'create' && data.project) {
-          try {
-            const project = await req.payload.findByID({
-              collection: 'projects',
-              id: data.project,
-            })
-            if (project) data.projectTitle = project.title
-          } catch (err) {
-            console.error('Failed to fetch project title', err)
+      async ({ data, req, operation, originalDoc }) => {
+        // 兼容微信小程序提交的 projectId 字段
+        if (data.projectId && !data.project) {
+          data.project = data.projectId
+        }
+
+        // 如果是新建，或者项目关联发生了变化，则同步更新 projectTitle
+        const isProjectChanged = operation === 'create'
+          ? !!data.project
+          : (data.project !== undefined && data.project !== originalDoc?.project)
+
+        if (isProjectChanged) {
+          if (data.project) {
+            try {
+              const project = await req.payload.findByID({
+                collection: 'projects',
+                id: data.project,
+              })
+              if (project) {
+                data.projectTitle = project.title
+              } else {
+                data.projectTitle = ''
+              }
+            } catch (err) {
+              console.error('Failed to fetch project title', err)
+            }
+          } else {
+            data.projectTitle = ''
           }
         }
         return data

@@ -18,6 +18,11 @@ import { MerchantProfiles } from './collections/MerchantProfiles'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+const secret = process.env.PAYLOAD_SECRET
+if (!secret && process.env.NODE_ENV === 'production') {
+  throw new Error('FATAL ERROR: PAYLOAD_SECRET environment variable is missing. It is required in production mode!')
+}
+
 export default buildConfig({
   admin: {
     user: 'users',
@@ -34,7 +39,7 @@ export default buildConfig({
     Users,
   ],
   editor: lexicalEditor({}),
-  secret: process.env.PAYLOAD_SECRET || 'your-strong-secret-here-change-in-prod',
+  secret: secret || 'your-fallback-dev-secret-for-local-demo',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
