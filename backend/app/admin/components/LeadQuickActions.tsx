@@ -21,11 +21,13 @@ export const LeadQuickActions: React.FC = () => {
   const { id } = useDocumentInfo()
   const [message, setMessage] = useState('')
   const [converting, setConverting] = useState(false)
+  const [syncingMerchant, setSyncingMerchant] = useState(false)
 
-  const { phone, leadType, projectId } = useFormFields(([fields]) => ({
+  const { phone, leadType, projectId, merchantProfileId } = useFormFields(([fields]) => ({
     phone: getFieldValue(fields, 'phone'),
     leadType: getFieldValue(fields, 'leadType'),
     projectId: getRelationshipId(fields.project?.value),
+    merchantProfileId: getRelationshipId(fields.merchantProfile?.value),
   }))
 
   const canConvert = useMemo(() => Boolean(id) && leadType === 'transfer', [id, leadType])
@@ -54,6 +56,52 @@ export const LeadQuickActions: React.FC = () => {
       return
     }
     window.location.href = `/admin/collections/projects/${projectId}`
+  }
+
+  const onOpenMerchantProfile = () => {
+    if (!merchantProfileId) {
+      showMessage('尚未关联商户档案')
+      return
+    }
+    window.location.href = `/admin/collections/merchant-profiles/${merchantProfileId}`
+  }
+
+  const onSyncMerchant = async () => {
+    if (!id) {
+      showMessage('请先保存线索后再沉淀档案')
+      return
+    }
+    if (!phone) {
+      showMessage('缺少联系电话，无法沉淀档案')
+      return
+    }
+    if (!window.confirm('确认将当前线索沉淀为商户档案吗？同手机号将自动合并更新。')) return
+
+    setSyncingMerchant(true)
+    setMessage('')
+    try {
+      const res = await fetch(`/api/leads/${id}/sync-merchant`, { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) {
+        showMessage(data.error || '沉淀档案失败')
+        return
+      }
+      const open = window.confirm(
+        data.created
+          ? '已新建商户档案，是否立即打开？'
+          : '已更新既有商户档案，是否立即打开？',
+      )
+      if (open && data.profileId) {
+        window.location.href = `/admin/collections/merchant-profiles/${data.profileId}`
+      } else {
+        showMessage(data.created ? '商户档案已新建' : '商户档案已更新')
+      }
+    } catch (err) {
+      console.error(err)
+      showMessage('沉淀档案失败，请检查网络')
+    } finally {
+      setSyncingMerchant(false)
+    }
   }
 
   const onConvertToProject = async () => {
@@ -122,6 +170,19 @@ export const LeadQuickActions: React.FC = () => {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
         <button type="button" style={buttonStyle} onClick={onCopyPhone}>复制电话</button>
         <button type="button" style={buttonStyle} onClick={onOpenProject} disabled={!projectId}>打开关联项目</button>
+        <button type="button" style={buttonStyle} onClick={onOpenMerchantProfile} disabled={!merchantProfileId}>打开商户档案</button>
+        <button
+          type="button"
+          style={{
+            ...buttonStyle,
+            opacity: syncingMerchant ? 0.7 : 1,
+            cursor: syncingMerchant ? 'not-allowed' : 'pointer',
+          }}
+          onClick={onSyncMerchant}
+          disabled={syncingMerchant}
+        >
+          {syncingMerchant ? '沉淀中...' : '沉淀为商户档案'}
+        </button>
         <button
           type="button"
           style={{

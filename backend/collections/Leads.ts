@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { canManageLeads, isAdminUser } from './shared/access'
 import { ADMIN_GROUPS } from './shared/fieldOptions'
 
 export const Leads: CollectionConfig = {
@@ -13,12 +14,20 @@ export const Leads: CollectionConfig = {
     defaultColumns: ['name', 'phone', 'leadType', 'status', 'owner', 'projectTitle', 'nextFollowAt', 'createdAt'],
     description: '处理来自小程序及后台录入的找铺、转让、设备咨询。跟进记录请在「跟进历史」标签页添加。',
     listSearchableFields: ['name', 'phone', 'businessType', 'regionPreference', 'projectTitle'],
+    components: {
+      views: {
+        kanban: {
+          Component: '@/app/admin/components/LeadsKanbanView',
+          path: '/kanban',
+        },
+      },
+    },
   },
   access: {
-    read: ({ req: { user } }) => !!user,
+    read: ({ req: { user } }) => canManageLeads(user),
     create: () => true,
-    update: ({ req: { user } }) => !!user,
-    delete: ({ req: { user } }) => !!user,
+    update: ({ req: { user } }) => canManageLeads(user),
+    delete: ({ req: { user } }) => isAdminUser(user),
   },
   fields: [
     {
@@ -233,6 +242,16 @@ export const Leads: CollectionConfig = {
       label: '关联招商项目',
       admin: {
         position: 'sidebar',
+      },
+    },
+    {
+      name: 'merchantProfile',
+      type: 'relationship',
+      relationTo: 'merchant-profiles',
+      label: '关联商户档案',
+      admin: {
+        position: 'sidebar',
+        description: '高意向客户可沉淀为长期商户档案。',
       },
     },
     {

@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { canManageMerchants, isAdminUser } from './shared/access'
 import { ADMIN_GROUPS, BUSINESS_TYPE_OPTIONS } from './shared/fieldOptions'
 
 export const MerchantProfiles: CollectionConfig = {
@@ -10,17 +11,27 @@ export const MerchantProfiles: CollectionConfig = {
   admin: {
     group: ADMIN_GROUPS.customers,
     useAsTitle: 'name',
-    defaultColumns: ['name', 'phone', 'preferredRegion', 'budgetRange', 'status'],
-    description: '长期客户画像库。单次咨询请优先在「咨询线索」中处理；高意向客户可在此沉淀档案。',
+    defaultColumns: ['name', 'phone', 'preferredRegion', 'budgetRange', 'status', 'updatedAt'],
+    description: '长期客户画像库。可从咨询线索一键沉淀档案，并在此查看历史关联线索。',
     listSearchableFields: ['name', 'phone', 'preferredRegion'],
   },
   access: {
-    read: ({ req: { user } }) => !!user,
-    create: ({ req: { user } }) => !!user,
-    update: ({ req: { user } }) => !!user,
-    delete: ({ req: { user } }) => !!user,
+    read: ({ req: { user } }) => canManageMerchants(user),
+    create: ({ req: { user } }) => canManageMerchants(user),
+    update: ({ req: { user } }) => canManageMerchants(user),
+    delete: ({ req: { user } }) => isAdminUser(user),
   },
   fields: [
+    {
+      name: 'relatedLeadsPanel',
+      type: 'ui',
+      label: '关联线索',
+      admin: {
+        components: {
+          Field: '@/app/admin/components/MerchantProfileLeadsPanel',
+        },
+      },
+    },
     {
       type: 'row',
       fields: [
@@ -35,6 +46,7 @@ export const MerchantProfiles: CollectionConfig = {
           type: 'text',
           required: true,
           label: '联系电话',
+          unique: true,
         },
       ],
     },
@@ -82,6 +94,16 @@ export const MerchantProfiles: CollectionConfig = {
           label: '有校园开店经验',
         },
       ],
+    },
+    {
+      name: 'relatedLeads',
+      type: 'relationship',
+      relationTo: 'leads',
+      hasMany: true,
+      label: '关联咨询线索',
+      admin: {
+        description: '通常由「沉淀为商户档案」自动维护，也可手动补充关联。',
+      },
     },
     {
       name: 'status',

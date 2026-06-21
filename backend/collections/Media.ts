@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { canManageProjects, isAdminUser, isStaffUser } from './shared/access'
 import { ADMIN_GROUPS } from './shared/fieldOptions'
 
 export const Media: CollectionConfig = {
@@ -14,6 +15,9 @@ export const Media: CollectionConfig = {
   },
   access: {
     read: () => true,
+    create: ({ req: { user } }) => isStaffUser(user),
+    update: ({ req: { user } }) => canManageProjects(user) || isAdminUser(user),
+    delete: ({ req: { user } }) => isAdminUser(user),
   },
   fields: [
     {

@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { canManageProjects, isAdminUser } from './shared/access'
 import {
   ADMIN_GROUPS,
   BUSINESS_TYPE_OPTIONS,
@@ -22,9 +23,9 @@ export const Projects: CollectionConfig = {
   },
   access: {
     read: () => true,
-    create: ({ req: { user } }) => !!user,
-    update: ({ req: { user } }) => !!user,
-    delete: ({ req: { user } }) => !!user,
+    create: ({ req: { user } }) => canManageProjects(user),
+    update: ({ req: { user } }) => canManageProjects(user),
+    delete: ({ req: { user } }) => isAdminUser(user),
   },
   hooks: {
     beforeChange: [

@@ -42,3 +42,28 @@ export const ADMIN_GROUPS = {
   customers: '客户资产',
   system: '系统设置',
 } as const
+
+export const LEAD_STATUS_OPTIONS = [
+  { label: '新线索', value: 'new', tone: '#3b82f6' },
+  { label: '已联系', value: 'contacted', tone: '#10b981' },
+  { label: '意向明确', value: 'interested', tone: '#8b5cf6' },
+  { label: '已约看铺', value: 'viewing_scheduled', tone: '#f59e0b' },
+  { label: '已看铺/已核实', value: 'viewed', tone: '#f97316' },
+  { label: '谈判中', value: 'negotiating', tone: '#ec4899' },
+  { label: '已成交', value: 'closed', tone: '#059669' },
+  { label: '无效', value: 'invalid', tone: '#64748b' },
+  { label: '暂缓', value: 'paused', tone: '#94a3b8' },
+] as const
+
+export const LEAD_KANBAN_COLUMNS = LEAD_STATUS_OPTIONS.filter(
+  item => !['invalid', 'paused'].includes(item.value),
+)
+
+export const LEAD_TYPE_LABELS: Record<string, string> = {
+  leasing: '找铺咨询',
+  transfer: '店铺转让',
+  equipment_sell: '设备出售',
+  equipment_buy: '设备求购',
+  equipment_recycle: '设备回收',
+  brand_cooperation: '品牌合作',
+}

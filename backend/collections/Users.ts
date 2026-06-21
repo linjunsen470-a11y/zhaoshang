@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { isAdminUser } from './shared/access'
 import { ADMIN_GROUPS } from './shared/fieldOptions'
 
 export const Users: CollectionConfig = {
@@ -15,10 +16,10 @@ export const Users: CollectionConfig = {
     description: '后台登录账号。displayName 会作为跟进记录的默认跟进人。',
   },
   access: {
-    create: ({ req: { user } }) => !!user,
+    create: ({ req: { user } }) => isAdminUser(user),
     read: ({ req: { user } }) => !!user,
-    update: ({ req: { user } }) => !!user,
-    delete: ({ req: { user } }) => !!user,
+    update: ({ req: { user } }) => isAdminUser(user),
+    delete: ({ req: { user } }) => isAdminUser(user),
   },
   hooks: {
     beforeChange: [

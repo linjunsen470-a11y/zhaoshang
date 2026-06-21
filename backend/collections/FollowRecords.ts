@@ -1,4 +1,5 @@
 import type { CollectionConfig } from 'payload'
+import { canManageLeads, isAdminUser } from './shared/access'
 
 export const FollowRecords: CollectionConfig = {
   slug: 'follow-records',
@@ -13,10 +14,10 @@ export const FollowRecords: CollectionConfig = {
     description: '跟进记录请在线索详情的「跟进历史」标签页添加，此集合仅供系统归档查询。',
   },
   access: {
-    read: ({ req: { user } }) => !!user,
-    create: ({ req: { user } }) => !!user,
-    update: ({ req: { user } }) => !!user,
-    delete: ({ req: { user } }) => !!user,
+    read: ({ req: { user } }) => canManageLeads(user),
+    create: ({ req: { user } }) => canManageLeads(user),
+    update: ({ req: { user } }) => canManageLeads(user),
+    delete: ({ req: { user } }) => isAdminUser(user),
   },
   fields: [
     {

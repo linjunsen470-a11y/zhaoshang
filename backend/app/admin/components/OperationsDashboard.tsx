@@ -131,6 +131,45 @@ export const OperationsDashboard: React.FC = () => {
       </div>
 
       <div style={{
+        display: 'flex',
+        gap: '10px',
+        flexWrap: 'wrap',
+        marginBottom: '16px',
+      }}>
+        <button
+          type="button"
+          onClick={() => { window.location.href = '/admin/collections/leads/kanban' }}
+          style={{
+            padding: '10px 16px',
+            borderRadius: '6px',
+            background: '#1d4ed8',
+            color: '#fff',
+            border: 'none',
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          打开线索看板
+        </button>
+        <button
+          type="button"
+          onClick={() => { window.location.href = '/admin/collections/leads?where[status][equals]=new&sort=-createdAt' }}
+          style={{
+            padding: '10px 16px',
+            borderRadius: '6px',
+            border: '1px solid var(--theme-elevation-150)',
+            background: 'var(--theme-elevation-50)',
+            color: 'var(--theme-text)',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+          }}
+        >
+          处理新线索
+        </button>
+      </div>
+
+      <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
         gap: '14px',
