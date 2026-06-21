@@ -109,7 +109,7 @@ Page({
 
     api.getProjects(params)
       .then(res => {
-        let list = (res || []).filter(p => p.status !== 'draft' && p.status !== 'offline');
+        let list = (Array.isArray(res) ? res : []).filter(p => p.status !== 'draft' && p.status !== 'offline');
         if (this.data.isRecommendedOnly) list = list.filter(p => p.isRecommended);
 
         const favs = wx.getStorageSync('favorites') || [];

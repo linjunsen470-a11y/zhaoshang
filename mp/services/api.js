@@ -82,6 +82,12 @@ function initLocalStorage() {
   if (!wx.getStorageSync('local_follows')) wx.setStorageSync('local_follows', []);
 }
 
+function ensureProjectList(data) {
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.docs)) return data.docs;
+  return [];
+}
+
 function createApiError(statusCode, payload) {
   const message = (payload && payload.error) || `API Error: ${statusCode}`;
   const error = new Error(message);
@@ -98,7 +104,7 @@ function wxRequest(options) {
   return new Promise((resolve, reject) => {
     wx.request({
       ...options,
-      timeout: 8000,
+      timeout: 15000,
       success: resolve,
       fail: reject
     });
@@ -138,7 +144,12 @@ async function request(urlPath, method = 'GET', data = {}, options = {}) {
   }
 
   if (res.statusCode >= 200 && res.statusCode < 300) {
-    return res.data;
+    const payload = res.data;
+    if (urlPath === '/projects' || urlPath.startsWith('/projects/')) {
+      if (urlPath === '/projects') return ensureProjectList(payload);
+      return payload;
+    }
+    return payload;
   }
 
   if (res.statusCode === 401 && needsAuth(urlPath) && !retried) {

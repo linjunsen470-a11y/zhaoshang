@@ -21,6 +21,10 @@ App({
     if (!favs) wx.setStorageSync('favorites', []);
   },
 
+  onError(message) {
+    console.error('MiniProgram runtime error:', message);
+  },
+
   callAdvisor(phoneNumber) {
     const phone = phoneNumber || this.globalData.advisorPhone || config.ADVISOR_PHONE;
     wx.showModal({

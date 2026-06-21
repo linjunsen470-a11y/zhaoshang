@@ -1,16 +1,4 @@
 <view class="container">
-  <view class="loading-state" wx:if="{{loading}}">
-    <view class="spinner"></view>
-    <text>正在加载招商项目...</text>
-  </view>
-
-  <view class="error-state" wx:elif="{{loadError}}">
-    <text class="error-title">加载失败</text>
-    <text class="error-desc">请检查网络后重试</text>
-    <button class="btn btn-primary btn-sm" bindtap="onRetryLoad">点击重试</button>
-  </view>
-
-  <block wx:else>
   <view class="header-bg">
     <view class="welcome-text">校园开店资源撮合平台</view>
     <view class="search-bar">
@@ -52,32 +40,83 @@
     </view>
   </view>
 
-  <view class="section-container" wx:if="{{recommendedList.length > 0}}">
-    <view class="section-header flex align-center justify-between">
-      <view class="section-title">重点推荐</view>
-      <text class="section-more" bindtap="onViewRecommended">查看全部</text>
+  <view class="section-container section-status" wx:if="{{loading}}">
+    <view class="loading-state inline-loading">
+      <view class="spinner"></view>
+      <text>正在加载招商项目...</text>
+    </view>
+  </view>
+
+  <view class="section-container section-status" wx:elif="{{loadError}}">
+    <view class="error-state inline-error">
+      <text class="error-title">项目加载失败</text>
+      <text class="error-desc">请确认后端已启动（pnpm backend:dev），并已关闭域名校验</text>
+      <button class="btn btn-primary btn-sm" bindtap="onRetryLoad">点击重试</button>
+    </view>
+  </view>
+
+  <block wx:else>
+    <view class="section-container" wx:if="{{recommendedList.length > 0}}">
+      <view class="section-header flex align-center justify-between">
+        <view class="section-title">重点推荐</view>
+        <text class="section-more" bindtap="onViewRecommended">查看全部</text>
+      </view>
+
+      <scroll-view class="recommended-scroll" scroll-x="true">
+        <view class="recommended-track flex">
+          <view class="recommended-item" wx:for="{{recommendedList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" style="position:relative;">
+            <image src="{{item.coverImage}}" mode="aspectFill" class="rec-cover" />
+            <view class="fav-mini" catchtap="onToggleFav" data-id="{{item.id}}"
+                  style="position:absolute; top:12rpx; right:12rpx; font-size:28rpx; padding:4rpx 8rpx; background:rgba(255,255,255,0.85); border-radius:50%; z-index:2;">
+              {{item.isFav ? '★' : '☆'}}
+            </view>
+            <view class="rec-info">
+              <view class="rec-badge badge badge-online">{{item.opportunityType === 'transfer' ? '委托转让' : '重点招商'}}</view>
+              <view class="rec-title ellipsis">{{item.title}}</view>
+              <view class="rec-sub flex justify-between">
+                <text class="rec-loc">{{item.city}} · {{item.district}}</text>
+                <text class="rec-price">{{item.feeText}}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
     </view>
 
-    <scroll-view class="recommended-scroll" scroll-x="true">
-      <view class="recommended-track flex">
-        <view class="recommended-item" wx:for="{{recommendedList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" style="position:relative;">
-          <image src="{{item.coverImage}}" mode="aspectFill" class="rec-cover" />
-          <view class="fav-mini" catchtap="onToggleFav" data-id="{{item.id}}"
-                style="position:absolute; top:12rpx; right:12rpx; font-size:28rpx; padding:4rpx 8rpx; background:rgba(255,255,255,0.85); border-radius:50%; z-index:2;">
-            {{item.isFav ? '★' : '☆'}}
+    <view class="section-container">
+      <view class="section-header flex align-center justify-between">
+        <view class="section-title">最新机会</view>
+        <navigator url="/pages/list/list" open-type="switchTab" class="section-more">查看全部</navigator>
+      </view>
+
+      <view class="latest-list" wx:if="{{latestList.length > 0}}">
+        <view class="latest-card card flex" wx:for="{{latestList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" style="position:relative;">
+          <view style="position:relative; flex-shrink:0;">
+            <image src="{{item.coverImage}}" mode="aspectFill" class="latest-cover" />
+            <view class="fav-mini" catchtap="onToggleFav" data-id="{{item.id}}"
+                  style="position:absolute; top:8rpx; right:8rpx; font-size:26rpx; padding:2rpx 6rpx; background:rgba(255,255,255,0.9); border-radius:50%; z-index:2;">
+              {{item.isFav ? '★' : '☆'}}
+            </view>
           </view>
-          <view class="rec-info">
-            <view class="rec-badge badge badge-online">{{item.opportunityType === 'transfer' ? '委托转让' : '重点招商'}}</view>
-            <view class="rec-title ellipsis">{{item.title}}</view>
-            <view class="rec-sub flex justify-between">
-              <text class="rec-loc">{{item.city}} · {{item.district}}</text>
-              <text class="rec-price">{{item.feeText}}</text>
+          <view class="latest-info flex-1 flex flex-col justify-between">
+            <view>
+              <view class="latest-title ellipsis">{{item.title}}</view>
+              <view class="latest-tags flex flex-wrap">
+                <text class="latest-tag">{{item.projectType}}</text>
+                <text class="latest-tag">{{item.areaText}}</text>
+                <text class="latest-tag" wx:for="{{item.suitableBusiness}}" wx:for-item="biz" wx:key="*this">{{biz}}</text>
+              </view>
+            </view>
+            <view class="latest-bottom flex align-center justify-between">
+              <view class="latest-loc">{{item.schoolAlias || item.schoolName || item.district}}</view>
+              <view class="latest-price">{{item.feeText}}</view>
             </view>
           </view>
         </view>
       </view>
-    </scroll-view>
-  </view>
+      <view class="empty-tip" wx:else>暂无发布项目</view>
+    </view>
+  </block>
 
   <view class="need-consult-card card flex align-center justify-between" bindtap="onApplyCustom">
     <view class="consult-text-group">
@@ -85,40 +124,6 @@
       <view class="consult-sub-title">提交需求，由顾问为你匹配招商、转让和设备资源</view>
     </view>
     <view class="consult-go-btn">快速提交</view>
-  </view>
-
-  <view class="section-container">
-    <view class="section-header flex align-center justify-between">
-      <view class="section-title">最新机会</view>
-      <navigator url="/pages/list/list" open-type="switchTab" class="section-more">查看全部</navigator>
-    </view>
-
-    <view class="latest-list" wx:if="{{latestList.length > 0}}">
-      <view class="latest-card card flex" wx:for="{{latestList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" style="position:relative;">
-        <view style="position:relative; flex-shrink:0;">
-          <image src="{{item.coverImage}}" mode="aspectFill" class="latest-cover" />
-          <view class="fav-mini" catchtap="onToggleFav" data-id="{{item.id}}"
-                style="position:absolute; top:8rpx; right:8rpx; font-size:26rpx; padding:2rpx 6rpx; background:rgba(255,255,255,0.9); border-radius:50%; z-index:2;">
-            {{item.isFav ? '★' : '☆'}}
-          </view>
-        </view>
-        <view class="latest-info flex-1 flex flex-col justify-between">
-          <view>
-            <view class="latest-title ellipsis">{{item.title}}</view>
-            <view class="latest-tags flex flex-wrap">
-              <text class="latest-tag">{{item.projectType}}</text>
-              <text class="latest-tag">{{item.areaText}}</text>
-              <text class="latest-tag" wx:for="{{item.suitableBusiness}}" wx:for-item="biz" wx:key="*this">{{biz}}</text>
-            </view>
-          </view>
-          <view class="latest-bottom flex align-center justify-between">
-            <view class="latest-loc">{{item.schoolAlias || item.schoolName || item.district}}</view>
-            <view class="latest-price">{{item.feeText}}</view>
-          </view>
-        </view>
-      </view>
-    </view>
-    <view class="empty-tip" wx:else>暂无发布项目</view>
   </view>
 
   <view class="contact-block card flex align-center justify-between" bindtap="onContactAdvisor">
@@ -131,5 +136,4 @@
     </view>
     <view class="call-btn badge">立即联系</view>
   </view>
-  </block>
 </view>

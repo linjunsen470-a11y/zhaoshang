@@ -22,7 +22,7 @@ Page({
       { id: 'cat5', name: '便利零售', icon: '🛒', type: 'business', val: '便利店' },
       { id: 'cat6', name: '店铺转让', icon: '🔁', type: 'opportunityType', val: 'transfer' },
       { id: 'cat7', name: '低预算', icon: '💰', type: 'budget', val: '5万以内' },
-      { id: 'cat8', name: '推荐项目', icon: '🔥', type: 'recommended', val: true }
+      { id: 'cat8', name: '推荐项目', icon: '🔥', type: 'recommended', val: 'true' }
     ],
     recommendedList: [],
     latestList: [],
@@ -54,14 +54,19 @@ Page({
   loadData(callback) {
     this.setData({ loading: true, loadError: false });
 
-    api.getProjects({ public: true })
+    const requestTimeout = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('请求超时，请检查后端是否已启动')), 16000);
+    });
+
+    Promise.race([api.getProjects({ public: true }), requestTimeout])
       .then(projects => {
+        const list = Array.isArray(projects) ? projects : [];
         const favs = wx.getStorageSync('favorites') || [];
-        const activeProjects = (projects || []).filter(p => p.status !== 'offline' && p.status !== 'draft');
-        activeProjects.sort((a, b) => b.createdAt - a.createdAt);
+        const activeProjects = list.filter(p => p.status !== 'offline' && p.status !== 'draft');
+        activeProjects.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
 
         this.setData({
-          recommendedList: (projects || [])
+          recommendedList: list
             .filter(p => p.isRecommended && p.status !== 'offline')
             .map(p => ({ ...p, isFav: favs.includes(p.id) })),
           latestList: activeProjects.slice(0, 4).map(p => ({ ...p, isFav: favs.includes(p.id) })),
@@ -71,10 +76,10 @@ Page({
         if (callback) callback();
       })
       .catch(err => {
-        console.error(err);
+        console.error('index.loadData failed:', err);
         this.setData({ loading: false, loadError: true });
         wx.showToast({
-          title: '加载失败，请稍后重试',
+          title: '项目加载失败',
           icon: 'none',
           duration: 2000
         });
@@ -115,7 +120,7 @@ Page({
     else if (type === 'budget') filter.budget = val;
     else if (type === 'status') filter.status = val;
     else if (type === 'opportunityType') filter.opportunityType = val;
-    else if (type === 'recommended') filter.recommended = true;
+    else if (type === 'recommended') filter.recommended = val === 'true' || val === true;
 
     wx.setStorageSync('pendingListFilter', filter);
     wx.switchTab({ url: '/pages/list/list' });
