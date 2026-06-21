@@ -30,6 +30,9 @@ export default buildConfig({
       title: '校园商铺招商管理台',
       description: '管理招商项目、咨询线索与商户档案',
     },
+    components: {
+      beforeDashboard: ['@/app/admin/components/OperationsDashboard'],
+    },
     importMap: {
       baseDir: dirname,
       importMapFile: path.resolve(dirname, 'app/admin/[[...segments]]/importMap.js'),

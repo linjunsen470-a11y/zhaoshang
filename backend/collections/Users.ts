@@ -20,6 +20,16 @@ export const Users: CollectionConfig = {
     update: ({ req: { user } }) => !!user,
     delete: ({ req: { user } }) => !!user,
   },
+  hooks: {
+    beforeChange: [
+      ({ data, operation }) => {
+        if (operation === 'create' && data.email && !data.displayName) {
+          data.displayName = String(data.email).split('@')[0]
+        }
+        return data
+      },
+    ],
+  },
   fields: [
     {
       name: 'displayName',

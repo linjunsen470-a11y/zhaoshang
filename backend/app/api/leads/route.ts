@@ -1,3 +1,4 @@
+import type { Where } from 'payload'
 import {
   ALL,
   getPayloadInstance,
@@ -18,9 +19,9 @@ export async function GET(request: Request) {
     return json({ error: '未登录或登录已过期' }, 401)
   }
 
-  const where = auth
+  const where: Where = auth
     ? { submitterOpenId: { equals: auth.openid } }
-    : { phone: { equals: phone } }
+    : { phone: { equals: phone! } }
 
   const result = await payload.find({
     collection: 'leads',

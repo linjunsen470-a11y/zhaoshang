@@ -1,4 +1,15 @@
+import { DISTRICT_OPTIONS } from '../../../../../collections/shared/fieldOptions'
 import { getPayloadInstance, json, toDatabaseId } from '../../../_shared/payloadApi'
+
+const VALID_DISTRICTS = new Set(DISTRICT_OPTIONS.map(option => option.value))
+
+function resolveDistrict(...candidates: Array<string | undefined>) {
+  for (const candidate of candidates) {
+    const value = String(candidate || '').trim()
+    if (VALID_DISTRICTS.has(value)) return value
+  }
+  return undefined
+}
 
 type Args = {
   params: Promise<{ id: string }>
@@ -66,7 +77,7 @@ export async function POST(request: Request, { params }: Args) {
     opportunityType: 'transfer',
     title: `${lead.businessType || '商铺'}转让 (${details.locationText || lead.regionPreference || '未指定区域'}) (转让线索ID: ${id})`,
     city: lead.city || '广州',
-    district: details.locationText || lead.regionPreference || '',
+    district: resolveDistrict(lead.regionPreference, details.locationText),
     addressText: details.locationText || '',
     schoolName: '',
     schoolAlias: '',
@@ -74,7 +85,7 @@ export async function POST(request: Request, { params }: Args) {
     projectType: '店铺转让',
     areaText: '',
     feeText: details.feeText || '面议',
-    suitableBusiness: lead.businessType ? [{ item: lead.businessType }] : [],
+    suitableBusiness: lead.businessType ? [lead.businessType] : [],
     unsuitableBusiness: [],
     highlights: [],
     trafficTags: [],

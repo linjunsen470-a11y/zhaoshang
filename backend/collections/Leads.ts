@@ -10,7 +10,7 @@ export const Leads: CollectionConfig = {
   admin: {
     group: ADMIN_GROUPS.operations,
     useAsTitle: 'name',
-    defaultColumns: ['name', 'phone', 'leadType', 'status', 'projectTitle', 'nextFollowAt', 'createdAt'],
+    defaultColumns: ['name', 'phone', 'leadType', 'status', 'owner', 'projectTitle', 'nextFollowAt', 'createdAt'],
     description: '处理来自小程序及后台录入的找铺、转让、设备咨询。跟进记录请在「跟进历史」标签页添加。',
     listSearchableFields: ['name', 'phone', 'businessType', 'regionPreference', 'projectTitle'],
   },
@@ -35,6 +35,16 @@ export const Leads: CollectionConfig = {
         {
           label: '基本需求',
           fields: [
+            {
+              name: 'leadQuickActions',
+              type: 'ui',
+              label: '快捷操作',
+              admin: {
+                components: {
+                  Field: '@/app/admin/components/LeadQuickActions',
+                },
+              },
+            },
             {
               type: 'row',
               fields: [
@@ -227,11 +237,12 @@ export const Leads: CollectionConfig = {
     },
     {
       name: 'owner',
-      type: 'text',
+      type: 'relationship',
+      relationTo: 'users',
       label: '跟进负责人',
       admin: {
         position: 'sidebar',
-        description: '填写负责跟进的顾问姓名，便于团队协作。',
+        description: '指定负责跟进的顾问；新建线索时默认当前登录账号。',
       },
     },
     {
@@ -290,6 +301,10 @@ export const Leads: CollectionConfig = {
           } else {
             data.projectTitle = ''
           }
+        }
+
+        if (operation === 'create' && req.user && !data.owner) {
+          data.owner = req.user.id
         }
 
         return data

@@ -276,6 +276,17 @@ export const Projects: CollectionConfig = {
       ],
     },
     {
+      name: 'miniProgramPreview',
+      type: 'ui',
+      label: '小程序预览',
+      admin: {
+        position: 'sidebar',
+        components: {
+          Field: '@/app/admin/components/ProjectEditHints',
+        },
+      },
+    },
+    {
       name: 'status',
       type: 'select',
       label: '发布状态',

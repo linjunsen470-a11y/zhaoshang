@@ -99,6 +99,9 @@ export const LeadFollowTimeline: React.FC = () => {
         if (followUps.length === 0) {
           leadPatch.status = 'contacted'
         }
+        if (user && 'id' in user && user.id) {
+          leadPatch.owner = user.id
+        }
         if (Object.keys(leadPatch).length > 0) {
           await fetch(`/api/payload/leads/${id}`, {
             method: 'PATCH',
