@@ -186,10 +186,17 @@ function localFallback(urlPath, method, requestData = {}) {
   if (urlPath === '/leads' && method === 'POST') {
     const leads = wx.getStorageSync('local_leads') || [];
     const projects = wx.getStorageSync('local_projects') || [];
+    const maxId = leads.reduce((max, l) => {
+      const cleaned = String(l.id).replace(/^l_?/, '');
+      const num = parseInt(cleaned, 10);
+      return (!isNaN(num) && num > max) ? num : max;
+    }, 26000000);
+    const nextId = String(maxId + 1);
+
     const newLead = {
       ...requestData,
       submitterOpenId: getCurrentOpenId(),
-      id: `l_mock_${Math.random().toString(36).substring(2, 9)}`,
+      id: nextId,
       leadType: requestData.leadType || 'leasing',
       sourceChannel: requestData.sourceChannel || 'mini_program',
       status: 'new',
@@ -230,6 +237,43 @@ function localFallback(urlPath, method, requestData = {}) {
     })).sort((a, b) => b.createdAt - a.createdAt);
   }
 
+  if (urlPath.startsWith('/leads/') && method === 'PUT') {
+    const id = urlPath.substring('/leads/'.length);
+    const leads = wx.getStorageSync('local_leads') || [];
+    const index = leads.findIndex(l => l.id === id);
+    if (index === -1) return null;
+
+    const openid = getCurrentOpenId();
+    if (leads[index].submitterOpenId && leads[index].submitterOpenId !== openid) {
+      throw new Error('无权修改此线索');
+    }
+
+    leads[index] = {
+      ...leads[index],
+      ...requestData,
+      id,
+      updatedAt: Date.now()
+    };
+    wx.setStorageSync('local_leads', leads);
+    return leads[index];
+  }
+
+  if (urlPath.startsWith('/leads/') && method === 'DELETE') {
+    const id = urlPath.substring('/leads/'.length);
+    const leads = wx.getStorageSync('local_leads') || [];
+    const index = leads.findIndex(l => l.id === id);
+    if (index === -1) return null;
+
+    const openid = getCurrentOpenId();
+    if (leads[index].submitterOpenId && leads[index].submitterOpenId !== openid) {
+      throw new Error('无权删除此线索');
+    }
+
+    leads.splice(index, 1);
+    wx.setStorageSync('local_leads', leads);
+    return { success: true };
+  }
+
   return null;
 }
 
@@ -240,5 +284,8 @@ module.exports = {
   submitLead: leadData => request('/leads', 'POST', leadData),
   submitTransfer: leadData => request('/leads', 'POST', { ...leadData, leadType: 'transfer' }),
   submitEquipment: leadData => request('/leads', 'POST', leadData),
-  getEquipments: params => request('/equipments', 'GET', params)
+  getEquipments: params => request('/equipments', 'GET', params),
+  updateLead: (id, leadData) => request(`/leads/${id}`, 'PUT', leadData),
+  deleteLead: id => request(`/leads/${id}`, 'DELETE')
 };
+

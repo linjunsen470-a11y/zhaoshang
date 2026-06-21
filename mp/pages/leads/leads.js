@@ -5,6 +5,19 @@ function formatDateTime(value) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
+function formatLeadId(id) {
+  if (!id) return '';
+  const cleaned = String(id).replace(/^l_?/, '');
+  const num = parseInt(cleaned, 10);
+  if (!isNaN(num)) {
+    if (num < 10000000) {
+      return String(26000000 + num);
+    }
+    return String(num);
+  }
+  return id;
+}
+
 Page({
   data: {
     phone: '',
@@ -51,6 +64,7 @@ Page({
       .then(res => {
         const formatted = (res || []).map(lead => ({
           ...lead,
+          displayId: formatLeadId(lead.id),
           statusInfo: this.data.statusMap[lead.status] || this.data.statusMap.new,
           formattedTime: formatDateTime(lead.createdAt),
           follows: (lead.follows || []).map(f => ({
@@ -96,22 +110,41 @@ Page({
     if (urls.length) wx.previewImage({ urls, current });
   },
 
-  onCallAdvisorFromLead() {
-    getApp().callAdvisor('18888888888');
-  },
-
-  onReConsult(e) {
-    const pid = e.currentTarget.dataset.projectId;
-    const url = pid ? `/pages/apply/apply?projectId=${pid}` : '/pages/apply/apply';
+  onEditLead(e) {
+    const id = e.currentTarget.dataset.id;
+    const type = e.currentTarget.dataset.type || 'leasing';
+    let url = '';
+    if (type === 'transfer') {
+      url = `/pages/transfer/transfer?leadId=${id}`;
+    } else if (type.startsWith('equipment')) {
+      url = `/pages/equipment/equipment?leadId=${id}`;
+    } else {
+      url = `/pages/apply/apply?leadId=${id}`;
+    }
     wx.navigateTo({ url });
   },
 
-  onCopyLeadPhone(e) {
-    const phone = (e.currentTarget && e.currentTarget.dataset && e.currentTarget.dataset.phone) || this.data.phone || '';
-    if (!phone) return;
-    wx.setClipboardData({
-      data: phone,
-      success: () => wx.showToast({ title: '电话已复制', icon: 'success' })
+  onDeleteLead(e) {
+    const id = e.currentTarget.dataset.id;
+    const displayId = formatLeadId(id);
+    wx.showModal({
+      title: '确认删除',
+      content: `确定要删除线索号为 ${displayId} 的记录吗？`,
+      confirmColor: '#ef4444',
+      success: (res) => {
+        if (res.confirm) {
+          wx.showLoading({ title: '正在删除...' });
+          api.deleteLead(id).then(() => {
+            wx.hideLoading();
+            wx.showToast({ title: '删除成功', icon: 'success' });
+            this.refreshLeads();
+          }).catch(err => {
+            wx.hideLoading();
+            wx.showToast({ title: '删除失败', icon: 'none' });
+            console.error(err);
+          });
+        }
+      }
     });
   }
 });

@@ -50,6 +50,15 @@ function writeData(data) {
 }
 
 function generateId(prefix) {
+  if (prefix === 'l') {
+    const leads = data.leads || [];
+    const maxId = leads.reduce((max, l) => {
+      const cleaned = String(l.id).replace(/^l_?/, '');
+      const num = parseInt(cleaned, 10);
+      return (!isNaN(num) && num > max) ? num : max;
+    }, 26000000);
+    return String(maxId + 1);
+  }
   return prefix + Math.random().toString(36).substring(2, 9);
 }
 
@@ -324,6 +333,19 @@ const server = http.createServer(async (req, res) => {
       } catch {
         sendJSON({ error: '无效的 JSON 数据' }, 400);
       }
+      return;
+    }
+
+    if (urlPath.startsWith('/api/leads/') && req.method === 'DELETE') {
+      const id = urlPath.substring('/api/leads/'.length);
+      const index = data.leads.findIndex(l => l.id === id);
+      if (index === -1) {
+        sendJSON({ error: '线索不存在' }, 404);
+        return;
+      }
+      data.leads.splice(index, 1);
+      writeData(data);
+      sendJSON({ success: true });
       return;
     }
 

@@ -1,13 +1,13 @@
 <view class="container">
-  <view class="leads-header">
-    <view class="phone-tip">
-      <text class="phone-label">当前记录归属：</text>
-      <text class="phone-number">{{openId || '本地调试用户'}}</text>
+  <view class="leads-header" style="padding: 20rpx 30rpx; background: #f8fafc; border-bottom: 1rpx solid #e2e8f0;" wx:if="{{phone}}">
+    <view class="phone-tip" style="font-size: 24rpx; color: #64748b; display: flex; align-items: center;">
+      <text class="phone-label">您的联系电话：</text>
+      <text class="phone-number" style="font-weight: 600; color: #334155; font-size: 26rpx;">{{phone}}</text>
     </view>
-    <view class="phone-tip" wx:if="{{phone}}">
-      <text class="phone-label">联系电话：</text>
-      <text class="phone-number" bindtap="onCopyLeadPhone" data-phone="{{phone}}">{{phone}}</text>
-    </view>
+  </view>
+
+  <view class="top-notice-bar" style="background: #fffbeb; border-bottom: 1rpx solid #fef3c7; padding: 12rpx 30rpx; font-size: 22rpx; color: #d97706; text-align: center;" wx:if="{{phone && leadsList.length > 0}}">
+    招商人员正在接入，请保持电话畅通。
   </view>
 
   <view class="leads-body">
@@ -78,14 +78,13 @@
           </view>
 
           <view class="lead-time-footer flex justify-between align-center">
-            <text class="lead-id-lbl">线索号：{{item.id}}</text>
+            <text class="lead-id-lbl">线索号：{{item.displayId || item.id}}</text>
             <text class="lead-time-lbl">提交于：{{item.formattedTime}}</text>
           </view>
 
-          <view class="lead-actions flex" style="margin-top:16rpx; gap:16rpx;">
-            <button class="btn btn-outline" style="flex:1; font-size:24rpx; padding:12rpx 0; height:auto;" bindtap="onCallAdvisorFromLead">联系顾问</button>
-            <button class="btn btn-secondary" style="flex:1; font-size:24rpx; padding:12rpx 0; height:auto;" bindtap="onReConsult" data-project-id="{{item.projectId}}" data-title="{{item.projectTitle}}">再次咨询</button>
-            <text class="lead-phone-copy" bindtap="onCopyLeadPhone" data-phone="{{item.phone}}" style="align-self:center; font-size:22rpx; color:#3b82f6; padding:0 8rpx;">复制电话</text>
+          <view class="lead-actions flex" style="margin-top:16rpx; gap:20rpx;">
+            <button class="btn btn-primary" style="flex:1; font-size:24rpx; padding:12rpx 0; height:auto; background: #3b82f6; border-color: #3b82f6;" bindtap="onEditLead" data-id="{{item.id}}" data-type="{{item.leadType}}">编辑</button>
+            <button class="btn btn-outline" style="flex:1; font-size:24rpx; padding:12rpx 0; height:auto; color: #ef4444; border-color: #ef4444;" bindtap="onDeleteLead" data-id="{{item.id}}">删除</button>
           </view>
 
           <view class="follow-timeline-section" wx:if="{{item.follows && item.follows.length > 0}}">
@@ -112,10 +111,6 @@
                 </view>
               </view>
             </view>
-          </view>
-
-          <view class="no-follow-tip" wx:else>
-            招商人员正在接入，请保持电话通畅。
           </view>
         </view>
       </view>

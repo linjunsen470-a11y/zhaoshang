@@ -218,7 +218,13 @@ export async function mapLead(doc: Doc) {
   })
 
   return {
-    id: String(doc.id),
+    id: (() => {
+      const num = Number(doc.id)
+      if (!isNaN(num) && num < 10000000) {
+        return String(26000000 + num)
+      }
+      return String(doc.id)
+    })(),
     submitterOpenId: stringValue(doc.submitterOpenId),
     leadType: stringValue(doc.leadType) || 'leasing',
     sourceChannel: stringValue(doc.sourceChannel) || 'mini_program',

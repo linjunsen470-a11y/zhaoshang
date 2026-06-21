@@ -14,15 +14,48 @@ Page({
     remark: '',
     attachments: [],
     uploadingImages: false,
-    submitting: false
+    submitting: false,
+    isEditMode: false,
+    leadId: ''
   },
 
-  onLoad() {
+  onLoad(options) {
     const userInfo = wx.getStorageSync('userInfo') || getApp().globalData.userInfo;
-    if (userInfo) {
+    if (userInfo && !options.leadId) {
       this.setData({
         name: userInfo.nickname || '',
         phone: userInfo.phone || ''
+      });
+    }
+
+    if (options.leadId) {
+      this.setData({ isEditMode: true, leadId: options.leadId });
+      wx.setNavigationBarTitle({ title: '修改转让信息' });
+      wx.showLoading({ title: '加载中...' });
+      api.getLeads().then(leads => {
+        const lead = leads.find(l => l.id === options.leadId);
+        if (lead) {
+          const details = lead.transferDetails || {};
+          this.setData({
+            name: lead.name,
+            phone: lead.phone,
+            locationText: details.locationText || lead.regionPreference || '',
+            businessType: lead.businessType,
+            feeText: details.feeText || '',
+            transferFee: details.transferFee || lead.budgetRange || '',
+            remainingTerm: details.remainingTerm || '',
+            includesEquipment: details.includesEquipment !== undefined ? details.includesEquipment : true,
+            remark: lead.remark || '',
+            attachments: lead.attachments || []
+          });
+        } else {
+          wx.showToast({ title: '未找到该咨询记录', icon: 'none' });
+        }
+      }).catch(err => {
+        console.error(err);
+        wx.showToast({ title: '加载失败', icon: 'none' });
+      }).finally(() => {
+        wx.hideLoading();
       });
     }
   },
@@ -87,7 +120,7 @@ Page({
     }
 
     this.setData({ submitting: true });
-    api.submitTransfer({
+    const payload = {
       name,
       phone,
       businessType,
@@ -103,17 +136,44 @@ Page({
         includesEquipment
       },
       attachments: attachments.map(item => item.id)
-    }).then(res => {
-      const userInfo = wx.getStorageSync('userInfo') || {};
-      userInfo.nickname = name;
-      userInfo.phone = phone;
-      wx.setStorageSync('userInfo', userInfo);
-      this.setData({ submitting: false });
-      wx.navigateTo({ url: `/pages/success/success?leadId=${res.id}` });
-    }).catch(err => {
-      console.error(err);
-      this.setData({ submitting: false });
-      wx.showModal({ title: '提交失败', content: '请稍后重试', showCancel: false });
-    });
+    };
+
+    if (this.data.isEditMode) {
+      api.updateLead(this.data.leadId, payload)
+        .then(res => {
+          this.setData({ submitting: false });
+          wx.showToast({
+            title: '修改成功',
+            icon: 'success',
+            duration: 1500,
+            success: () => {
+              setTimeout(() => {
+                wx.navigateBack();
+              }, 1500);
+            }
+          });
+        }).catch(err => {
+          console.error(err);
+          this.setData({ submitting: false });
+          wx.showModal({
+            title: '修改失败',
+            content: err.message || '请稍后重试',
+            showCancel: false
+          });
+        });
+    } else {
+      api.submitTransfer(payload).then(res => {
+        const userInfo = wx.getStorageSync('userInfo') || {};
+        userInfo.nickname = name;
+        userInfo.phone = phone;
+        wx.setStorageSync('userInfo', userInfo);
+        this.setData({ submitting: false });
+        wx.navigateTo({ url: `/pages/success/success?leadId=${res.id}` });
+      }).catch(err => {
+        console.error(err);
+        this.setData({ submitting: false });
+        wx.showModal({ title: '提交失败', content: '请稍后重试', showCancel: false });
+      });
+    }
   }
 });

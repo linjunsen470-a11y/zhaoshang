@@ -1,6 +1,6 @@
 <view class="container form-page">
   <view class="form-header card">
-    <view class="form-title">{{projectTitle ? '咨询项目' : '提交找铺需求'}}</view>
+    <view class="form-title">{{isEditMode ? '修改咨询信息' : (projectTitle ? '咨询项目' : '提交找铺需求')}}</view>
     <view class="form-desc">{{projectTitle || '填写你的经营品类、预算和区域偏好，招商顾问会协助匹配合适铺位。'}}</view>
   </view>
 
@@ -54,7 +54,7 @@
   </view>
 
   <view class="form-actions">
-    <button class="btn btn-secondary" bindtap="onClearForm">清空</button>
-    <button class="btn btn-primary" loading="{{submitting}}" disabled="{{submitting || uploadingImages}}" bindtap="onSubmitForm">提交咨询</button>
+    <button class="btn btn-secondary" bindtap="onClearForm" wx:if="{{!isEditMode}}">清空</button>
+    <button class="btn btn-primary" style="{{isEditMode ? 'flex: 1;' : ''}}" loading="{{submitting}}" disabled="{{submitting || uploadingImages}}" bindtap="onSubmitForm">{{isEditMode ? '保存修改' : '提交咨询'}}</button>
   </view>
 </view>

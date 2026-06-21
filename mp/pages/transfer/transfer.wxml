@@ -1,6 +1,6 @@
 <view class="container form-page">
   <view class="form-header card">
-    <view class="form-title">委托店铺转让</view>
+    <view class="form-title">{{isEditMode ? '修改转让需求' : '委托店铺转让'}}</view>
     <view class="form-desc">提交店铺位置、当前业态和转让预期，平台顾问会协助核验并匹配接手方。</view>
   </view>
 
@@ -58,6 +58,6 @@
   </view>
 
   <view class="form-actions">
-    <button class="btn btn-primary" loading="{{submitting}}" disabled="{{submitting || uploadingImages}}" bindtap="onSubmitForm">提交委托</button>
+    <button class="btn btn-primary" loading="{{submitting}}" disabled="{{submitting || uploadingImages}}" bindtap="onSubmitForm">{{isEditMode ? '保存修改' : '提交委托'}}</button>
   </view>
 </view>

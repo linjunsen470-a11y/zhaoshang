@@ -19,7 +19,9 @@ Page({
     budgets: ['5万以内', '5-10万', '10-20万', '20-50万', '50万以上', '暂不确定'],
     businessIndex: -1,
     budgetIndex: -1,
-    submitting: false
+    submitting: false,
+    isEditMode: false,
+    leadId: ''
   },
 
   onLoad(options) {
@@ -35,10 +37,45 @@ Page({
     }
 
     const userInfo = wx.getStorageSync('userInfo') || getApp().globalData.userInfo;
-    if (userInfo) {
+    if (userInfo && !options.leadId) {
       this.setData({
         name: userInfo.nickname || '',
         phone: userInfo.phone || ''
+      });
+    }
+
+    if (options.leadId) {
+      this.setData({ isEditMode: true, leadId: options.leadId });
+      wx.setNavigationBarTitle({ title: '修改咨询信息' });
+      wx.showLoading({ title: '加载中...' });
+      api.getLeads().then(leads => {
+        const lead = leads.find(l => l.id === options.leadId);
+        if (lead) {
+          const businessIndex = this.data.businesses.indexOf(lead.businessType);
+          const budgetIndex = this.data.budgets.indexOf(lead.budgetRange);
+          this.setData({
+            leadType: lead.leadType || 'leasing',
+            projectId: lead.projectId || '',
+            projectTitle: lead.projectTitle || '',
+            name: lead.name,
+            phone: lead.phone,
+            businessType: lead.businessType,
+            budgetRange: lead.budgetRange,
+            regionPreference: lead.regionPreference || '',
+            hasCampusExperience: lead.hasCampusExperience || false,
+            remark: lead.remark || '',
+            attachments: lead.attachments || [],
+            businessIndex,
+            budgetIndex
+          });
+        } else {
+          wx.showToast({ title: '未找到该咨询记录', icon: 'none' });
+        }
+      }).catch(err => {
+        console.error(err);
+        wx.showToast({ title: '加载失败', icon: 'none' });
+      }).finally(() => {
+        wx.hideLoading();
       });
     }
   },
@@ -139,7 +176,7 @@ Page({
     }
 
     this.setData({ submitting: true });
-    api.submitLead({
+    const payload = {
       leadType,
       sourceChannel: 'mini_program',
       name,
@@ -151,23 +188,50 @@ Page({
       hasCampusExperience,
       remark: remark || undefined,
       attachments: attachments.map(item => item.id)
-    }).then(res => {
-      const userInfo = wx.getStorageSync('userInfo') || {};
-      userInfo.nickname = name;
-      userInfo.phone = phone;
-      wx.setStorageSync('userInfo', userInfo);
-      getApp().globalData.userInfo.phone = phone;
-      getApp().globalData.userInfo.nickname = name;
-      this.setData({ submitting: false });
-      wx.navigateTo({ url: `/pages/success/success?projectId=${projectId || ''}&leadId=${res.id}` });
-    }).catch(err => {
-      console.error(err);
-      this.setData({ submitting: false });
-      wx.showModal({
-        title: '提交失败',
-        content: '网络拥堵，请稍后重试',
-        showCancel: false
+    };
+
+    if (this.data.isEditMode) {
+      api.updateLead(this.data.leadId, payload)
+        .then(res => {
+          this.setData({ submitting: false });
+          wx.showToast({
+            title: '修改成功',
+            icon: 'success',
+            duration: 1500,
+            success: () => {
+              setTimeout(() => {
+                wx.navigateBack();
+              }, 1500);
+            }
+          });
+        }).catch(err => {
+          console.error(err);
+          this.setData({ submitting: false });
+          wx.showModal({
+            title: '修改失败',
+            content: err.message || '网络拥堵，请稍后重试',
+            showCancel: false
+          });
+        });
+    } else {
+      api.submitLead(payload).then(res => {
+        const userInfo = wx.getStorageSync('userInfo') || {};
+        userInfo.nickname = name;
+        userInfo.phone = phone;
+        wx.setStorageSync('userInfo', userInfo);
+        getApp().globalData.userInfo.phone = phone;
+        getApp().globalData.userInfo.nickname = name;
+        this.setData({ submitting: false });
+        wx.navigateTo({ url: `/pages/success/success?projectId=${projectId || ''}&leadId=${res.id}` });
+      }).catch(err => {
+        console.error(err);
+        this.setData({ submitting: false });
+        wx.showModal({
+          title: '提交失败',
+          content: '网络拥堵，请稍后重试',
+          showCancel: false
+        });
       });
-    });
+    }
   }
 });
