@@ -1,4 +1,4 @@
-import { getPayloadInstance, json, mapFollow } from '../../../_shared/payloadApi'
+import { getPayloadInstance, json, mapFollow, toDatabaseId } from '../../../_shared/payloadApi'
 
 type Args = {
   params: Promise<{ id: string }>
@@ -23,7 +23,7 @@ export async function POST(request: Request, { params }: Args) {
   const doc = await payload.create({
     collection: 'follow-records',
     data: {
-      lead: id,
+      lead: toDatabaseId(id)!,
       content: input.content,
       nextFollowAt: input.nextFollowAt ? new Date(Number(input.nextFollowAt)).toISOString() : undefined,
       operatorName: input.operatorName || '系统管理员',

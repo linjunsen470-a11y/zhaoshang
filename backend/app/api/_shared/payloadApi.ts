@@ -104,9 +104,22 @@ function objectValue(value: unknown) {
   return value && typeof value === 'object' ? value as Record<string, unknown> : {}
 }
 
+export function toDatabaseId(value: unknown): string | number | undefined {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') {
+    const num = Number(value)
+    return Number.isNaN(num) ? value : num
+  }
+  if (value && typeof value === 'object' && 'id' in value) {
+    const idVal = (value as { id: unknown }).id
+    return toDatabaseId(idVal)
+  }
+  return undefined
+}
+
 function ids(value: unknown) {
   if (!Array.isArray(value)) return undefined
-  return value.map(relationId).filter(Boolean)
+  return value.map(toDatabaseId).filter(Boolean) as (string | number)[]
 }
 
 export function mapMedia(doc: Doc) {
@@ -310,7 +323,7 @@ export function sanitizeLeadInput(input: Record<string, unknown>, submitterOpenI
     attachments: ids(input.attachments),
     remark: input.remark,
     status: input.status || 'new',
-    project: input.project || input.projectId || undefined,
+    project: toDatabaseId(input.project || input.projectId),
     owner: input.owner,
     nextFollowAt: input.nextFollowAt ? new Date(Number(input.nextFollowAt)).toISOString() : undefined,
     closedAmount: input.closedAmount,

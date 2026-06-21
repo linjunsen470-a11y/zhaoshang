@@ -1,4 +1,4 @@
-import { getPayloadInstance, json } from '../../../_shared/payloadApi'
+import { getPayloadInstance, json, toDatabaseId } from '../../../_shared/payloadApi'
 
 type Args = {
   params: Promise<{ id: string }>
@@ -8,14 +8,33 @@ export async function POST(request: Request, { params }: Args) {
   const { id } = await params
   const payload = await getPayloadInstance()
 
-  let lead: any
+  interface LeadDoc {
+    leadType?: string
+    businessType?: string
+    regionPreference?: string
+    city?: string
+    remark?: string
+    name?: string
+    phone?: string
+    attachments?: (string | number | Record<string, unknown>)[]
+    transferDetails?: {
+      locationText?: string
+      feeText?: string
+      remainingTerm?: string
+      includesEquipment?: boolean
+      transferFee?: string
+    }
+  }
+
+  let lead: LeadDoc
   try {
-    lead = await payload.findByID({
+    const raw = await payload.findByID({
       collection: 'leads',
       id,
       depth: 0,
       overrideAccess: true,
     })
+    lead = raw as unknown as LeadDoc
   } catch {
     return json({ error: '线索不存在' }, 404)
   }
@@ -64,8 +83,8 @@ export async function POST(request: Request, { params }: Args) {
     customerInfo: '',
     cooperationMode: '承接现有合同',
     viewingTimeText: '需提前预约顾问',
-    coverImage: lead.attachments?.[0],
-    images: lead.attachments || [],
+    coverImage: lead.attachments?.[0] ? toDatabaseId(lead.attachments[0]) : undefined,
+    images: Array.isArray(lead.attachments) ? lead.attachments.map(toDatabaseId).filter(Boolean) : [],
     transferInfo: {
       currentBusiness: lead.businessType || '',
       monthlyRent: details.feeText || '',
@@ -84,24 +103,25 @@ export async function POST(request: Request, { params }: Args) {
   try {
     const project = await payload.create({
       collection: 'projects',
-      data: projectData as any,
+      data: projectData as never,
       overrideAccess: true,
     })
 
     // Update lead status to viewed
     await payload.update({
       collection: 'leads',
-      id,
+      id: toDatabaseId(id)!,
       data: {
         status: 'viewed',
-        remark: `${lead.remark || ''}\n【系统提示】已于 ${new Date().toLocaleString()} 一键转为招商项目草稿 (ID: ${project.id})。`.trim(),
+        remark: `${String(lead.remark || '')}\n【系统提示】已于 ${new Date().toLocaleString()} 一键转为招商项目草稿 (ID: ${project.id})。`.trim(),
       },
       overrideAccess: true,
     })
 
     return json({ success: true, projectId: project.id, projectTitle: project.title })
-  } catch (err: any) {
+  } catch (err) {
     console.error('Failed to convert lead to project:', err)
-    return json({ error: err.message || '转换项目失败' }, 500)
+    const errMsg = err instanceof Error ? err.message : String(err)
+    return json({ error: errMsg || '转换项目失败' }, 500)
   }
 }

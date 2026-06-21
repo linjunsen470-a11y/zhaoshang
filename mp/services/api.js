@@ -100,7 +100,7 @@ async function request(urlPath, method = 'GET', data = {}) {
     header.Authorization = `Bearer ${token}`;
   }
 
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     wx.request({
       url: `${appInstance.globalData.apiUrl}${urlPath}`,
       method,
@@ -112,9 +112,19 @@ async function request(urlPath, method = 'GET', data = {}) {
           resolve(res.data);
           return;
         }
+        if (!appInstance.globalData.useLocalMock) {
+          reject(new Error(`API Error: ${res.statusCode}`));
+          return;
+        }
         resolve(localFallback(urlPath, method, data));
       },
-      fail: () => resolve(localFallback(urlPath, method, data))
+      fail: err => {
+        if (!appInstance.globalData.useLocalMock) {
+          reject(err || new Error('Network error'));
+          return;
+        }
+        resolve(localFallback(urlPath, method, data));
+      }
     });
   });
 }

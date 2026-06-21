@@ -6,28 +6,28 @@ export async function GET(request: Request) {
 
   const leadType = searchParams.get('leadType')
   
-  const where: any = {
-    and: [
-      {
-        leadType: {
-          in: ['equipment_sell', 'equipment_buy', 'equipment_recycle']
-        }
-      },
-      {
-        status: {
-          not_in: ['closed', 'invalid', 'paused']
-        }
+  const andConditions: Record<string, unknown>[] = [
+    {
+      leadType: {
+        in: ['equipment_sell', 'equipment_buy', 'equipment_recycle']
       }
-    ]
-  }
+    },
+    {
+      status: {
+        not_in: ['closed', 'invalid', 'paused']
+      }
+    }
+  ]
 
   if (leadType && leadType !== 'all' && leadType !== '全部') {
-    where.and.push({ leadType: { equals: leadType } })
+    andConditions.push({ leadType: { equals: leadType } })
   }
+
+  const where = { and: andConditions }
 
   const result = await payload.find({
     collection: 'leads',
-    where,
+    where: where as never,
     limit: 100,
     sort: '-createdAt',
     depth: 1,
@@ -35,7 +35,11 @@ export async function GET(request: Request) {
   })
 
   const equipments = result.docs.map(doc => {
-    const raw = doc as any
+    const raw = doc as unknown as Record<string, unknown> & {
+      equipmentDetails?: Record<string, unknown>
+      attachments?: (Record<string, unknown> | string | number)[]
+    }
+    const details = raw.equipmentDetails || {}
     return {
       id: String(raw.id),
       leadType: raw.leadType,
@@ -44,21 +48,22 @@ export async function GET(request: Request) {
       regionPreference: raw.regionPreference || '',
       remark: raw.remark || '',
       equipmentDetails: raw.equipmentDetails ? {
-        equipmentName: raw.equipmentDetails.equipmentName || '',
-        specText: raw.equipmentDetails.specText || '',
-        equipmentCondition: raw.equipmentDetails.equipmentCondition || '',
-        expectedPrice: raw.equipmentDetails.expectedPrice || '',
+        equipmentName: details.equipmentName || '',
+        specText: details.specText || '',
+        equipmentCondition: details.equipmentCondition || '',
+        expectedPrice: details.expectedPrice || '',
       } : undefined,
-      attachments: Array.isArray(raw.attachments) ? raw.attachments.map((item: any) => {
+      attachments: Array.isArray(raw.attachments) ? raw.attachments.map((item) => {
         if (item && typeof item === 'object') {
+          const media = item as Record<string, unknown>
           return {
-            id: String(item.id),
-            url: item.url ? ((process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3000').replace(/\/$/, '') + item.url) : undefined
+            id: String(media.id),
+            url: media.url ? ((process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3000').replace(/\/$/, '') + media.url) : undefined
           }
         }
         return { id: String(item), url: undefined }
       }) : [],
-      createdAt: typeof raw.createdAt === 'string' ? Date.parse(raw.createdAt) : raw.createdAt,
+      createdAt: typeof raw.createdAt === 'string' ? Date.parse(raw.createdAt) : (typeof raw.createdAt === 'number' ? raw.createdAt : Date.now()),
     }
   })
 
