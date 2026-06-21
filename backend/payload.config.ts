@@ -26,6 +26,10 @@ if (!secret && process.env.NODE_ENV === 'production') {
 export default buildConfig({
   admin: {
     user: 'users',
+    meta: {
+      title: '校园商铺招商管理台',
+      description: '管理招商项目、咨询线索与商户档案',
+    },
     importMap: {
       baseDir: dirname,
       importMapFile: path.resolve(dirname, 'app/admin/[[...segments]]/importMap.js'),
@@ -37,10 +41,10 @@ export default buildConfig({
   collections: [
     Projects,
     Leads,
-    FollowRecords,
     MerchantProfiles,
     Media,
     Users,
+    FollowRecords,
   ],
   editor: lexicalEditor({}),
   secret: secret || 'your-fallback-dev-secret-for-local-demo',

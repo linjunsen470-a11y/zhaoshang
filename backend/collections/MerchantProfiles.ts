@@ -1,14 +1,18 @@
 import type { CollectionConfig } from 'payload'
+import { ADMIN_GROUPS, BUSINESS_TYPE_OPTIONS } from './shared/fieldOptions'
 
 export const MerchantProfiles: CollectionConfig = {
   slug: 'merchant-profiles',
   labels: {
-    plural: '客商画像/商户库',
-    singular: '客商画像/商户库',
+    plural: '商户档案',
+    singular: '商户档案',
   },
   admin: {
+    group: ADMIN_GROUPS.customers,
     useAsTitle: 'name',
     defaultColumns: ['name', 'phone', 'preferredRegion', 'budgetRange', 'status'],
+    description: '长期客户画像库。单次咨询请优先在「咨询线索」中处理；高意向客户可在此沉淀档案。',
+    listSearchableFields: ['name', 'phone', 'preferredRegion'],
   },
   access: {
     read: ({ req: { user } }) => !!user,
@@ -36,9 +40,10 @@ export const MerchantProfiles: CollectionConfig = {
     },
     {
       name: 'businessTypes',
-      type: 'text',
+      type: 'select',
       hasMany: true,
-      label: '主营品类/业态 (敲击回车可添加多个)',
+      label: '主营品类/业态',
+      options: BUSINESS_TYPE_OPTIONS,
     },
     {
       type: 'row',
@@ -78,7 +83,6 @@ export const MerchantProfiles: CollectionConfig = {
         },
       ],
     },
-    // Sidebar fields
     {
       name: 'status',
       type: 'select',

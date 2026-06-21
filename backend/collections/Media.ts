@@ -1,7 +1,17 @@
 import type { CollectionConfig } from 'payload'
+import { ADMIN_GROUPS } from './shared/fieldOptions'
 
 export const Media: CollectionConfig = {
   slug: 'media',
+  labels: {
+    plural: '媒体库',
+    singular: '媒体文件',
+  },
+  admin: {
+    group: ADMIN_GROUPS.system,
+    description: '项目图片、线索附件与后台上传素材。线索附件请在线索详情中管理，避免误删用户图片。',
+    defaultColumns: ['filename', 'source', 'alt', 'createdAt'],
+  },
   access: {
     read: () => true,
   },
@@ -18,13 +28,8 @@ export const Media: CollectionConfig = {
       name: 'alt',
       type: 'text',
       label: '替代文本',
-    },
-    {
-      name: 'ownerOpenId',
-      type: 'text',
-      label: '上传用户 OpenID',
       admin: {
-        readOnly: true,
+        description: '简要描述图片内容，便于识别。',
       },
     },
     {
@@ -36,6 +41,19 @@ export const Media: CollectionConfig = {
         { label: '线索附件', value: 'lead_attachment' },
         { label: '后台上传', value: 'admin' },
       ],
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'ownerOpenId',
+      type: 'text',
+      label: '上传用户 OpenID',
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+        condition: data => Boolean(data?.ownerOpenId),
+      },
     },
     {
       name: 'originalFilename',
@@ -43,14 +61,16 @@ export const Media: CollectionConfig = {
       label: '原始文件名',
       admin: {
         readOnly: true,
+        hidden: true,
       },
     },
     {
       name: 'compressedSize',
       type: 'number',
-      label: '压缩后大小',
+      label: '压缩后大小（字节）',
       admin: {
         readOnly: true,
+        hidden: true,
       },
     },
   ],

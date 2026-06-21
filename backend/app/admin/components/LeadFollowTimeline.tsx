@@ -25,15 +25,16 @@ export const LeadFollowTimeline: React.FC = () => {
   const [nextFollowAt, setNextFollowAt] = useState('')
   const [operatorName, setOperatorName] = useState('')
   
-  // Set default operator name from user email
+  // Set default operator name from user profile
   useEffect(() => {
-    if (user && user.email) {
-      const defaultOp = user.email.split('@')[0]
-      const timer = setTimeout(() => {
-        setOperatorName(prev => prev || defaultOp)
-      }, 0)
-      return () => clearTimeout(timer)
-    }
+    if (!user) return
+    const profile = user as { email?: string; displayName?: string }
+    const defaultOp = profile.displayName || (profile.email ? profile.email.split('@')[0] : '')
+    if (!defaultOp) return
+    const timer = setTimeout(() => {
+      setOperatorName(prev => prev || defaultOp)
+    }, 0)
+    return () => clearTimeout(timer)
   }, [user])
 
   // Fetch follow-ups
@@ -91,9 +92,25 @@ export const LeadFollowTimeline: React.FC = () => {
       })
 
       if (res.ok) {
+        const leadPatch: Record<string, unknown> = {}
+        if (nextFollowAt) {
+          leadPatch.nextFollowAt = new Date(nextFollowAt).toISOString()
+        }
+        if (followUps.length === 0) {
+          leadPatch.status = 'contacted'
+        }
+        if (Object.keys(leadPatch).length > 0) {
+          await fetch(`/api/payload/leads/${id}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(leadPatch),
+          })
+        }
+
         setContent('')
         setNextFollowAt('')
-        // Refresh list
         await fetchFollowUps()
       } else {
         const data = await res.json()

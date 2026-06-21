@@ -3,11 +3,14 @@ import type { CollectionConfig } from 'payload'
 export const FollowRecords: CollectionConfig = {
   slug: 'follow-records',
   labels: {
-    plural: '跟进历史明细',
-    singular: '跟进历史明细',
+    plural: '跟进明细（归档）',
+    singular: '跟进明细',
   },
   admin: {
-    useAsTitle: 'content',
+    hidden: true,
+    useAsTitle: 'operatorName',
+    defaultColumns: ['lead', 'operatorName', 'createdAt'],
+    description: '跟进记录请在线索详情的「跟进历史」标签页添加，此集合仅供系统归档查询。',
   },
   access: {
     read: ({ req: { user } }) => !!user,
@@ -29,7 +32,7 @@ export const FollowRecords: CollectionConfig = {
       type: 'relationship',
       relationTo: 'leads',
       required: true,
-      label: '关联线索/商机',
+      label: '关联线索',
     },
     {
       name: 'content',

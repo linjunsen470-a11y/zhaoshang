@@ -1,14 +1,18 @@
 import type { CollectionConfig } from 'payload'
+import { ADMIN_GROUPS } from './shared/fieldOptions'
 
 export const Leads: CollectionConfig = {
   slug: 'leads',
   labels: {
-    plural: '销售线索与咨询',
-    singular: '销售线索与咨询',
+    plural: '咨询线索',
+    singular: '咨询线索',
   },
   admin: {
+    group: ADMIN_GROUPS.operations,
     useAsTitle: 'name',
-    defaultColumns: ['name', 'phone', 'leadType', 'status', 'project'],
+    defaultColumns: ['name', 'phone', 'leadType', 'status', 'projectTitle', 'nextFollowAt', 'createdAt'],
+    description: '处理来自小程序及后台录入的找铺、转让、设备咨询。跟进记录请在「跟进历史」标签页添加。',
+    listSearchableFields: ['name', 'phone', 'businessType', 'regionPreference', 'projectTitle'],
   },
   access: {
     read: ({ req: { user } }) => !!user,
@@ -45,6 +49,9 @@ export const Leads: CollectionConfig = {
                   type: 'text',
                   required: true,
                   label: '联系电话',
+                  admin: {
+                    description: '顾问联系客户的主要号码。',
+                  },
                 },
               ],
             },
@@ -63,7 +70,7 @@ export const Leads: CollectionConfig = {
                     { label: '出售设备', value: 'equipment_sell' },
                     { label: '求购设备', value: 'equipment_buy' },
                     { label: '回收咨询', value: 'equipment_recycle' },
-                    { label: '品牌合作', value: 'brand_cooperation' },
+                    { label: '品牌合作（仅后台）', value: 'brand_cooperation' },
                   ],
                 },
                 {
@@ -145,15 +152,38 @@ export const Leads: CollectionConfig = {
               type: 'textarea',
               label: '用户补充说明',
             },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'submitterOpenId',
+                  type: 'text',
+                  label: '提交用户 OpenID',
+                  admin: {
+                    readOnly: true,
+                    description: '微信用户标识，用于小程序端查询自己的咨询记录。',
+                  },
+                },
+                {
+                  name: 'projectTitle',
+                  type: 'text',
+                  label: '关联项目标题',
+                  admin: {
+                    readOnly: true,
+                  },
+                },
+              ],
+            },
           ],
         },
         {
           label: '跟进历史',
+          description: '在此添加跟进记录。新建线索请先保存，再录入第一条跟进。',
           fields: [
             {
               name: 'followTimeline',
               type: 'ui',
-              label: '跟进Timeline',
+              label: '跟进记录',
               admin: {
                 components: {
                   Field: '@/app/admin/components/LeadFollowTimeline',
@@ -163,16 +193,6 @@ export const Leads: CollectionConfig = {
           ],
         },
       ],
-    },
-    // Sidebar fields
-    {
-      name: 'submitterOpenId',
-      type: 'text',
-      label: '提交用户 OpenID',
-      admin: {
-        readOnly: true,
-        position: 'sidebar',
-      },
     },
     {
       name: 'status',
@@ -193,6 +213,7 @@ export const Leads: CollectionConfig = {
       required: true,
       admin: {
         position: 'sidebar',
+        description: '更新客户跟进阶段，用户可在小程序「我的咨询记录」中查看。',
       },
     },
     {
@@ -205,20 +226,12 @@ export const Leads: CollectionConfig = {
       },
     },
     {
-      name: 'projectTitle',
-      type: 'text',
-      label: '关联项目标题',
-      admin: {
-        readOnly: true,
-        position: 'sidebar',
-      },
-    },
-    {
       name: 'owner',
       type: 'text',
       label: '跟进负责人',
       admin: {
         position: 'sidebar',
+        description: '填写负责跟进的顾问姓名，便于团队协作。',
       },
     },
     {
@@ -227,6 +240,10 @@ export const Leads: CollectionConfig = {
       label: '下次跟进时间',
       admin: {
         position: 'sidebar',
+        description: '添加跟进记录时可自动同步；也可在此手动调整。',
+        date: {
+          pickerAppearance: 'dayAndTime',
+        },
       },
     },
     {
@@ -235,6 +252,7 @@ export const Leads: CollectionConfig = {
       label: '成交金额/服务费 (元)',
       admin: {
         position: 'sidebar',
+        condition: data => ['closed', 'invalid'].includes(data?.status),
       },
     },
     {
@@ -243,6 +261,7 @@ export const Leads: CollectionConfig = {
       label: '流失/失败原因',
       admin: {
         position: 'sidebar',
+        condition: data => ['closed', 'invalid', 'paused'].includes(data?.status),
       },
     },
   ],

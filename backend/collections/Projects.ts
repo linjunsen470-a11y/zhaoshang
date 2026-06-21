@@ -1,20 +1,40 @@
 import type { CollectionConfig } from 'payload'
+import {
+  ADMIN_GROUPS,
+  BUSINESS_TYPE_OPTIONS,
+  CITY_OPTIONS,
+  DISTRICT_OPTIONS,
+  PROJECT_TYPE_OPTIONS,
+} from './shared/fieldOptions'
 
 export const Projects: CollectionConfig = {
   slug: 'projects',
   labels: {
-    plural: '招商与转让项目',
-    singular: '招商与转让项目',
+    plural: '招商项目',
+    singular: '招商项目',
   },
   admin: {
+    group: ADMIN_GROUPS.operations,
     useAsTitle: 'title',
-    defaultColumns: ['title', 'opportunityType', 'status', 'auditStatus', 'district'],
+    defaultColumns: ['title', 'opportunityType', 'status', 'auditStatus', 'district', 'isRecommended', 'updatedAt'],
+    description: '管理小程序展示的招商铺位与转让项目。上线前请确认审核状态为「已通过」。',
+    listSearchableFields: ['title', 'schoolName', 'schoolAlias', 'district', 'addressText'],
   },
   access: {
     read: () => true,
     create: ({ req: { user } }) => !!user,
     update: ({ req: { user } }) => !!user,
     delete: ({ req: { user } }) => !!user,
+  },
+  hooks: {
+    beforeChange: [
+      ({ data }) => {
+        if (data?.status === 'online' && data?.auditStatus && data.auditStatus !== 'approved') {
+          throw new Error('审核未通过的项目不能设为「开放中」，请先将审核状态改为「已通过」。')
+        }
+        return data
+      },
+    ],
   },
   fields: [
     {
@@ -30,7 +50,18 @@ export const Projects: CollectionConfig = {
       tabs: [
         {
           label: '基础信息',
+          description: '标题、位置、学校与封面图。封面图会显示在小程序列表和详情页顶部。',
           fields: [
+            {
+              name: 'coverImage',
+              type: 'upload',
+              relationTo: 'media',
+              label: '封面图',
+              required: true,
+              admin: {
+                description: '建议上传横图，比例 4:3 或 16:9。',
+              },
+            },
             {
               type: 'row',
               fields: [
@@ -58,18 +89,27 @@ export const Projects: CollectionConfig = {
               fields: [
                 {
                   name: 'city',
-                  type: 'text',
+                  type: 'select',
                   label: '城市',
+                  defaultValue: '广州',
+                  options: CITY_OPTIONS,
                 },
                 {
                   name: 'district',
-                  type: 'text',
+                  type: 'select',
                   label: '区域/区县',
+                  options: DISTRICT_OPTIONS,
+                  admin: {
+                    description: '与小程序「找铺」筛选一致，请从列表中选择。',
+                  },
                 },
                 {
                   name: 'addressText',
                   type: 'text',
                   label: '详细地址',
+                  admin: {
+                    placeholder: '例如：广州华商学院荔湖校区第一食堂二楼 A05 档口',
+                  },
                 },
               ],
             },
@@ -85,6 +125,9 @@ export const Projects: CollectionConfig = {
                   name: 'schoolAlias',
                   type: 'text',
                   label: '学校简称',
+                  admin: {
+                    placeholder: '例如：华商学院',
+                  },
                 },
                 {
                   name: 'showFullSchoolName',
@@ -98,15 +141,7 @@ export const Projects: CollectionConfig = {
               name: 'projectType',
               type: 'select',
               label: '项目类型',
-              options: [
-                { label: '食堂档口', value: '食堂档口' },
-                { label: '校园商业街', value: '校园商业街' },
-                { label: '校内铺位', value: '校内铺位' },
-                { label: '校外临校铺位', value: '校外临校铺位' },
-                { label: '校园服务点', value: '校园服务点' },
-                { label: '店铺转让', value: '店铺转让' },
-                { label: '其他', value: '其他' },
-              ],
+              options: PROJECT_TYPE_OPTIONS,
               required: true,
             },
           ],
@@ -121,41 +156,47 @@ export const Projects: CollectionConfig = {
                   name: 'areaText',
                   type: 'text',
                   label: '面积',
+                  admin: {
+                    placeholder: '例如：15m²',
+                  },
                 },
                 {
                   name: 'feeText',
                   type: 'text',
                   label: '费用说明',
+                  admin: {
+                    placeholder: '例如：3万元/年，另收 2% 管理费',
+                  },
                 },
               ],
             },
             {
               name: 'suitableBusiness',
-              type: 'text',
+              type: 'select',
               hasMany: true,
-              label: '适合业态 (敲击回车可添加多个)',
+              label: '适合业态',
+              options: BUSINESS_TYPE_OPTIONS,
             },
             {
               name: 'unsuitableBusiness',
-              type: 'text',
+              type: 'select',
               hasMany: true,
-              label: '不适合业态 (敲击回车可添加多个)',
+              label: '不适合业态',
+              options: BUSINESS_TYPE_OPTIONS,
             },
             {
               name: 'highlights',
               type: 'text',
               hasMany: true,
-              label: '项目亮点 (敲击回车可添加多个)',
+              label: '项目亮点',
+              admin: {
+                description: '输入一条后按回车继续添加。',
+              },
             },
             {
               name: 'cooperationMode',
               type: 'textarea',
               label: '合作方式',
-            },
-            {
-              name: 'advisorTips',
-              type: 'textarea',
-              label: '顾问提示',
             },
             {
               name: 'customerInfo',
@@ -186,43 +227,54 @@ export const Projects: CollectionConfig = {
           ],
         },
         {
-          label: '配套与交通',
+          label: '内部备注',
+          description: '以下字段仅供后台内部参考，当前小程序详情页不会展示。',
           fields: [
+            {
+              name: 'advisorTips',
+              type: 'textarea',
+              label: '顾问提示',
+              admin: {
+                description: '内部备忘，小程序端暂不展示。',
+              },
+            },
             {
               name: 'trafficTags',
               type: 'text',
               hasMany: true,
-              label: '人流/位置标签 (敲击回车可添加多个)',
+              label: '人流/位置标签',
+              admin: {
+                description: '内部标签，小程序端暂不展示。',
+              },
             },
             {
               name: 'facilityTags',
               type: 'text',
               hasMany: true,
-              label: '设施条件标签 (敲击回车可添加多个)',
+              label: '设施条件标签',
+              admin: {
+                description: '内部标签，小程序端暂不展示。',
+              },
             },
           ],
         },
         {
-          label: '媒体图片',
+          label: '详情图',
           fields: [
-            {
-              name: 'coverImage',
-              type: 'upload',
-              relationTo: 'media',
-              label: '封面图',
-            },
             {
               name: 'images',
               type: 'upload',
               relationTo: 'media',
               hasMany: true,
-              label: '详情图',
+              label: '详情轮播图',
+              admin: {
+                description: '上传多张实景图，将显示在小程序详情页轮播区域。',
+              },
             },
           ],
         },
       ],
     },
-    // Sidebar fields
     {
       name: 'status',
       type: 'select',
@@ -238,6 +290,7 @@ export const Projects: CollectionConfig = {
       required: true,
       admin: {
         position: 'sidebar',
+        description: '控制小程序是否展示及展示样式。设为「开放中」前需审核通过。',
       },
     },
     {
@@ -249,10 +302,11 @@ export const Projects: CollectionConfig = {
         { label: '已通过', value: 'approved' },
         { label: '已拒绝', value: 'rejected' },
       ],
-      defaultValue: 'approved',
+      defaultValue: 'pending',
       required: true,
       admin: {
         position: 'sidebar',
+        description: '内容审核流程。「已通过」后才可上线为「开放中」。',
       },
     },
     {
@@ -262,15 +316,17 @@ export const Projects: CollectionConfig = {
       label: '重点推荐',
       admin: {
         position: 'sidebar',
+        description: '勾选后出现在小程序首页「重点推荐」区域。',
       },
     },
     {
       name: 'sort',
       type: 'number',
       defaultValue: 0,
-      label: '排序权重 (越大越靠前)',
+      label: '排序权重',
       admin: {
         position: 'sidebar',
+        description: '数值越大越靠前，相同权重按更新时间排序。',
       },
     },
     {
@@ -279,6 +335,7 @@ export const Projects: CollectionConfig = {
       label: '内部备注',
       admin: {
         position: 'sidebar',
+        description: '仅后台可见，不会展示给用户。',
       },
     },
   ],
