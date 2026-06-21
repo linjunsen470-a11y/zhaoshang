@@ -7,12 +7,12 @@ Page({
       { id: 'find', name: '找校园铺位', desc: '食堂档口/商业街/服务点', icon: '🏫', action: 'list' },
       { id: 'transfer', name: '委托转让', desc: '退店换店，平台撮合', icon: '🔁', action: 'transfer' },
       { id: 'equipment', name: '买卖设备', desc: '餐饮设备求购/回收', icon: '🧊', action: 'equipment' },
-      { id: 'budget', name: '开店测算', desc: '轻量预算评估', icon: '🧮', action: 'budget' }
+      { id: 'budget', name: '开店测算', desc: '轻量预算评估', icon: '💡', action: 'budget' }
     ],
     categories: [
-      { id: 'cat1', name: '食堂档口', icon: '🍱', type: 'projectType', val: '食堂档口' },
-      { id: 'cat2', name: '校园商业街', icon: '🏬', type: 'projectType', val: '校园商业街' },
-      { id: 'cat3', name: '小吃快餐', icon: '🍜', type: 'business', val: '小吃' },
+      { id: 'cat1', name: '食堂档口', icon: '🍜', type: 'projectType', val: '食堂档口' },
+      { id: 'cat2', name: '商业街', icon: '🏬', type: 'projectType', val: '校园商业街' },
+      { id: 'cat3', name: '小吃快餐', icon: '🍔', type: 'business', val: '小吃' },
       { id: 'cat4', name: '奶茶咖啡', icon: '🥤', type: 'business', val: '奶茶' },
       { id: 'cat5', name: '便利零售', icon: '🛒', type: 'business', val: '便利店' },
       { id: 'cat6', name: '店铺转让', icon: '🔁', type: 'opportunityType', val: 'transfer' },
@@ -51,11 +51,11 @@ Page({
     api.getProjects({ public: true })
       .then(projects => {
         const favs = wx.getStorageSync('favorites') || [];
-        const activeProjects = projects.filter(p => p.status !== 'offline' && p.status !== 'draft');
+        const activeProjects = (projects || []).filter(p => p.status !== 'offline' && p.status !== 'draft');
         activeProjects.sort((a, b) => b.createdAt - a.createdAt);
 
         this.setData({
-          recommendedList: projects
+          recommendedList: (projects || [])
             .filter(p => p.isRecommended && p.status !== 'offline')
             .map(p => ({ ...p, isFav: favs.includes(p.id) })),
           latestList: activeProjects.slice(0, 4).map(p => ({ ...p, isFav: favs.includes(p.id) })),

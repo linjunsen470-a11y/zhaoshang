@@ -6,25 +6,24 @@ Page({
     project: null,
     isFavorited: false,
     loading: true,
-    formattedUpdateTime: ''
+    formattedUpdateTime: '',
+    currentImageIndex: 0
   },
 
-  onLoad: function (options) {
+  onLoad(options) {
     const id = options.id;
     this.setData({ projectId: id });
     this.loadDetail(id);
     this.checkFavoriteStatus(id);
   },
 
-  onShow: function () {
-    // 每次显示时重新检查一下，以防在收藏页面删除了收藏，返回时状态没同步
+  onShow() {
     if (this.data.projectId) {
       this.checkFavoriteStatus(this.data.projectId);
     }
   },
 
-  // 加载项目详情
-  loadDetail: function (id) {
+  loadDetail(id) {
     this.setData({ loading: true });
     api.getProjectDetail(id)
       .then(project => {
@@ -33,20 +32,21 @@ Page({
             title: '提示',
             content: '项目已下架或不存在',
             showCancel: false,
-            success: () => {
-              wx.navigateBack();
-            }
+            success: () => wx.navigateBack()
           });
           return;
         }
 
-        // 格式化更新时间
-        const date = new Date(project.updatedAt);
+        const images = Array.isArray(project.images) && project.images.length
+          ? project.images
+          : (project.coverImage ? [project.coverImage] : []);
+        const date = new Date(project.updatedAt || Date.now());
         const formattedDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
         this.setData({
-          project: project,
+          project: { ...project, images },
           formattedUpdateTime: formattedDate,
+          currentImageIndex: 0,
           loading: false
         });
       })
@@ -57,27 +57,31 @@ Page({
       });
   },
 
-  // 检查收藏状态
-  checkFavoriteStatus: function (id) {
+  checkFavoriteStatus(id) {
     const favs = wx.getStorageSync('favorites') || [];
-    this.setData({
-      isFavorited: favs.includes(id)
-    });
+    this.setData({ isFavorited: favs.includes(id) });
   },
 
-  // 切换收藏状态
-  onToggleFavorite: function () {
+  onSwiperChange(e) {
+    this.setData({ currentImageIndex: e.detail.current || 0 });
+  },
+
+  onPreviewImage(e) {
+    const urls = (this.data.project && this.data.project.images) || [];
+    const current = e.currentTarget.dataset.src || urls[this.data.currentImageIndex];
+    if (!urls.length) return;
+    wx.previewImage({ urls, current });
+  },
+
+  onToggleFavorite() {
     const id = this.data.projectId;
     let favs = wx.getStorageSync('favorites') || [];
     let isFav = false;
 
     if (favs.includes(id)) {
-      // 取消收藏
       favs = favs.filter(item => item !== id);
-      isFav = false;
       wx.showToast({ title: '已取消收藏', icon: 'success' });
     } else {
-      // 收藏
       favs.push(id);
       isFav = true;
       wx.showToast({ title: '收藏成功', icon: 'success' });
@@ -87,28 +91,21 @@ Page({
     this.setData({ isFavorited: isFav });
   },
 
-  // 拨打顾问电话（统一反馈）
-  onCallAdvisor: function () {
+  onCallAdvisor() {
     getApp().callAdvisor('18888888888');
   },
 
-  // 我要咨询跳转
-  onGoToConsult: function () {
+  onGoToConsult() {
     if (this.data.project) {
-      wx.navigateTo({
-        url: `/pages/apply/apply?projectId=${this.data.projectId}`
-      });
+      wx.navigateTo({ url: `/pages/apply/apply?projectId=${this.data.projectId}` });
     }
   },
 
-  // 显式分享（open-type 也会触发 onShareAppMessage）
-  onShareTap: function () {
-    // 提示用户使用右上角或点击分享按钮
+  onShareTap() {
     wx.showToast({ title: '请点击右上角分享或使用下方按钮', icon: 'none' });
   },
 
-  // 复制地址
-  onCopyAddress: function () {
+  onCopyAddress() {
     const p = this.data.project;
     const text = p.addressText || `${p.city || ''}${p.district || ''}${p.schoolName || ''}`;
     if (!text) {
@@ -121,8 +118,7 @@ Page({
     });
   },
 
-  // 复制顾问电话
-  onCopyPhone: function () {
+  onCopyPhone() {
     const phone = '18888888888';
     wx.setClipboardData({
       data: phone,
@@ -130,10 +126,9 @@ Page({
     });
   },
 
-  // 分享功能
-  onShareAppMessage: function () {
+  onShareAppMessage() {
     return {
-      title: this.data.project ? `校园商铺招商：${this.data.project.title}` : '学校商铺招商宝',
+      title: this.data.project ? `校园商铺招商：${this.data.project.title}` : '学校商铺招商',
       path: `/pages/detail/detail?id=${this.data.projectId}`
     };
   }

@@ -1,169 +1,143 @@
-<!-- pages/list/list.wxml -->
 <view class="container">
-  
-  <!-- 顶部固定搜索及筛选 -->
   <view class="sticky-header">
     <view class="search-section">
       <view class="search-box">
         <icon type="search" size="14" color="#94a3b8" class="search-icon"></icon>
-        <input type="text" placeholder="输入关键字搜索项目..." 
+        <input type="text" placeholder="输入关键词搜索项目..."
                confirm-type="search" bindconfirm="onSearch" bindinput="onSearchInput" value="{{keyword}}" />
-        <text class="clear-btn" wx:if="{{keyword}}" bindtap="onResetFilters">✕</text>
+        <text class="clear-btn" wx:if="{{keyword}}" bindtap="onResetFilters">×</text>
       </view>
     </view>
 
-    <!-- 筛选横条 -->
     <view class="filter-tabs">
-      <view class="filter-tab-item {{selectedDistrict !== '全部' ? 'active-filter' : ''}} {{activeTab === 'district' ? 'tab-open' : ''}}" 
+      <view class="filter-tab-item {{selectedDistrict !== '全部' ? 'active-filter' : ''}} {{activeTab === 'district' ? 'tab-open' : ''}}"
             bindtap="onTabTap" data-tab="district">
         <text class="tab-text ellipsis">{{selectedDistrict === '全部' ? '区域' : selectedDistrict}}</text>
-        <text class="arrow-icon">▼</text>
+        <text class="arrow-icon">▾</text>
       </view>
 
-      <view class="filter-tab-item {{selectedType !== '全部' ? 'active-filter' : ''}} {{activeTab === 'type' ? 'tab-open' : ''}}" 
+      <view class="filter-tab-item {{selectedType !== '全部' ? 'active-filter' : ''}} {{activeTab === 'type' ? 'tab-open' : ''}}"
             bindtap="onTabTap" data-tab="type">
         <text class="tab-text ellipsis">{{selectedType === '全部' ? '类型' : selectedType}}</text>
-        <text class="arrow-icon">▼</text>
+        <text class="arrow-icon">▾</text>
       </view>
 
-      <view class="filter-tab-item {{selectedBudget !== '全部' ? 'active-filter' : ''}} {{activeTab === 'budget' ? 'tab-open' : ''}}" 
+      <view class="filter-tab-item {{selectedBudget !== '全部' ? 'active-filter' : ''}} {{activeTab === 'budget' ? 'tab-open' : ''}}"
             bindtap="onTabTap" data-tab="budget">
         <text class="tab-text ellipsis">{{selectedBudget === '全部' ? '预算' : selectedBudget}}</text>
-        <text class="arrow-icon">▼</text>
+        <text class="arrow-icon">▾</text>
       </view>
 
-      <view class="filter-tab-item {{selectedBusiness !== '全部' ? 'active-filter' : ''}} {{activeTab === 'business' ? 'tab-open' : ''}}" 
+      <view class="filter-tab-item {{selectedBusiness !== '全部' ? 'active-filter' : ''}} {{activeTab === 'business' ? 'tab-open' : ''}}"
             bindtap="onTabTap" data-tab="business">
         <text class="tab-text ellipsis">{{selectedBusiness === '全部' ? '业态' : selectedBusiness}}</text>
-        <text class="arrow-icon">▼</text>
+        <text class="arrow-icon">▾</text>
       </view>
 
-      <view class="filter-tab-item {{selectedStatus !== '全部' ? 'active-filter' : ''}} {{activeTab === 'status' ? 'tab-open' : ''}}" 
+      <view class="filter-tab-item {{selectedStatus !== '全部' ? 'active-filter' : ''}} {{activeTab === 'status' ? 'tab-open' : ''}}"
             bindtap="onTabTap" data-tab="status">
         <text class="tab-text ellipsis">状态</text>
-        <text class="arrow-icon">▼</text>
+        <text class="arrow-icon">▾</text>
       </view>
     </view>
   </view>
 
-  <!-- 筛选项下拉面板抽屉 -->
   <view class="filter-drawer-container" wx:if="{{activeTab}}">
-    <!-- 背景半透明遮罩 -->
     <view class="drawer-backdrop" bindtap="closeDrawer"></view>
-    
-    <!-- 区域选项 -->
+
     <scroll-view scroll-y class="drawer-content" wx:if="{{activeTab === 'district'}}">
-      <view class="option-item {{selectedDistrict === item ? 'selected-option' : ''}}" 
+      <view class="option-item {{selectedDistrict === item ? 'selected-option' : ''}}"
             wx:for="{{districts}}" wx:key="*this" bindtap="onSelectOption" data-field="district" data-val="{{item}}">
         {{item}}
       </view>
     </scroll-view>
 
-    <!-- 类型选项 -->
     <scroll-view scroll-y class="drawer-content" wx:if="{{activeTab === 'type'}}">
-      <view class="option-item {{selectedType === item ? 'selected-option' : ''}}" 
+      <view class="option-item {{selectedType === item ? 'selected-option' : ''}}"
             wx:for="{{types}}" wx:key="*this" bindtap="onSelectOption" data-field="type" data-val="{{item}}">
         {{item}}
       </view>
     </scroll-view>
 
-    <!-- 预算选项 -->
     <scroll-view scroll-y class="drawer-content" wx:if="{{activeTab === 'budget'}}">
-      <view class="option-item {{selectedBudget === item ? 'selected-option' : ''}}" 
+      <view class="option-item {{selectedBudget === item ? 'selected-option' : ''}}"
             wx:for="{{budgets}}" wx:key="*this" bindtap="onSelectOption" data-field="budget" data-val="{{item}}">
         {{item}}
       </view>
     </scroll-view>
 
-    <!-- 业态选项 -->
     <scroll-view scroll-y class="drawer-content" wx:if="{{activeTab === 'business'}}">
-      <view class="option-item {{selectedBusiness === item ? 'selected-option' : ''}}" 
+      <view class="option-item {{selectedBusiness === item ? 'selected-option' : ''}}"
             wx:for="{{businesses}}" wx:key="*this" bindtap="onSelectOption" data-field="business" data-val="{{item}}">
         {{item}}
       </view>
     </scroll-view>
 
-    <!-- 状态选项 -->
     <scroll-view scroll-y class="drawer-content" wx:if="{{activeTab === 'status'}}">
-      <view class="option-item {{selectedStatus === item.val ? 'selected-option' : ''}}" 
+      <view class="option-item {{selectedStatus === item.val ? 'selected-option' : ''}}"
             wx:for="{{statuses}}" wx:key="val" bindtap="onSelectOption" data-field="status" data-val="{{item.val}}">
         {{item.name}}
       </view>
     </scroll-view>
   </view>
 
-  <!-- 列表主体内容 -->
   <view class="list-body">
-    
-    <!-- 筛选提示条 -->
     <view class="filter-tip flex justify-between align-center" wx:if="{{selectedDistrict !== '全部' || selectedType !== '全部' || selectedBudget !== '全部' || selectedBusiness !== '全部' || selectedStatus !== '全部' || keyword || isRecommendedOnly || isFavoritesOnly}}">
       <text class="tip-text">已启用筛选条件</text>
       <text class="reset-btn-link" bindtap="onResetFilters">重置筛选</text>
     </view>
 
-    <!-- 加载中 -->
     <view class="loading-state" wx:if="{{loading}}">
       <view class="spinner"></view>
       <text>正在加载招商铺位...</text>
     </view>
 
-    <!-- 项目列表 -->
     <block wx:else>
       <view class="list-container" wx:if="{{projectList.length > 0}}">
         <view class="project-card card" wx:for="{{projectList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}">
-          
           <view class="card-top flex" style="position:relative;">
             <view style="position:relative; flex-shrink:0;">
               <image src="{{item.coverImage}}" mode="aspectFill" class="project-img" />
-              <!-- 列表快捷收藏 -->
-              <view class="fav-mini" catchtap="onToggleFavInList" data-id="{{item.id}}" 
+              <view class="fav-mini" catchtap="onToggleFavInList" data-id="{{item.id}}"
                     style="position:absolute; top:8rpx; right:8rpx; font-size:28rpx; line-height:1; z-index:5; padding:4rpx 6rpx; background:rgba(255,255,255,0.9); border-radius:50%;">
                 {{item.isFav ? '★' : '☆'}}
               </view>
             </view>
-            
+
             <view class="project-main flex-1 flex flex-col justify-between">
               <view>
-                <!-- 标题 -->
                 <view class="project-title">{{item.title}}</view>
-                
-                <!-- 状态与属性 -->
                 <view class="project-meta flex align-center">
                   <view class="badge badge-online" wx:if="{{item.status === 'online'}}">招商中</view>
                   <view class="badge badge-coming" wx:elif="{{item.status === 'coming'}}">即将开放</view>
-                  <view class="badge badge-full" wx:elif="{{item.status === 'full'}}">已满租</view>
+                  <view class="badge badge-full" wx:elif="{{item.status === 'full'}}">已满/已转</view>
                   <text class="school-tag ellipsis">{{item.schoolAlias || item.schoolName}}</text>
                 </view>
               </view>
 
-              <!-- 面积与费用 -->
               <view class="price-area-row flex align-center justify-between">
-                <text class="area-val">📐 {{item.areaText}}</text>
+                <text class="area-val">面积 {{item.areaText}}</text>
                 <text class="price-val">{{item.feeText}}</text>
               </view>
             </view>
           </view>
 
-          <!-- 适合业态与更新时间 -->
           <view class="card-bottom flex align-center justify-between">
             <view class="business-tags flex-1 ellipsis">
               <text class="suit-label">适合：</text>
               <text class="biz-tag-inline" wx:for="{{item.suitableBusiness}}" wx:for-item="biz" wx:key="*this">{{biz}}</text>
             </view>
-            <view class="update-time">📍 {{item.district}}</view>
+            <view class="update-time">{{item.district}}</view>
           </view>
-
         </view>
       </view>
 
-      <!-- 空数据状态 -->
       <view class="empty-state" wx:else>
-        <text class="empty-icon">📂</text>
+        <text class="empty-icon">□</text>
         <text class="empty-title">没有找到匹配的招商项目</text>
-        <text class="empty-desc">您可以尝试缩短搜索词，或重置筛选条件</text>
+        <text class="empty-desc">可以尝试缩短搜索词，或重置筛选条件</text>
         <button class="btn btn-primary btn-sm reset-btn" bindtap="onResetFilters">重置筛选</button>
       </view>
     </block>
   </view>
-
 </view>

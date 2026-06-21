@@ -7,6 +7,10 @@
   font-size: 26rpx;
 }
 
+.phone-tip + .phone-tip {
+  margin-top: 8rpx;
+}
+
 .phone-label {
   color: #64748b;
 }
@@ -100,6 +104,26 @@
   color: #475569;
   line-height: 1.4;
   word-break: break-all;
+}
+
+.detail-line {
+  color: #475569;
+  line-height: 1.5;
+  margin-bottom: 6rpx;
+}
+
+.lead-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
+  margin-top: 16rpx;
+}
+
+.lead-attachment-img {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 8rpx;
+  background: #e2e8f0;
 }
 
 /* 底部编号和时间 */

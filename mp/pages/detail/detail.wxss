@@ -1,7 +1,5 @@
-/* pages/detail/detail.wxss */
-
 .container {
-  padding-bottom: 160rpx; /* 留出底部动作条 + 辅助操作空间 */
+  padding-bottom: 160rpx;
 }
 
 .loading-layout {
@@ -12,7 +10,13 @@
   background-color: #f8fafc;
 }
 
-/* 轮播图 */
+.swiper-wrap {
+  position: relative;
+  width: 100%;
+  height: 480rpx;
+  background-color: #e2e8f0;
+}
+
 .detail-swiper {
   width: 100%;
   height: 480rpx;
@@ -25,12 +29,23 @@
   object-fit: cover;
 }
 
-/* 详情卡片内容区 */
+.swiper-count {
+  position: absolute;
+  right: 24rpx;
+  bottom: 24rpx;
+  padding: 8rpx 18rpx;
+  border-radius: 999rpx;
+  background: rgba(15, 23, 42, 0.72);
+  color: #ffffff;
+  font-size: 22rpx;
+  line-height: 1;
+  z-index: 2;
+}
+
 .detail-content {
   padding: 24rpx 30rpx;
 }
 
-/* 大标题卡片 */
 .title-card {
   padding: 30rpx;
 }
@@ -51,7 +66,6 @@
   line-height: 1.4;
 }
 
-/* 标题指示线 */
 .card-section-title {
   font-size: 28rpx;
   font-weight: 700;
@@ -71,7 +85,6 @@
   border-left-color: #ef4444;
 }
 
-/* 参数表格 */
 .params-table {
   display: flex;
   flex-direction: column;
@@ -110,7 +123,6 @@
   font-weight: 700;
 }
 
-/* 适合/不适合业态标签 */
 .biz-tag-container {
   padding-left: 10rpx;
 }
@@ -136,7 +148,6 @@
   border: 1rpx solid #fee2e2;
 }
 
-/* 亮点板块 */
 .highlight-item {
   margin-bottom: 16rpx;
   padding-left: 10rpx;
@@ -155,7 +166,6 @@
   font-weight: 500;
 }
 
-/* 文本段落板块 */
 .desc-text {
   font-size: 26rpx;
   color: #475569;
@@ -167,7 +177,6 @@
   height: 90rpx;
 }
 
-/* 底部固定动作条 */
 .bottom-action-bar {
   position: fixed;
   bottom: 0;
@@ -181,7 +190,6 @@
   z-index: 100;
 }
 
-/* 收藏图标 */
 .favorite-action {
   width: 100rpx;
   margin-right: 20rpx;

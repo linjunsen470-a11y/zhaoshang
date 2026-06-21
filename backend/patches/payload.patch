@@ -1,0 +1,13 @@
+diff --git a/dist/bin/loadEnv.js b/dist/bin/loadEnv.js
+index b61ecc1684f0b686fa8bbcefa68b5ed825c09420..08141e56a7aa919f887beb3ce68ccfaadf799e58 100644
+--- a/dist/bin/loadEnv.js
++++ b/dist/bin/loadEnv.js
+@@ -1,6 +1,6 @@
+-import nextEnvImport from '@next/env';
++import * as nextEnvImport from '@next/env';
+ import { findUpSync } from '../utilities/findUp.js';
+-const { loadEnvConfig } = nextEnvImport;
++const loadEnvConfig = nextEnvImport.loadEnvConfig || (nextEnvImport.default ? nextEnvImport.default.loadEnvConfig : undefined);
+ /**
+  * Try to find user's env files and load it. Uses the same algorithm next.js uses to parse env files, meaning this also supports .env.local, .env.development, .env.production, etc.
+  */ export function loadEnv(path) {

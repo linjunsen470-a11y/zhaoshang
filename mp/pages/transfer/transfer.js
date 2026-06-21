@@ -1,4 +1,5 @@
 const api = require('../../services/api.js');
+const upload = require('../../services/upload.js');
 
 Page({
   data: {
@@ -11,6 +12,8 @@ Page({
     remainingTerm: '',
     includesEquipment: true,
     remark: '',
+    attachments: [],
+    uploadingImages: false,
     submitting: false
   },
 
@@ -34,9 +37,38 @@ Page({
   onInputRemark(e) { this.setData({ remark: e.detail.value.trim() }); },
   onEquipmentIncludedChange(e) { this.setData({ includesEquipment: e.detail.value === 'true' }); },
 
-  onSubmitForm() {
-    const { name, phone, locationText, businessType, feeText, transferFee, remainingTerm, includesEquipment, remark } = this.data;
+  async onChooseImages() {
+    if (this.data.uploadingImages) return;
+    this.setData({ uploadingImages: true });
+    try {
+      const files = await upload.pickCompressAndUpload(this.data.attachments);
+      this.setData({ attachments: this.data.attachments.concat(files) });
+    } catch (err) {
+      console.error(err);
+      wx.showToast({ title: '图片上传失败', icon: 'none' });
+    } finally {
+      this.setData({ uploadingImages: false });
+    }
+  },
 
+  onRemoveImage(e) {
+    const index = e.currentTarget.dataset.index;
+    this.setData({ attachments: this.data.attachments.filter((_, i) => i !== index) });
+  },
+
+  onPreviewAttachment(e) {
+    const current = e.currentTarget.dataset.url;
+    const urls = this.data.attachments.map(item => item.url || item.localPath).filter(Boolean);
+    if (urls.length) wx.previewImage({ urls, current });
+  },
+
+  onSubmitForm() {
+    const { name, phone, locationText, businessType, feeText, transferFee, remainingTerm, includesEquipment, remark, attachments, uploadingImages } = this.data;
+
+    if (uploadingImages) {
+      wx.showToast({ title: '图片仍在上传', icon: 'none' });
+      return;
+    }
     if (!name) {
       wx.showToast({ title: '请输入称呼', icon: 'none' });
       return;
@@ -54,15 +86,6 @@ Page({
       return;
     }
 
-    const combinedRemark = [
-      `店铺位置：${locationText}`,
-      feeText ? `面积与费用：${feeText}` : '',
-      transferFee ? `转让费预期：${transferFee}` : '',
-      remainingTerm ? `剩余合同期：${remainingTerm}` : '',
-      `是否含设备：${includesEquipment ? '含设备' : '不含/待定'}`,
-      remark ? `补充说明：${remark}` : ''
-    ].filter(Boolean).join('\n');
-
     this.setData({ submitting: true });
     api.submitTransfer({
       name,
@@ -71,7 +94,15 @@ Page({
       budgetRange: transferFee || '待评估',
       regionPreference: locationText,
       sourceChannel: 'mini_program',
-      remark: combinedRemark
+      remark: remark || undefined,
+      transferDetails: {
+        locationText,
+        feeText,
+        transferFee,
+        remainingTerm,
+        includesEquipment
+      },
+      attachments: attachments.map(item => item.id)
     }).then(res => {
       const userInfo = wx.getStorageSync('userInfo') || {};
       userInfo.nickname = name;

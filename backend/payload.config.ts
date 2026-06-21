@@ -28,7 +28,11 @@ export default buildConfig({
     user: 'users',
     importMap: {
       baseDir: dirname,
+      importMapFile: path.resolve(dirname, 'app/admin/[[...segments]]/importMap.js'),
     },
+  },
+  routes: {
+    api: '/api/payload',
   },
   collections: [
     Projects,
@@ -44,6 +48,7 @@ export default buildConfig({
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: postgresAdapter({
+    push: process.env.PAYLOAD_DB_PUSH === 'true',
     pool: {
       connectionString: process.env.DATABASE_URI || 'postgres://payload:payload@localhost:5432/payload',
     },

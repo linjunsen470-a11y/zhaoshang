@@ -12,8 +12,7 @@ Page({
     editPhone: ''
   },
 
-  onShow: function () {
-    // 每次页面展示，拉取最新的用户信息
+  onShow() {
     const localInfo = wx.getStorageSync('userInfo');
     if (localInfo) {
       this.setData({
@@ -24,14 +23,11 @@ Page({
         }
       });
     } else {
-      this.setData({
-        userInfo: app.globalData.userInfo
-      });
+      this.setData({ userInfo: app.globalData.userInfo });
     }
   },
 
-  // 触发修改信息弹窗
-  onEditProfile: function () {
+  onEditProfile() {
     this.setData({
       showEditModal: true,
       editNickname: this.data.userInfo.nickname,
@@ -39,21 +35,21 @@ Page({
     });
   },
 
-  onNicknameInput: function (e) {
+  onNicknameInput(e) {
     this.setData({ editNickname: e.detail.value.trim() });
   },
 
-  onPhoneInput: function (e) {
+  onPhoneInput(e) {
     this.setData({ editPhone: e.detail.value.trim() });
   },
 
-  onCancelEdit: function () {
+  onCancelEdit() {
     this.setData({ showEditModal: false });
   },
 
-  onSaveEdit: function () {
+  onSaveEdit() {
     const { editNickname, editPhone } = this.data;
-    
+
     if (!editNickname) {
       wx.showToast({ title: '昵称不能为空', icon: 'none' });
       return;
@@ -84,50 +80,39 @@ Page({
     wx.showToast({ title: '信息更新成功', icon: 'success' });
   },
 
-  // 我的咨询
-  onGoToLeads: function () {
-    wx.navigateTo({
-      url: '/pages/leads/leads'
-    });
+  onGoToLeads() {
+    wx.navigateTo({ url: '/pages/leads/leads' });
   },
 
-  // 我的收藏 (复用项目列表页，传入 favs=true)
-  onGoToFavorites: function () {
+  onGoToFavorites() {
     wx.setStorageSync('pendingListFilter', { favs: true });
-    wx.switchTab({
-      url: '/pages/list/list'
-    });
+    wx.switchTab({ url: '/pages/list/list' });
   },
 
-  // 联系客服（统一反馈）
-  onCallService: function () {
+  onCallService() {
     getApp().callAdvisor('18888888888');
   },
 
-  // 显示关于平台
-  onShowAbout: function () {
+  onShowAbout() {
     wx.showModal({
       title: '关于学校招商宝',
-      content: '学校商铺招商宝是一款专注于高校食堂档口、商业街铺位、校内外服务网点的招商信息展示与意向线索对接平台。版本：v1.0.0',
+      content: '学校商铺招商宝是一款专注于高校食堂档口、商业街铺位、校内外服务网点的信息展示与意向线索对接平台。版本：v1.0.0',
       showCancel: false,
       confirmText: '我知道了'
     });
   },
 
-  // 提示后台管理端入口
-  onShowAdminTip: function () {
+  onShowAdminTip() {
     wx.showModal({
       title: 'Web 管理后台入口',
-      content: '管理端已部署在 PC 浏览器端。请在电脑浏览器上打开以下链接进行管理和跟进：\n\nhttp://localhost:5173/admin/index.html',
+      content: '本地 Mock 后台：http://localhost:5173/admin/index.html\n\nPayload CMS 后台：http://localhost:3000/admin',
       confirmText: '复制链接',
       cancelText: '取消',
       success: (res) => {
         if (res.confirm) {
           wx.setClipboardData({
-            data: 'http://localhost:5173/admin/index.html',
-            success: () => {
-              wx.showToast({ title: '链接已复制', icon: 'success' });
-            }
+            data: 'http://localhost:3000/admin',
+            success: () => wx.showToast({ title: '链接已复制', icon: 'success' })
           });
         }
       }

@@ -1,4 +1,5 @@
 const api = require('../../services/api.js');
+const upload = require('../../services/upload.js');
 
 Page({
   data: {
@@ -12,6 +13,8 @@ Page({
     regionPreference: '',
     hasCampusExperience: false,
     remark: '',
+    attachments: [],
+    uploadingImages: false,
     businesses: ['快餐', '粉面', '小吃', '奶茶', '咖啡', '便利店', '水果', '文具', '打印', '快递', '维修', '洗衣', '其他'],
     budgets: ['5万以内', '5-10万', '10-20万', '20-50万', '50万以上', '暂不确定'],
     businessIndex: -1,
@@ -69,6 +72,32 @@ Page({
     this.setData({ hasCampusExperience: e.detail.value === 'true' });
   },
 
+  async onChooseImages() {
+    if (this.data.uploadingImages) return;
+    this.setData({ uploadingImages: true });
+    try {
+      const files = await upload.pickCompressAndUpload(this.data.attachments);
+      this.setData({ attachments: this.data.attachments.concat(files) });
+    } catch (err) {
+      console.error(err);
+      wx.showToast({ title: '图片上传失败', icon: 'none' });
+    } finally {
+      this.setData({ uploadingImages: false });
+    }
+  },
+
+  onRemoveImage(e) {
+    const index = e.currentTarget.dataset.index;
+    const attachments = this.data.attachments.filter((_, i) => i !== index);
+    this.setData({ attachments });
+  },
+
+  onPreviewAttachment(e) {
+    const current = e.currentTarget.dataset.url;
+    const urls = this.data.attachments.map(item => item.url || item.localPath).filter(Boolean);
+    if (urls.length) wx.previewImage({ urls, current });
+  },
+
   onClearForm() {
     this.setData({
       name: '',
@@ -78,6 +107,7 @@ Page({
       regionPreference: '',
       hasCampusExperience: false,
       remark: '',
+      attachments: [],
       businessIndex: -1,
       budgetIndex: -1
     });
@@ -85,8 +115,12 @@ Page({
   },
 
   onSubmitForm() {
-    const { leadType, name, phone, businessType, budgetRange, projectId, regionPreference, hasCampusExperience, remark } = this.data;
+    const { leadType, name, phone, businessType, budgetRange, projectId, regionPreference, hasCampusExperience, remark, attachments, uploadingImages } = this.data;
 
+    if (uploadingImages) {
+      wx.showToast({ title: '图片仍在上传', icon: 'none' });
+      return;
+    }
     if (!name) {
       wx.showToast({ title: '请输入称呼', icon: 'none' });
       return;
@@ -115,7 +149,8 @@ Page({
       projectId: projectId || undefined,
       regionPreference: regionPreference || undefined,
       hasCampusExperience,
-      remark: remark || undefined
+      remark: remark || undefined,
+      attachments: attachments.map(item => item.id)
     }).then(res => {
       const userInfo = wx.getStorageSync('userInfo') || {};
       userInfo.nickname = name;

@@ -1,4 +1,5 @@
 const api = require('../../services/api.js');
+const upload = require('../../services/upload.js');
 
 Page({
   data: {
@@ -7,9 +8,12 @@ Page({
     phone: '',
     equipmentName: '',
     specText: '',
+    equipmentCondition: '',
     budgetRange: '',
     regionPreference: '',
     remark: '',
+    attachments: [],
+    uploadingImages: false,
     submitting: false
   },
 
@@ -28,13 +32,43 @@ Page({
   onInputPhone(e) { this.setData({ phone: e.detail.value.trim() }); },
   onInputEquipmentName(e) { this.setData({ equipmentName: e.detail.value.trim() }); },
   onInputSpec(e) { this.setData({ specText: e.detail.value.trim() }); },
+  onInputCondition(e) { this.setData({ equipmentCondition: e.detail.value.trim() }); },
   onInputBudget(e) { this.setData({ budgetRange: e.detail.value.trim() }); },
   onInputRegion(e) { this.setData({ regionPreference: e.detail.value.trim() }); },
   onInputRemark(e) { this.setData({ remark: e.detail.value.trim() }); },
 
-  onSubmitForm() {
-    const { leadType, name, phone, equipmentName, specText, budgetRange, regionPreference, remark } = this.data;
+  async onChooseImages() {
+    if (this.data.uploadingImages) return;
+    this.setData({ uploadingImages: true });
+    try {
+      const files = await upload.pickCompressAndUpload(this.data.attachments);
+      this.setData({ attachments: this.data.attachments.concat(files) });
+    } catch (err) {
+      console.error(err);
+      wx.showToast({ title: '图片上传失败', icon: 'none' });
+    } finally {
+      this.setData({ uploadingImages: false });
+    }
+  },
 
+  onRemoveImage(e) {
+    const index = e.currentTarget.dataset.index;
+    this.setData({ attachments: this.data.attachments.filter((_, i) => i !== index) });
+  },
+
+  onPreviewAttachment(e) {
+    const current = e.currentTarget.dataset.url;
+    const urls = this.data.attachments.map(item => item.url || item.localPath).filter(Boolean);
+    if (urls.length) wx.previewImage({ urls, current });
+  },
+
+  onSubmitForm() {
+    const { leadType, name, phone, equipmentName, specText, equipmentCondition, budgetRange, regionPreference, remark, attachments, uploadingImages } = this.data;
+
+    if (uploadingImages) {
+      wx.showToast({ title: '图片仍在上传', icon: 'none' });
+      return;
+    }
     if (!name) {
       wx.showToast({ title: '请输入称呼', icon: 'none' });
       return;
@@ -48,19 +82,6 @@ Page({
       return;
     }
 
-    const typeName = {
-      equipment_sell: '出售设备',
-      equipment_buy: '求购设备',
-      equipment_recycle: '回收咨询'
-    }[leadType];
-    const combinedRemark = [
-      `需求类型：${typeName}`,
-      specText ? `数量/规格：${specText}` : '',
-      budgetRange ? `预算/期望价格：${budgetRange}` : '',
-      regionPreference ? `所在区域：${regionPreference}` : '',
-      remark ? `补充说明：${remark}` : ''
-    ].filter(Boolean).join('\n');
-
     this.setData({ submitting: true });
     api.submitEquipment({
       leadType,
@@ -70,7 +91,14 @@ Page({
       businessType: equipmentName,
       budgetRange: budgetRange || '待评估',
       regionPreference,
-      remark: combinedRemark
+      remark: remark || undefined,
+      equipmentDetails: {
+        equipmentName,
+        specText,
+        equipmentCondition,
+        expectedPrice: budgetRange
+      },
+      attachments: attachments.map(item => item.id)
     }).then(res => {
       const userInfo = wx.getStorageSync('userInfo') || {};
       userInfo.nickname = name;

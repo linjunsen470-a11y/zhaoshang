@@ -5,11 +5,12 @@ App({
       avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
       phone: '13800138000'
     },
-    apiUrl: 'http://127.0.0.1:5173/api',
-    fallbackUrl: 'http://localhost:5173/api',
-    // Demo 模式默认不发起 wx.request，避免微信开发者工具的合法域名校验拦截 localhost/127.0.0.1。
-    // 如需联调本地 mock API，可改为 false，并在开发者工具中关闭“校验合法域名”。
-    useLocalMock: true
+    apiUrl: 'http://127.0.0.1:3000/api',
+    fallbackUrl: 'http://127.0.0.1:5173/api',
+    devOpenId: 'dev-openid-local',
+    // true: use built-in mock data without network.
+    // false: request Payload/Next compatible API at apiUrl and use auth token.
+    useLocalMock: false
   },
 
   onLaunch() {

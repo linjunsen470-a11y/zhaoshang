@@ -1,141 +1,289 @@
-# 校园商铺招商平台 PRD
+# 校园商铺招商小程序 PRD
 
 ## 1. 项目定位
 
-本项目从“学校商铺招商小程序”升级为“校园餐饮/商铺资源撮合平台”。平台围绕商户从找铺、评估、入驻、转让退出、设备处理的流程，提供小程序、网站、mock 管理后台和 Payload CMS 后台。
+本项目是一个“校园商铺资源撮合平台”，服务对象包括想进入校园经营的商户、需要转让/退出的存量商户，以及有餐饮设备供需的商户。产品形态包括微信小程序、Payload CMS 后台、Next.js 网站/API 和本地 mock 演示模式。
 
 核心原则：
 
-- 主营收方向优先：招商铺位、店铺委托转让、餐饮设备供需撮合。
-- 辅助模块轻量化：开店预算测算、铺位评估、入驻清单作为获客和信任建设，不做复杂流程。
-- 学生兼职派单不进入本系统。
-- 网站与小程序共用机会数据、线索数据和跟进状态。
+- 主业务优先：招商铺位、店铺委托转让、餐饮设备供需撮合。
+- 线索驱动：第一阶段不做在线交易、担保、聊天和复杂履约，只沉淀可跟进线索。
+- 后台可运营：项目、线索、跟进记录和图片素材统一进入 Payload CMS。
+- 本地可联调：支持微信 openid 生产链路，也支持 `devOpenId` 本地调试链路。
 
-## 2. 业务模块
+## 2. 用户角色
 
-### 2.1 招商铺位
+- 找铺商户：浏览项目，提交找铺咨询。
+- 转让商户：提交店铺转让委托和店铺图片。
+- 设备供需商户：提交设备出售、求购、回收需求和设备图片。
+- 招商顾问：在 CMS 中查看线索、补充跟进记录、更新状态。
+- 平台管理员：维护项目、媒体、线索和后台用户。
 
-面向想进入校园经营的餐饮、零售、服务类商户。
+## 3. 小程序功能
 
-主要能力：
+### 3.1 首页
 
-- 展示食堂档口、校园商业街、校内铺位、校外临校铺位、校园服务点。
-- 支持按区域、学校、项目类型、预算、适合业态、状态筛选。
-- 项目详情展示面积、费用、学校、地址、适合/不适合业态、项目亮点、合作方式、看铺安排。
-- 增加轻量评估信息：人流/位置标签、设施条件标签、顾问提示。
-- 用户可提交找铺需求，形成 `leasing` 类型线索。
-
-### 2.2 店铺委托转让
-
-面向希望退出、换店或处理存量店铺的校园商户。
-
-主要能力：
-
-- 商户提交店铺位置、当前业态、面积费用、转让费预期、剩余合同期、是否含设备、补充说明。
-- 后台人工审核后，可选择公开展示或内部定向撮合。
-- 转让机会使用 `opportunityType=transfer` 管理。
-- 转让需求形成 `leadType=transfer` 线索。
-
-注意事项：
-
-- 校园店铺和食堂档口可能受合同、校方准入、经营主体变更限制影响。
-- 平台文案应强调“委托转让/退出协助”，避免表达为可自由转让。
-
-### 2.3 餐饮设备供需
-
-面向开店商户和退店商户。
-
-主要能力：
-
-- 支持出售设备、求购设备、回收咨询三类入口。
-- 设备信息包含设备名称、规格数量、预算/期望价格、所在区域、补充说明。
-- 第一版不做在线交易、支付、担保和聊天，只做线索撮合。
-- 对应线索类型：`equipment_sell`、`equipment_buy`、`equipment_recycle`。
-
-### 2.4 品牌合作
-
-保持轻量入口，不做复杂加盟平台。
-
-适用场景：
-
-- 品牌方找校园点位。
-- 学校/物业希望引入品牌。
-- 个人商户了解品牌合作可能性。
-
-对应线索类型：`brand_cooperation`。
-
-### 2.5 辅助模块
-
-辅助模块用于获客和信任建设，不作为第一阶段重开发对象。
-
-- 开店预算测算：第一版只在首页设置入口，引导用户提交找铺需求。
-- 铺位评估：以详情页标签和顾问提示呈现。
-- 入驻清单：后续可做为网站内容页，用于 SEO 和减少沟通成本。
-
-## 3. 产品端
-
-### 3.1 小程序端
-
-首页主入口：
+入口：
 
 - 找校园铺位
 - 委托店铺转让
 - 买卖餐饮设备
-- 开店预算测算
+- 开店预算测算入口
 
-页面结构：
+首页应展示推荐项目和主要业务入口，引导用户进入项目列表或表单提交。
 
-- `pages/index`：首页、搜索、业务入口、推荐机会。
-- `pages/list`：机会列表，展示招商铺位和转让机会。
-- `pages/detail`：机会详情。
-- `pages/apply`：找铺需求提交。
-- `pages/transfer`：委托转让提交。
-- `pages/equipment`：设备供需提交。
-- `pages/leads`：我的需求/咨询记录。
-- `pages/my`：用户资料、我的需求、我的收藏。
+### 3.2 项目列表
 
-Demo 模式：
+展示招商铺位和转让机会。
 
-- `mp/app.js` 默认 `useLocalMock=true`。
-- 小程序在 demo 模式下不发起 `wx.request`，避免微信开发者工具合法域名校验拦截本地 `127.0.0.1`。
-- 如需联调本地 API，将 `useLocalMock` 改为 `false`，并在开发者工具中关闭“校验合法域名”。
+筛选维度：
 
-### 3.2 网站端
+- 关键词 `q`
+- 区域 `district`
+- 项目类型 `projectType`
+- 预算 `budget`
+- 适合业态 `business`
+- 机会类型 `opportunityType`
+- 状态 `status`
 
-网站用于公开展示、搜索获客和合作方背书。
+### 3.3 项目详情
 
-第一版页面：
+详情页展示：
 
-- 平台首页
-- 精选机会展示
-- 统一需求表单
+- 多张项目图片，支持左右滑动和点击预览。
+- 项目标题、状态、推荐标记、更新时间。
+- 学校、项目类型、面积、费用、城市、区域、地址。
+- 转让机会的当前业态、月租、剩余合同期、转让费。
+- 适合/不适合业态。
+- 项目亮点、客群说明、合作方式、看铺安排。
+- 收藏、联系顾问、我要咨询。
 
-后续可扩展：
+### 3.4 找铺咨询表单
 
-- 招商铺位列表/详情
-- 转让机会列表/详情
-- 设备供需页
-- 入驻清单和开店指南内容页
+字段：
 
-网站表单提交后写入同一线索池，来源标记为 `sourceChannel=website`。
+- 称呼
+- 手机号
+- 经营品类
+- 投资预算
+- 意向区域
+- 是否有校园经营经验
+- 补充说明
+- 补充图片，最多 6 张
 
-### 3.3 管理后台
+提交后生成 `leadType=leasing` 线索。图片上传前由小程序压缩，后端再次压缩并写入 Payload `media`。
 
-当前有两套后台形态：
+### 3.5 店铺转让表单
 
-- `admin/` 静态 mock 后台：用于 demo、演示、快速本地调试。
-- `backend/` Payload CMS + Next.js：用于生产方向的后台和网站。
+字段：
 
-后台核心能力：
+- 称呼
+- 手机号
+- 店铺位置
+- 当前业态
+- 面积与费用
+- 转让费预期
+- 剩余合同期
+- 是否包含设备
+- 补充说明
+- 店铺图片，最多 6 张
 
-- 数据看板：机会总数、开放中机会、转让机会、设备线索、待联系线索、成交线索。
-- 机会管理：按业务类型、状态筛选招商铺位和转让机会。
-- 线索跟进：按线索类型、状态筛选，记录沟通内容和下次跟进时间。
-- 商户档案：Payload 中预留 `merchant-profiles` 集合，用于未来沉淀长期商户需求。
+提交后生成 `leadType=transfer` 线索，并写入结构化字段：
 
-## 4. 数据模型
+```ts
+transferDetails: {
+  locationText?: string;
+  feeText?: string;
+  transferFee?: string;
+  remainingTerm?: string;
+  includesEquipment?: boolean;
+}
+```
 
-### 4.1 Opportunity / Project
+### 3.6 设备供需表单
+
+类型：
+
+- 出售设备 `equipment_sell`
+- 求购设备 `equipment_buy`
+- 回收咨询 `equipment_recycle`
+
+字段：
+
+- 称呼
+- 手机号
+- 设备名称
+- 数量/规格
+- 设备状态
+- 采购预算/期望价格
+- 所在区域
+- 补充说明
+- 设备图片，最多 6 张
+
+提交后写入结构化字段：
+
+```ts
+equipmentDetails: {
+  equipmentName?: string;
+  specText?: string;
+  equipmentCondition?: string;
+  expectedPrice?: string;
+}
+```
+
+### 3.7 我的记录
+
+用户只能查看自己提交的历史线索。
+
+身份策略：
+
+- 生产模式使用微信 `openid`。
+- 本地联调模式使用 `devOpenId`。
+- 后端在 `leads.submitterOpenId` 中记录提交人。
+- `GET /api/leads` 对带 token 的小程序请求按 `submitterOpenId` 过滤，不再依赖手机号做权限隔离。
+
+记录页展示：
+
+- 需求类型、品类/设备、预算/价格、区域。
+- 转让详情、设备详情。
+- 用户上传图片缩略图和预览。
+- 提交时间、线索状态、跟进时间线。
+
+## 4. CMS 功能
+
+Payload CMS 用于生产方向的数据维护。
+
+### 4.1 Projects
+
+维护招商铺位和转让机会。
+
+关键字段：
+
+- `opportunityType`: `leasing` 或 `transfer`
+- 标题、学校、区域、地址、项目类型、面积、费用
+- 适合/不适合业态
+- 项目亮点、客群说明、合作方式、看铺安排
+- `coverImage` 和 `images`
+- 转让信息 `transferInfo`
+- 状态、审核状态、推荐、排序
+
+### 4.2 Leads
+
+统一线索池。
+
+关键字段：
+
+- `leadType`
+- `sourceChannel`
+- `submitterOpenId`
+- `project` / `projectTitle`
+- `name` / `phone`
+- `businessType`
+- `budgetRange`
+- `regionPreference`
+- `hasCampusExperience`
+- `transferDetails`
+- `equipmentDetails`
+- `attachments`
+- `status`
+- `owner` / `nextFollowAt` / `closedAmount` / `lostReason`
+
+### 4.3 Media
+
+用于项目图片和用户上传图片。
+
+关键字段：
+
+- `seedKey`
+- `alt`
+- `ownerOpenId`
+- `source`: `seed_demo`、`lead_attachment`、`admin`
+- `originalFilename`
+- `compressedSize`
+
+### 4.4 Follow Records
+
+用于线索跟进时间线。
+
+字段：
+
+- 线索
+- 跟进内容
+- 操作人
+- 下次跟进时间
+- 创建时间
+
+## 5. API 约定
+
+小程序兼容 API：
+
+- `POST /api/auth/wechat-login`
+- `GET /api/projects`
+- `GET /api/projects/:id`
+- `GET /api/leads`
+- `POST /api/leads`
+- `POST /api/uploads/lead-image`
+- `GET /api/stats`
+
+认证：
+
+- `POST /api/auth/wechat-login` 返回 `{ token, openid, expiresAt, mode }`。
+- 小程序调用 `/api/leads` 和 `/api/uploads/lead-image` 时带 `Authorization: Bearer <token>`。
+
+上传：
+
+- `/api/uploads/lead-image` 接收 multipart `file`。
+- 后端限制图片类型和大小，压缩为 JPEG 后写入 `media`。
+- 表单提交时传 `attachments: string[]`，数组元素为 media id。
+
+## 6. 调试模式
+
+### 6.1 小程序本地 mock
+
+在 `mp/app.js`：
+
+```js
+useLocalMock: true
+```
+
+小程序不请求后端，使用本地 storage mock 数据。适合 UI 演示和前端离线开发。
+
+### 6.2 Payload CMS 联调
+
+在 `mp/app.js`：
+
+```js
+apiUrl: 'http://127.0.0.1:3000/api',
+useLocalMock: false,
+devOpenId: 'dev-openid-local'
+```
+
+在 `backend/.env`：
+
+```env
+WECHAT_AUTH_MODE=dev
+WECHAT_AUTH_DEV_OPENID=dev-openid-local
+```
+
+初始化数据：
+
+```bash
+pnpm backend:seed
+```
+
+### 6.3 微信生产模式
+
+在生产环境：
+
+```env
+WECHAT_AUTH_MODE=wechat
+WECHAT_APPID=your-wechat-appid
+WECHAT_APP_SECRET=your-wechat-app-secret
+```
+
+小程序通过 `wx.login` 获取 code，后端调用微信 `jscode2session` 获取 openid。
+
+## 7. 数据模型摘要
 
 ```ts
 interface Project {
@@ -147,16 +295,12 @@ interface Project {
   addressText?: string;
   schoolName?: string;
   schoolAlias?: string;
-  showFullSchoolName?: boolean;
-  projectType: string;
+  projectType?: string;
   areaText?: string;
   feeText?: string;
   suitableBusiness?: string[];
   unsuitableBusiness?: string[];
   highlights?: string[];
-  trafficTags?: string[];
-  facilityTags?: string[];
-  advisorTips?: string;
   customerInfo?: string;
   cooperationMode?: string;
   viewingTimeText?: string;
@@ -168,21 +312,13 @@ interface Project {
     remainingTerm?: string;
     includesEquipment?: boolean;
     expectedTransferFee?: string;
-    contractTransferAllowed?: string;
   };
   status: 'draft' | 'online' | 'coming' | 'full' | 'offline';
   auditStatus: 'pending' | 'approved' | 'rejected';
   isRecommended: boolean;
   sort: number;
-  remark?: string;
-  createdAt: number;
-  updatedAt: number;
 }
-```
 
-### 4.2 Lead
-
-```ts
 interface Lead {
   id: string;
   leadType:
@@ -193,6 +329,7 @@ interface Lead {
     | 'equipment_recycle'
     | 'brand_cooperation';
   sourceChannel: 'mini_program' | 'website' | 'admin';
+  submitterOpenId?: string;
   projectId?: string;
   projectTitle?: string;
   name: string;
@@ -201,114 +338,32 @@ interface Lead {
   budgetRange?: string;
   regionPreference?: string;
   hasCampusExperience?: boolean;
+  transferDetails?: {
+    locationText?: string;
+    feeText?: string;
+    transferFee?: string;
+    remainingTerm?: string;
+    includesEquipment?: boolean;
+  };
+  equipmentDetails?: {
+    equipmentName?: string;
+    specText?: string;
+    equipmentCondition?: string;
+    expectedPrice?: string;
+  };
+  attachments?: Array<{ id: string; url: string; alt?: string }>;
   remark?: string;
-  status:
-    | 'new'
-    | 'contacted'
-    | 'interested'
-    | 'viewing_scheduled'
-    | 'viewed'
-    | 'negotiating'
-    | 'closed'
-    | 'invalid'
-    | 'paused';
-  owner?: string;
-  nextFollowAt?: number;
-  closedAmount?: number;
-  lostReason?: string;
-  createdAt: number;
-  updatedAt: number;
+  status: string;
+  follows?: FollowRecord[];
 }
 ```
 
-### 4.3 FollowRecord
+## 8. 验证要求
 
-```ts
-interface FollowRecord {
-  id: string;
-  leadId: string;
-  content: string;
-  nextFollowAt?: number;
-  operatorId?: string;
-  operatorName?: string;
-  createdAt: number;
-}
-```
-
-### 4.4 MerchantProfile
-
-```ts
-interface MerchantProfile {
-  id: string;
-  name: string;
-  phone: string;
-  businessTypes?: string[];
-  budgetRange?: string;
-  preferredRegion?: string;
-  acceptsTransfer?: boolean;
-  needsEquipment?: boolean;
-  hasCampusExperience?: boolean;
-  status: 'active' | 'closed' | 'paused' | 'invalid';
-  notes?: string;
-}
-```
-
-## 5. API 约定
-
-Mock 服务入口：`server.js`
-
-主要接口：
-
-- `GET /api/projects`
-- `GET /api/projects/:id`
-- `POST /api/projects`
-- `PUT /api/projects/:id`
-- `DELETE /api/projects/:id`
-- `GET /api/leads`
-- `POST /api/leads`
-- `PUT /api/leads/:id`
-- `POST /api/leads/:id/follow`
-- `GET /api/stats`
-
-常用筛选参数：
-
-- `opportunityType`
-- `leadType`
-- `status`
-- `district`
-- `projectType`
-- `business`
-- `budget`
-- `q`
-- `phone`
-
-## 6. 部署与验证
-
-本地 mock：
-
-```bash
-pnpm dev
-```
-
-Payload/Next 后台：
-
-```bash
-pnpm backend:dev
-pnpm backend:lint
-pnpm backend:build
-```
-
-Docker 生产构建：
-
-```bash
-cp .env.example .env
-docker compose up -d --build
-```
-
-验证要求：
-
-- 小程序 demo 模式无需配置合法域名即可打开。
-- 找铺、转让、设备三类表单均能形成线索。
-- 网站提交表单后，后台线索来源应为 `website`。
-- 后台可按业务类型和状态筛选线索。
+- 小程序项目列表能从 CMS 或本地 mock 获取数据。
+- 项目详情能展示多张真实图片并左右滑动。
+- 找铺、转让、设备表单均能提交并在 CMS `leads` 中看到。
+- 转让和设备字段在 CMS 中以结构化字段展示，不只堆在备注里。
+- 用户上传图片能进入 CMS `media`，线索中能看到附件。
+- `dev-openid-local` 和其他 `devOpenId` 的历史记录相互隔离。
 - `pnpm backend:lint` 和 `pnpm backend:build` 通过。

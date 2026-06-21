@@ -9,6 +9,7 @@
     "backend:dev": "pnpm --dir backend dev",
     "backend:build": "pnpm --dir backend build",
     "backend:start": "pnpm --dir backend start",
-    "backend:lint": "pnpm --dir backend lint"
+    "backend:lint": "pnpm --dir backend lint",
+    "backend:seed": "pnpm --dir backend seed:demo"
   }
 }

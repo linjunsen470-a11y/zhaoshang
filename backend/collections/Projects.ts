@@ -14,6 +14,14 @@ export const Projects: CollectionConfig = {
   },
   fields: [
     {
+      name: 'seedKey',
+      type: 'text',
+      unique: true,
+      admin: {
+        hidden: true,
+      },
+    },
+    {
       name: 'opportunityType',
       type: 'select',
       required: true,
@@ -39,19 +47,23 @@ export const Projects: CollectionConfig = {
     {
       name: 'addressText',
       type: 'text',
+      label: '详细地址',
     },
     {
       name: 'schoolName',
       type: 'text',
+      label: '学校名称',
     },
     {
       name: 'schoolAlias',
       type: 'text',
+      label: '学校简称',
     },
     {
       name: 'showFullSchoolName',
       type: 'checkbox',
       defaultValue: false,
+      label: '显示完整学校名',
     },
     {
       name: 'projectType',
@@ -62,24 +74,29 @@ export const Projects: CollectionConfig = {
     {
       name: 'areaText',
       type: 'text',
+      label: '面积',
     },
     {
       name: 'feeText',
       type: 'text',
+      label: '费用说明',
     },
     {
       name: 'suitableBusiness',
       type: 'array',
+      label: '适合业态',
       fields: [{ name: 'item', type: 'text' }],
     },
     {
       name: 'unsuitableBusiness',
       type: 'array',
+      label: '不适合业态',
       fields: [{ name: 'item', type: 'text' }],
     },
     {
       name: 'highlights',
       type: 'array',
+      label: '项目亮点',
       fields: [{ name: 'item', type: 'text' }],
     },
     {
@@ -102,29 +119,35 @@ export const Projects: CollectionConfig = {
     {
       name: 'customerInfo',
       type: 'textarea',
+      label: '客群说明',
     },
     {
       name: 'cooperationMode',
       type: 'textarea',
+      label: '合作方式',
     },
     {
       name: 'viewingTimeText',
       type: 'textarea',
+      label: '看铺安排',
     },
     {
       name: 'coverImage',
       type: 'upload',
       relationTo: 'media',
+      label: '封面图',
     },
     {
       name: 'images',
       type: 'upload',
       relationTo: 'media',
       hasMany: true,
+      label: '详情图',
     },
     {
       name: 'transferInfo',
       type: 'group',
+      label: '转让信息',
       admin: {
         condition: (_, siblingData) => siblingData?.opportunityType === 'transfer',
       },
@@ -165,15 +188,18 @@ export const Projects: CollectionConfig = {
       name: 'isRecommended',
       type: 'checkbox',
       defaultValue: false,
+      label: '重点推荐',
     },
     {
       name: 'sort',
       type: 'number',
       defaultValue: 0,
+      label: '排序',
     },
     {
       name: 'remark',
       type: 'textarea',
+      label: '备注',
     },
   ],
   timestamps: true,
