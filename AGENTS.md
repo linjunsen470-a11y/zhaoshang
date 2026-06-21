@@ -5,11 +5,11 @@
 This repository has four main surfaces:
 
 - `mp/`: WeChat mini-program client. Pages live in `mp/pages/<page>/` with matching `.js`, `.wxml`, `.wxss`, and `.json` files. Shared API calls are in `mp/services/api.js`; client constants are in `mp/config.js`; shared form helpers are in `mp/utils/form.js`; images are in `mp/images/`. Core user flows include finding campus shops, submitting transfer/equipment leads, viewing/editing/deleting own consultation history, and reading the privacy policy.
-- `backend/`: Payload CMS + Next.js backend and public website. App routes are in `backend/app/`, collections in `backend/collections/`, and CMS configuration in `backend/payload.config.ts`. Mini-program compatibility APIs and shared auth/sanitization helpers are in `backend/app/api/`.
+- `backend/`: Payload CMS + Next.js backend and public website. App routes are in `backend/app/`, collections in `backend/collections/`, CMS configuration in `backend/payload.config.ts`, and admin UI extensions in `backend/app/admin/components/`. Shared field labels/options live in `backend/collections/shared/fieldOptions.ts`; role-based access helpers live in `backend/collections/shared/access.ts`. Mini-program compatibility APIs and shared auth/sanitization helpers are in `backend/app/api/`.
 - Root mock/admin tooling: `server.js` runs the local Node server, `admin/` contains the static admin UI, and `data.json` stores mock data.
 - Deployment tooling: `docker-compose.yml`, root `.env.example`, `backend/Dockerfile`, and `backend/.env.example` support production builds.
 
-Docs belong in `docs/`. Deployment configuration is in `docker-compose.yml` and `.env.example`.
+Docs belong in `docs/`, including `docs/miniprogram-ux-audit.md` and `docs/payload-admin-ux-audit.md`. Deployment configuration is in `docker-compose.yml` and `.env.example`.
 
 ## Build, Test, and Development Commands
 
@@ -34,6 +34,17 @@ For lead-related backend changes:
 - Use `sanitizeLeadUpdateInput()` for `PUT /api/leads/:id`.
 - Validate attachment ownership with `validateAttachmentOwnership()` before persisting attachments.
 - Do not expose `submitterOpenId` or CRM-only fields in `mapLead()` responses.
+
+For Payload admin UX changes:
+
+- Register custom admin components in `backend/app/admin/components/` and wire them through `backend/app/admin/[[...segments]]/importMap.js`.
+- Custom collection views (e.g. kanban) belong under `admin.components.views`, not top-level `admin.views`.
+- Keep dropdown labels/options aligned with the mini-program via `backend/collections/shared/fieldOptions.ts`.
+- Follow-up records are added in the lead detail timeline UI; keep the `follow-records` collection hidden from the sidebar.
+- Staff roles are `admin`, `advisor`, and `editor`; enforce permissions through `backend/collections/shared/access.ts`.
+- Admin-only lead actions use `POST /api/leads/:id/convert` and `POST /api/leads/:id/sync-merchant`; do not expose these through the mini-program client.
+
+Schema changes against Postgres may require `PAYLOAD_DB_PUSH=true` during build or via `backend/scripts/push-schema.ts`.
 
 ## Testing Guidelines
 

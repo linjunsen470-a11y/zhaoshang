@@ -8,7 +8,8 @@
 admin/                 静态 mock 管理后台，配合根目录 server.js 使用
 backend/               Payload CMS + Next.js 后台、网站和生产 API
 backend/app/api/       小程序兼容 API、登录 API、上传 API
-backend/collections/   Payload collections：项目、线索、媒体、跟进记录等
+backend/collections/   Payload collections：项目、线索、媒体、商户档案等
+backend/app/admin/     Payload 后台自定义组件（工作台、看板、快捷操作等）
 backend/scripts/       demo 数据和 seed 脚本
 docs/                  产品和需求文档
 mp/                    微信小程序客户端
@@ -30,8 +31,30 @@ server.js              轻量 mock API/admin 服务
 - 用户隔离：小程序提交记录按微信 `openid`（或本地 mock 的 `devOpenId`）隔离。
 - 设备供需广场：公开列表展示设备线索，联系方式隐藏，区域与备注做截断脱敏。
 - 隐私合规：小程序内置隐私政策页面。
-- CMS 管理：Payload 后台维护项目、线索、跟进记录和媒体资源。
+- CMS 管理：Payload 后台维护项目、线索、商户档案和媒体资源；含运营工作台、线索看板与快捷操作。
 - 双模式调试：支持纯本地 mock 演示，也支持小程序直连本地 Payload CMS。
+
+## 近期改进（2026-06）
+
+### 小程序 UX
+
+- 首页金刚区：「找校园铺位」独占主入口；「委托转让」与「餐饮设备」并列次入口；已移除名不副实的「开店测算」。
+- 推荐项目快捷筛选修正为 `recommended: true`；找铺页增加「招商/转让」来源筛选。
+- 找铺/转让/设备表单增加隐私政策勾选；咨询记录展示中文 `leadType`。
+- 列表智能刷新、首页/找铺加载态与重试、下拉刷新；搜索清除仅清关键词。
+- 收藏页与「我的」页提示「仅保存在本机」；咨询表单展示关联项目卡片。
+- 本地默认头像、拨号失败可复制号码；成功页文案改为工作日联系。
+
+**暂缓：** 生产 `API_URL` 配置、收藏服务端同步、P2（地图、订阅消息等）。详见 [docs/miniprogram-ux-audit.md](docs/miniprogram-ux-audit.md)。
+
+### Payload 后台 UX
+
+- 侧栏中文化与分组；下拉选项与小程序对齐（`collections/shared/fieldOptions.ts`）。
+- 运营工作台（`OperationsDashboard`）、线索看板（`/admin/collections/leads/kanban`）、线索快捷操作与跟进时间线。
+- 项目编辑提示小程序详情路径；线索可转项目、沉淀商户档案（`POST /api/leads/:id/sync-merchant`）。
+- 角色权限：`admin` / `advisor` / `editor`；`follow-records` 集合侧栏隐藏，跟进在线索详情添加。
+
+详见 [docs/payload-admin-ux-audit.md](docs/payload-admin-ux-audit.md)。
 
 ## 本地开发
 
@@ -138,6 +161,8 @@ devOpenId: 'dev-openid-local'
 | GET | `/api/equipments` | 否 | 设备供需公开列表（脱敏） |
 | POST | `/api/uploads/lead-image` | 是 | 上传线索图片 |
 | GET | `/api/stats` | 否 | 运营统计 |
+| POST | `/api/leads/:id/convert` | 后台 | 将线索转为招商/转让项目（CMS 快捷操作） |
+| POST | `/api/leads/:id/sync-merchant` | 后台 | 将线索沉淀为商户档案并建立关联 |
 
 认证说明：
 
@@ -162,7 +187,9 @@ devOpenId: 'dev-openid-local'
 - `leads.attachments`：用户上传图片，对应 Payload `media`。
 - `leads.submitterOpenId`：小程序用户身份隔离字段（仅 CMS 内部使用，不下发客户端）。
 - `media`：项目 demo 图片和用户上传图片，记录来源、`ownerOpenId`、压缩大小等。
-- `follow-records`：招商顾问跟进时间线。
+- `follow-records`：跟进时间线归档（侧栏隐藏；日常在线索详情「跟进历史」标签页维护）。
+- `merchant-profiles`：商户长期需求档案，可与线索双向关联。
+- `users.role`：后台角色 `admin`（全权限）、`advisor`（线索/商户）、`editor`（项目/媒体）。
 
 ## 验证命令
 
@@ -184,6 +211,7 @@ Get-ChildItem -Path mp -Recurse -Filter *.js | ForEach-Object { node --check $_.
 - Token 过期或重新登录后的接口重试
 - 设备供需列表不展示联系方式
 - 「我的」页可打开隐私政策
+- 首页金刚区布局、推荐筛选、来源筛选、表单隐私勾选与加载重试
 
 ## Docker 部署
 

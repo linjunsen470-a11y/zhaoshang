@@ -4,12 +4,13 @@ Payload CMS + Next.js backend for the campus shop opportunity platform.
 
 The backend provides:
 
-- Payload admin UI.
+- Payload admin UI with editor-friendly Chinese labels, grouped sidebar, operations dashboard, and lead kanban.
 - Public website homepage.
 - Production data models for opportunities, leads, follow records, media, merchant profiles, and users.
 - Mini-program compatible APIs for projects, leads, auth, image upload, equipment listings, and stats.
 - Local-dev WeChat auth fallback plus production `jscode2session` support.
 - User-scoped lead CRUD with attachment ownership validation.
+- Role-based staff access (`admin`, `advisor`, `editor`).
 - Docker/VPS deployment target.
 
 The root `server.js` and `admin/` directory remain available for lightweight mock/demo workflows.
@@ -54,6 +55,14 @@ docker compose up -d db
 pnpm backend:dev
 ```
 
+After schema changes, push the database schema if needed:
+
+```bash
+pnpm --dir backend exec tsx scripts/push-schema.ts
+```
+
+Or set `PAYLOAD_DB_PUSH=true` for a one-off build/migration. The Docker image build already uses this flag.
+
 Seed demo data into Payload/PostgreSQL:
 
 ```bash
@@ -66,8 +75,44 @@ URLs:
 
 - Website: `http://localhost:3000`
 - Payload admin: `http://localhost:3000/admin`
+- Lead kanban: `http://localhost:3000/admin/collections/leads/kanban`
 - Payload API: `http://localhost:3000/api/payload/...`
 - Mini-program compatible API: `http://localhost:3000/api/projects`, `http://localhost:3000/api/leads`, `http://localhost:3000/api/uploads/lead-image`
+
+## Admin UX
+
+Custom admin components live in `app/admin/components/`:
+
+| Component | Purpose |
+|-----------|---------|
+| `OperationsDashboard` | Before-dashboard stats: new leads, overdue follow-ups, online projects, quick links |
+| `LeadsKanbanView` | Drag-and-drop lead status board at `/admin/collections/leads/kanban` |
+| `LeadQuickActions` | Copy phone, open related project, convert to project, sync merchant profile |
+| `LeadFollowTimeline` | Inline follow-up history on lead detail; syncs `nextFollowAt` and status |
+| `ProjectEditHints` | Shows the mini-program detail path for the current project |
+| `MerchantProfileLeadsPanel` | Related leads panel on merchant profile records |
+
+Shared Chinese labels and select options are centralized in `collections/shared/fieldOptions.ts` so CMS dropdowns match the mini-program.
+
+Sidebar groups:
+
+- `业务运营`: projects, leads
+- `客户资产`: merchant profiles
+- `系统设置`: users, media
+
+The `follow-records` collection is hidden from the sidebar. Advisors add follow-ups from the lead detail timeline instead.
+
+### Staff roles
+
+Configured on `users.role`:
+
+| Role | Access |
+|------|--------|
+| `admin` | Full CMS access, user management, delete leads |
+| `advisor` | Manage leads, merchant profiles, follow-ups |
+| `editor` | Manage projects and media |
+
+Helpers in `collections/shared/access.ts` enforce these rules on collection access.
 
 ## Mini-program Auth
 
@@ -98,6 +143,14 @@ Authenticated mini-program APIs filter user history by `submitterOpenId`, not by
 - `PUT /api/leads/:id` and `DELETE /api/leads/:id` require auth and verify `submitterOpenId`.
 - Updates use `sanitizeLeadUpdateInput()`, which whitelists only user-editable fields.
 - CRM fields such as `status`, `owner`, `closedAmount`, and `lostReason` cannot be changed through the mini-program API.
+
+### Admin actions
+
+- `POST /api/leads/:id/follow` — add a follow-up record from internal workflows.
+- `POST /api/leads/:id/convert` — convert a lead into a `projects` record (used by CMS quick actions).
+- `POST /api/leads/:id/sync-merchant` — create or update a `merchant-profiles` record from lead contact/demand fields and link it back to the lead.
+
+These admin routes are intended for authenticated CMS sessions, not the mini-program client.
 
 ### Response Shape
 
@@ -138,16 +191,16 @@ Behavior:
 
 ## Collections
 
-- `projects`: unified opportunity model for leasing and transfer opportunities.
-- `leads`: unified lead pool for leasing, transfer, equipment, recycle, and brand cooperation.
+- `projects`: unified opportunity model for leasing and transfer opportunities. Cover image is pinned to the top of the edit form; rejected audit records cannot go online.
+- `leads`: unified lead pool for leasing, transfer, equipment, recycle, and brand cooperation. Includes `merchantProfile` relationship and kanban view.
 - `leads.transferDetails`: structured transfer fields from the mini-program transfer form.
 - `leads.equipmentDetails`: structured equipment fields from the mini-program equipment form.
 - `leads.attachments`: user uploaded images from mini-program forms.
 - `leads.submitterOpenId`: owner identity for user-history isolation.
-- `follow-records`: follow-up timeline records.
-- `merchant-profiles`: long-term merchant demand profile.
+- `follow-records`: follow-up timeline archive (hidden sidebar; maintained from lead detail).
+- `merchant-profiles`: long-term merchant demand profile with `relatedLeads`.
 - `media`: demo images, lead attachments, and admin uploads.
-- `users`: Payload admin users.
+- `users`: Payload admin users with `role` and `displayName`.
 
 ## Production-compatible API
 
@@ -166,6 +219,7 @@ In addition to Payload's native REST API under `/api/payload/...`, the backend e
 - `DELETE /api/leads/:id`
 - `POST /api/leads/:id/follow`
 - `POST /api/leads/:id/convert`
+- `POST /api/leads/:id/sync-merchant`
 - `GET /api/equipments`
 - `POST /api/uploads/lead-image`
 - `GET /api/stats`
