@@ -7,8 +7,9 @@ The backend provides:
 - Payload admin UI.
 - Public website homepage.
 - Production data models for opportunities, leads, follow records, media, merchant profiles, and users.
-- Mini-program compatible APIs for projects, leads, auth, image upload, and stats.
+- Mini-program compatible APIs for projects, leads, auth, image upload, equipment listings, and stats.
 - Local-dev WeChat auth fallback plus production `jscode2session` support.
+- User-scoped lead CRUD with attachment ownership validation.
 - Docker/VPS deployment target.
 
 The root `server.js` and `admin/` directory remain available for lightweight mock/demo workflows.
@@ -74,10 +75,41 @@ URLs:
 
 Modes:
 
-- `WECHAT_AUTH_MODE=dev`: local debugging. The backend uses `X-Dev-OpenId`, request body `devOpenId`, `WECHAT_AUTH_DEV_OPENID`, or `dev-openid-local`.
+- `WECHAT_AUTH_MODE=dev`: local debugging. The backend accepts `X-Dev-OpenId`, request body `devOpenId`, `WECHAT_AUTH_DEV_OPENID`, or `dev-openid-local`. The mini-program only sends `X-Dev-OpenId` when `useLocalMock: true`.
 - `WECHAT_AUTH_MODE=wechat`: production mode. The backend exchanges the mini-program `code` through WeChat `jscode2session`; configure `WECHAT_APPID` and `WECHAT_APP_SECRET`.
 
 Authenticated mini-program APIs filter user history by `submitterOpenId`, not by phone number.
+
+## Lead APIs and Security
+
+### Read
+
+- `GET /api/leads` requires `Authorization: Bearer <token>`. Unauthenticated requests without a `phone` query param return `401`.
+- `GET /api/leads/:id` returns a single lead for the authenticated owner only.
+
+### Create
+
+- `POST /api/leads` requires auth.
+- Uses `sanitizeLeadCreateInput()` so new leads always start with `status: 'new'`.
+- Validates that every `attachments` media ID belongs to the current `ownerOpenId`.
+
+### Update / Delete
+
+- `PUT /api/leads/:id` and `DELETE /api/leads/:id` require auth and verify `submitterOpenId`.
+- Updates use `sanitizeLeadUpdateInput()`, which whitelists only user-editable fields.
+- CRM fields such as `status`, `owner`, `closedAmount`, and `lostReason` cannot be changed through the mini-program API.
+
+### Response Shape
+
+`mapLead()` omits internal fields from API responses:
+
+- `submitterOpenId`
+- `owner`
+- `closedAmount`
+- `lostReason`
+- `nextFollowAt`
+
+Follow records are still included for the user's own leads.
 
 ## Image Uploads
 
@@ -85,13 +117,24 @@ Authenticated mini-program APIs filter user history by `submitterOpenId`, not by
 
 Behavior:
 
-- Validates image mime type and size.
+- Validates image mime type and size (max 10 MB).
 - Rotates and resizes images to max 1600 px.
 - Converts uploaded images to JPEG quality 82.
 - Stores the compressed image in Payload `media`.
-- Records owner openid, source, original filename, and compressed size.
+- Records `ownerOpenId`, source, original filename, and compressed size.
 
-Mini-program form submissions then pass the returned media IDs in `attachments`.
+Mini-program form submissions then pass the returned media IDs in `attachments`. Lead create/update validates attachment ownership before persisting.
+
+## Equipment Public Listing
+
+`GET /api/equipments` returns active equipment-related leads for the public equipment marketplace page.
+
+Behavior:
+
+- Filters `leadType` to `equipment_sell`, `equipment_buy`, `equipment_recycle`.
+- Excludes `closed`, `invalid`, and `paused` statuses.
+- Does not return submitter name or phone.
+- Masks `regionPreference` and truncates `remark` for public display.
 
 ## Collections
 
@@ -117,13 +160,22 @@ In addition to Payload's native REST API under `/api/payload/...`, the backend e
 - `PUT /api/projects/:id`
 - `DELETE /api/projects/:id`
 - `GET /api/leads`
+- `GET /api/leads/:id`
 - `POST /api/leads`
 - `PUT /api/leads/:id`
+- `DELETE /api/leads/:id`
 - `POST /api/leads/:id/follow`
+- `POST /api/leads/:id/convert`
+- `GET /api/equipments`
 - `POST /api/uploads/lead-image`
 - `GET /api/stats`
 
 These routes use Payload's local API internally and return lightweight JSON shapes compatible with the mini-program service layer.
+
+Shared helpers live in `backend/app/api/_shared/`:
+
+- `auth.ts`: HMAC token signing and verification.
+- `payloadApi.ts`: mapping, sanitization, attachment ownership checks, and public text masking.
 
 ## Production Build
 
@@ -192,3 +244,5 @@ Then open:
 
 - Mock admin: `http://localhost:5173/admin/index.html`
 - Mock stats API: `http://localhost:5173/api/stats`
+
+The mock admin sends `X-Admin-Access: local-admin` when loading leads. Override with `ADMIN_ACCESS_KEY` if needed.
