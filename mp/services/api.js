@@ -198,6 +198,28 @@ function localFallback(urlPath, method, requestData = {}) {
     return newLead;
   }
 
+  if (urlPath === '/equipments' && method === 'GET') {
+    let list = wx.getStorageSync('local_leads') || [];
+    list = list.filter(l => 
+      ['equipment_sell', 'equipment_buy', 'equipment_recycle'].includes(l.leadType) &&
+      !['closed', 'invalid', 'paused'].includes(l.status)
+    );
+    if (requestData.leadType && requestData.leadType !== '全部') {
+      list = list.filter(l => l.leadType === requestData.leadType);
+    }
+    return list.map(l => ({
+      id: l.id,
+      leadType: l.leadType,
+      businessType: l.businessType,
+      budgetRange: l.budgetRange,
+      regionPreference: l.regionPreference,
+      remark: l.remark,
+      equipmentDetails: l.equipmentDetails,
+      attachments: l.attachments || [],
+      createdAt: l.createdAt
+    })).sort((a, b) => b.createdAt - a.createdAt);
+  }
+
   return null;
 }
 
@@ -207,5 +229,6 @@ module.exports = {
   getLeads: () => request('/leads', 'GET'),
   submitLead: leadData => request('/leads', 'POST', leadData),
   submitTransfer: leadData => request('/leads', 'POST', { ...leadData, leadType: 'transfer' }),
-  submitEquipment: leadData => request('/leads', 'POST', leadData)
+  submitEquipment: leadData => request('/leads', 'POST', leadData),
+  getEquipments: params => request('/equipments', 'GET', params)
 };

@@ -357,6 +357,105 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (urlPath.startsWith('/api/leads/') && urlPath.endsWith('/convert') && req.method === 'POST') {
+      const leadId = urlPath.substring('/api/leads/'.length, urlPath.length - '/convert'.length);
+      const index = data.leads.findIndex(l => l.id === leadId);
+      if (index === -1) {
+        sendJSON({ error: '线索不存在' }, 404);
+        return;
+      }
+      const lead = data.leads[index];
+      if (lead.leadType !== 'transfer') {
+        sendJSON({ error: '只有店铺转让类型的线索才能转为招商机会' }, 400);
+        return;
+      }
+
+      const exists = data.projects.some(p => p.title.includes(`(转让线索ID: ${leadId})`));
+      if (exists) {
+        sendJSON({ error: '该线索已转换过招商项目' }, 400);
+        return;
+      }
+
+      const details = lead.transferDetails || {};
+      const newProject = normalizeProject({
+        id: generateId('p'),
+        opportunityType: 'transfer',
+        title: `${lead.businessType || '商铺'}转让 (${details.locationText || lead.regionPreference || '未指定区域'}) (转让线索ID: ${leadId})`,
+        city: '广州',
+        district: details.locationText || lead.regionPreference || '',
+        addressText: details.locationText || '',
+        schoolName: '',
+        schoolAlias: '',
+        showFullSchoolName: false,
+        projectType: '店铺转让',
+        areaText: '',
+        feeText: details.feeText || '面议',
+        suitableBusiness: lead.businessType ? [lead.businessType] : [],
+        unsuitableBusiness: [],
+        highlights: [],
+        trafficTags: [],
+        facilityTags: [],
+        advisorTips: lead.remark || '',
+        customerInfo: '',
+        cooperationMode: '承接现有合同',
+        viewingTimeText: '需提前预约顾问',
+        coverImage: lead.attachments?.[0] || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80',
+        images: lead.attachments || [],
+        transferInfo: {
+          currentBusiness: lead.businessType || '',
+          monthlyRent: details.feeText || '',
+          remainingTerm: details.remainingTerm || '',
+          includesEquipment: !!details.includesEquipment,
+          expectedTransferFee: details.transferFee || '',
+          contractTransferAllowed: '待核实',
+        },
+        status: 'draft',
+        auditStatus: 'pending',
+        isRecommended: false,
+        sort: 0,
+        remark: `由店铺转让线索一键生成。联系人：${lead.name}，电话：${lead.phone}`,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      });
+
+      data.projects.push(newProject);
+      
+      data.leads[index] = {
+        ...lead,
+        status: 'viewed',
+        remark: `${lead.remark || ''}\n【系统提示】已于 ${new Date().toLocaleString()} 一键转为招商项目草稿 (ID: ${newProject.id})。`.trim(),
+        updatedAt: Date.now()
+      };
+
+      writeData(data);
+      sendJSON({ success: true, projectId: newProject.id, projectTitle: newProject.title });
+      return;
+    }
+
+    if (urlPath === '/api/equipments' && req.method === 'GET') {
+      let list = [...data.leads];
+      list = list.filter(l => 
+        ['equipment_sell', 'equipment_buy', 'equipment_recycle'].includes(l.leadType) &&
+        !['closed', 'invalid', 'paused'].includes(l.status)
+      );
+      if (query.leadType && query.leadType !== ALL) {
+        list = list.filter(l => l.leadType === query.leadType);
+      }
+      const mapped = list.map(l => ({
+        id: l.id,
+        leadType: l.leadType,
+        businessType: l.businessType,
+        budgetRange: l.budgetRange,
+        regionPreference: l.regionPreference,
+        remark: l.remark,
+        equipmentDetails: l.equipmentDetails,
+        attachments: l.attachments || [],
+        createdAt: l.createdAt
+      })).sort((a, b) => b.createdAt - a.createdAt);
+      sendJSON(mapped);
+      return;
+    }
+
     if (urlPath === '/api/stats' && req.method === 'GET') {
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);

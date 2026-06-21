@@ -228,6 +228,23 @@ function initLeadsView() {
     });
   });
   document.getElementById('btn-submit-follow').addEventListener('click', () => saveFollowRecord());
+  document.getElementById('btn-convert-project').addEventListener('click', async () => {
+    const id = state.selectedLeadId;
+    if (!id) return;
+    if (!confirm('确定将该店铺转让线索一键生成招商项目（草稿）吗？')) return;
+
+    try {
+      const res = await fetchJSON(`${API_BASE}/leads/${id}/convert`, {
+        method: 'POST'
+      });
+      alert(`转换成功！已生成项目草稿：${res.projectTitle}\n可进入【机会管理】查看。`);
+      await loadLeadsList();
+      selectLead(id);
+      await loadDashboardData();
+    } catch (err) {
+      alert(`转换失败：${err.message}`);
+    }
+  });
 }
 
 async function loadLeadsList() {
@@ -305,6 +322,13 @@ function selectLead(id) {
   const badge = document.getElementById('lead-det-status-badge');
   badge.textContent = st.name;
   badge.className = `badge ${st.class}`;
+
+  const convertBtn = document.getElementById('btn-convert-project');
+  if (lead.leadType === 'transfer' && lead.status !== 'viewed' && lead.status !== 'closed') {
+    convertBtn.style.display = 'inline-flex';
+  } else {
+    convertBtn.style.display = 'none';
+  }
 
   renderTimeline(lead.follows || []);
 }

@@ -88,7 +88,7 @@ Page({
     } else if (action === 'transfer') {
       wx.navigateTo({ url: '/pages/transfer/transfer' });
     } else if (action === 'equipment') {
-      wx.navigateTo({ url: '/pages/equipment/equipment' });
+      wx.navigateTo({ url: '/pages/equipment-list/equipment-list' });
     } else if (action === 'budget') {
       wx.navigateTo({ url: '/pages/apply/apply?leadType=leasing&from=budget' });
     }

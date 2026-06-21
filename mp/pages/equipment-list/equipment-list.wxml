@@ -1,0 +1,89 @@
+<view class="container">
+  <!-- 头部筛选 Tabs -->
+  <view class="tabs-bar">
+    <view class="tab-item {{activeTab === item.val ? 'active' : ''}}" 
+          wx:for="{{tabs}}" wx:key="val" bindtap="onTabTap" data-tab="{{item.val}}">
+      {{item.name}}
+    </view>
+  </view>
+
+  <view class="list-body">
+    <!-- 加载中 -->
+    <view class="loading-state" wx:if="{{loading}}">
+      <view class="spinner"></view>
+      <text>正在查询设备供需...</text>
+    </view>
+
+    <!-- 列表展示 -->
+    <block wx:else>
+      <view class="equipments-list" wx:if="{{equipmentList.length > 0}}">
+        <view class="equipment-card card" wx:for="{{equipmentList}}" wx:key="id">
+          <!-- 卡片头部：标题与类型Tag -->
+          <view class="card-header flex align-center justify-between">
+            <view class="title-block flex align-center">
+              <text class="tag {{item.tagClass}}">{{item.tagText}}</text>
+              <text class="title font-bold ellipsis">{{item.businessType || '未知设备'}}</text>
+            </view>
+            <text class="date-lbl">{{item.formattedDate}}</text>
+          </view>
+
+          <!-- 结构化详情 -->
+          <view class="card-details">
+            <view class="detail-row" wx:if="{{item.equipmentDetails.specText}}">
+              <text class="detail-label">数量规格</text>
+              <text class="detail-value">{{item.equipmentDetails.specText}}</text>
+            </view>
+            <view class="detail-row" wx:if="{{item.equipmentDetails.equipmentCondition}}">
+              <text class="detail-label">设备成色</text>
+              <text class="detail-value">{{item.equipmentDetails.equipmentCondition}}</text>
+            </view>
+            <view class="detail-row">
+              <text class="detail-label">期望价格</text>
+              <text class="detail-value highlight-price">{{item.budgetRange || item.equipmentDetails.expectedPrice || '面议/待评估'}}</text>
+            </view>
+            <view class="detail-row" wx:if="{{item.regionPreference}}">
+              <text class="detail-label">所在区域</text>
+              <text class="detail-value">{{item.regionPreference}}</text>
+            </view>
+          </view>
+
+          <!-- 补充描述 -->
+          <view class="card-remark" wx:if="{{item.remark}}">
+            <text class="remark-label">补充说明：</text>
+            <text class="remark-text">{{item.remark}}</text>
+          </view>
+
+          <!-- 图片展示 (左右滚动) -->
+          <view class="card-images" wx:if="{{item.attachments && item.attachments.length > 0}}">
+            <scroll-view scroll-x="true" class="images-scroll">
+              <view class="images-track flex">
+                <image class="image-item" wx:for="{{item.attachments}}" wx:for-item="img" wx:key="id" wx:for-index="imgIdx"
+                       src="{{img.url}}" mode="aspectFill" bindtap="onPreviewImage" data-url="{{img.url}}" data-itemindex="{{index}}" />
+              </view>
+            </scroll-view>
+          </view>
+
+          <!-- 底部动作条 -->
+          <view class="card-actions flex align-center justify-between">
+            <text class="privacy-tip">「信息已脱敏 顾问担保对接」</text>
+            <button class="btn btn-primary btn-action" bindtap="onContactAdvisor">联系顾问</button>
+          </view>
+        </view>
+      </view>
+
+      <!-- 空白页 -->
+      <view class="empty-state" wx:else>
+        <text class="empty-icon">🧊</text>
+        <text class="empty-title">当前尚无此类设备信息</text>
+        <text class="empty-desc">没有找到相关设备？发布您的供需，顾问将为您寻找配对。</text>
+        <button class="btn btn-primary reset-btn" bindtap="onPublishTap">发布设备供需</button>
+      </view>
+    </block>
+  </view>
+
+  <!-- 悬浮发布按钮 -->
+  <view class="floating-btn" bindtap="onPublishTap">
+    <text class="plus-icon">+</text>
+    <text class="btn-text">发布供需</text>
+  </view>
+</view>
