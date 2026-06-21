@@ -2,6 +2,10 @@ import type { CollectionConfig } from 'payload'
 
 export const Leads: CollectionConfig = {
   slug: 'leads',
+  labels: {
+    plural: '销售线索与咨询',
+    singular: '销售线索与咨询',
+  },
   admin: {
     useAsTitle: 'name',
     defaultColumns: ['name', 'phone', 'leadType', 'status', 'project'],
@@ -22,6 +26,146 @@ export const Leads: CollectionConfig = {
       },
     },
     {
+      type: 'tabs',
+      tabs: [
+        {
+          label: '基本需求',
+          fields: [
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'name',
+                  type: 'text',
+                  required: true,
+                  label: '客户称呼',
+                },
+                {
+                  name: 'phone',
+                  type: 'text',
+                  required: true,
+                  label: '联系电话',
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'leadType',
+                  type: 'select',
+                  required: true,
+                  defaultValue: 'leasing',
+                  label: '线索类型',
+                  options: [
+                    { label: '找铺咨询', value: 'leasing' },
+                    { label: '店铺转让', value: 'transfer' },
+                    { label: '出售设备', value: 'equipment_sell' },
+                    { label: '求购设备', value: 'equipment_buy' },
+                    { label: '回收咨询', value: 'equipment_recycle' },
+                    { label: '品牌合作', value: 'brand_cooperation' },
+                  ],
+                },
+                {
+                  name: 'sourceChannel',
+                  type: 'select',
+                  defaultValue: 'mini_program',
+                  label: '来源渠道',
+                  options: [
+                    { label: '小程序', value: 'mini_program' },
+                    { label: '网站', value: 'website' },
+                    { label: '后台录入', value: 'admin' },
+                  ],
+                },
+              ],
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'businessType',
+                  type: 'text',
+                  label: '经营品类/设备名称',
+                },
+                {
+                  name: 'budgetRange',
+                  type: 'text',
+                  label: '预算/期望价格',
+                },
+                {
+                  name: 'regionPreference',
+                  type: 'text',
+                  label: '意向区域',
+                },
+              ],
+            },
+            {
+              name: 'hasCampusExperience',
+              type: 'checkbox',
+              label: '有校园经营经验',
+            },
+            {
+              name: 'attachments',
+              type: 'upload',
+              relationTo: 'media',
+              hasMany: true,
+              label: '用户上传图片/附件',
+            },
+            {
+              name: 'transferDetails',
+              type: 'group',
+              label: '店铺转让专属信息',
+              admin: {
+                condition: (_, siblingData) => siblingData?.leadType === 'transfer',
+              },
+              fields: [
+                { name: 'locationText', type: 'text', label: '店铺位置' },
+                { name: 'feeText', type: 'text', label: '面积与费用' },
+                { name: 'transferFee', type: 'text', label: '转让费预期' },
+                { name: 'remainingTerm', type: 'text', label: '剩余合同期' },
+                { name: 'includesEquipment', type: 'checkbox', label: '是否包含设备' },
+              ],
+            },
+            {
+              name: 'equipmentDetails',
+              type: 'group',
+              label: '设备供需专属信息',
+              admin: {
+                condition: (_, siblingData) => ['equipment_sell', 'equipment_buy', 'equipment_recycle'].includes(siblingData?.leadType),
+              },
+              fields: [
+                { name: 'equipmentName', type: 'text', label: '设备名称' },
+                { name: 'specText', type: 'text', label: '数量/规格' },
+                { name: 'equipmentCondition', type: 'text', label: '成色/说明' },
+                { name: 'expectedPrice', type: 'text', label: '预算/期望价格' },
+              ],
+            },
+            {
+              name: 'remark',
+              type: 'textarea',
+              label: '用户补充说明',
+            },
+          ],
+        },
+        {
+          label: '跟进历史',
+          fields: [
+            {
+              name: 'followTimeline',
+              type: 'ui',
+              label: '跟进Timeline',
+              admin: {
+                components: {
+                  Field: '@/app/admin/components/LeadFollowTimeline',
+                },
+              },
+            },
+          ],
+        },
+      ],
+    },
+    // Sidebar fields
+    {
       name: 'submitterOpenId',
       type: 'text',
       label: '提交用户 OpenID',
@@ -29,105 +173,6 @@ export const Leads: CollectionConfig = {
         readOnly: true,
         position: 'sidebar',
       },
-    },
-    {
-      name: 'leadType',
-      type: 'select',
-      required: true,
-      defaultValue: 'leasing',
-      label: '线索类型',
-      options: [
-        { label: '找铺咨询', value: 'leasing' },
-        { label: '店铺转让', value: 'transfer' },
-        { label: '出售设备', value: 'equipment_sell' },
-        { label: '求购设备', value: 'equipment_buy' },
-        { label: '回收咨询', value: 'equipment_recycle' },
-        { label: '品牌合作', value: 'brand_cooperation' },
-      ],
-    },
-    {
-      name: 'sourceChannel',
-      type: 'select',
-      defaultValue: 'mini_program',
-      label: '来源渠道',
-      options: [
-        { label: '小程序', value: 'mini_program' },
-        { label: '网站', value: 'website' },
-        { label: '后台录入', value: 'admin' },
-      ],
-    },
-    {
-      name: 'name',
-      type: 'text',
-      required: true,
-      label: '称呼',
-    },
-    {
-      name: 'phone',
-      type: 'text',
-      required: true,
-      label: '手机号',
-    },
-    {
-      name: 'businessType',
-      type: 'text',
-      label: '经营品类/设备名称',
-    },
-    {
-      name: 'budgetRange',
-      type: 'text',
-      label: '预算/期望价格',
-    },
-    {
-      name: 'regionPreference',
-      type: 'text',
-      label: '意向区域',
-    },
-    {
-      name: 'hasCampusExperience',
-      type: 'checkbox',
-      label: '有校园经营经验',
-    },
-    {
-      name: 'transferDetails',
-      type: 'group',
-      label: '店铺转让信息',
-      admin: {
-        condition: (_, siblingData) => siblingData?.leadType === 'transfer',
-      },
-      fields: [
-        { name: 'locationText', type: 'text', label: '店铺位置' },
-        { name: 'feeText', type: 'text', label: '面积与费用' },
-        { name: 'transferFee', type: 'text', label: '转让费预期' },
-        { name: 'remainingTerm', type: 'text', label: '剩余合同期' },
-        { name: 'includesEquipment', type: 'checkbox', label: '是否包含设备' },
-      ],
-    },
-    {
-      name: 'equipmentDetails',
-      type: 'group',
-      label: '设备供需信息',
-      admin: {
-        condition: (_, siblingData) => ['equipment_sell', 'equipment_buy', 'equipment_recycle'].includes(siblingData?.leadType),
-      },
-      fields: [
-        { name: 'equipmentName', type: 'text', label: '设备名称' },
-        { name: 'specText', type: 'text', label: '数量/规格' },
-        { name: 'equipmentCondition', type: 'text', label: '成色/说明' },
-        { name: 'expectedPrice', type: 'text', label: '预算/期望价格' },
-      ],
-    },
-    {
-      name: 'attachments',
-      type: 'upload',
-      relationTo: 'media',
-      hasMany: true,
-      label: '用户上传图片',
-    },
-    {
-      name: 'remark',
-      type: 'textarea',
-      label: '补充说明',
     },
     {
       name: 'status',
@@ -146,40 +191,59 @@ export const Leads: CollectionConfig = {
       ],
       defaultValue: 'new',
       required: true,
+      admin: {
+        position: 'sidebar',
+      },
     },
     {
       name: 'project',
       type: 'relationship',
       relationTo: 'projects',
-      label: '关联项目',
+      label: '关联招商项目',
+      admin: {
+        position: 'sidebar',
+      },
     },
     {
       name: 'projectTitle',
       type: 'text',
-      label: '项目标题',
+      label: '关联项目标题',
       admin: {
         readOnly: true,
+        position: 'sidebar',
       },
     },
     {
       name: 'owner',
       type: 'text',
-      label: '负责人',
+      label: '跟进负责人',
+      admin: {
+        position: 'sidebar',
+      },
     },
     {
       name: 'nextFollowAt',
       type: 'date',
       label: '下次跟进时间',
+      admin: {
+        position: 'sidebar',
+      },
     },
     {
       name: 'closedAmount',
       type: 'number',
-      label: '成交金额/服务费',
+      label: '成交金额/服务费 (元)',
+      admin: {
+        position: 'sidebar',
+      },
     },
     {
       name: 'lostReason',
       type: 'text',
-      label: '失败原因',
+      label: '流失/失败原因',
+      admin: {
+        position: 'sidebar',
+      },
     },
   ],
   hooks: {

@@ -53,7 +53,6 @@ export function fromArrayItems(value: unknown) {
   return value
     .map(item => (typeof item === 'string' ? item.trim() : ''))
     .filter(Boolean)
-    .map(item => ({ item }))
 }
 
 function publicBaseUrl() {

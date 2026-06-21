@@ -37,10 +37,6 @@ async function findBySeedKey(payload: Awaited<ReturnType<typeof getPayload>>, co
   return result.docs[0] as { id: string | number } | undefined
 }
 
-function items(values: readonly string[]) {
-  return values.map(item => ({ item }))
-}
-
 async function upsert(
   payload: Awaited<ReturnType<typeof getPayload>>,
   collection: Collection,
@@ -137,11 +133,11 @@ async function main() {
       projectType: project.projectType,
       areaText: project.areaText,
       feeText: project.feeText,
-      suitableBusiness: items(project.suitableBusiness),
-      unsuitableBusiness: items(project.unsuitableBusiness),
-      highlights: items(project.highlights),
-      trafficTags: items(project.trafficTags),
-      facilityTags: items(project.facilityTags),
+      suitableBusiness: project.suitableBusiness,
+      unsuitableBusiness: project.unsuitableBusiness,
+      highlights: project.highlights,
+      trafficTags: project.trafficTags,
+      facilityTags: project.facilityTags,
       advisorTips: project.advisorTips,
       customerInfo: project.customerInfo,
       cooperationMode: project.cooperationMode,

@@ -2,6 +2,10 @@ import type { CollectionConfig } from 'payload'
 
 export const FollowRecords: CollectionConfig = {
   slug: 'follow-records',
+  labels: {
+    plural: '跟进历史明细',
+    singular: '跟进历史明细',
+  },
   admin: {
     useAsTitle: 'content',
   },
@@ -25,13 +29,13 @@ export const FollowRecords: CollectionConfig = {
       type: 'relationship',
       relationTo: 'leads',
       required: true,
-      label: '线索',
+      label: '关联线索/商机',
     },
     {
       name: 'content',
       type: 'textarea',
       required: true,
-      label: '跟进内容',
+      label: '跟进内容详情',
     },
     {
       name: 'nextFollowAt',
@@ -41,7 +45,7 @@ export const FollowRecords: CollectionConfig = {
     {
       name: 'operatorName',
       type: 'text',
-      label: '跟进人',
+      label: '跟进人姓名',
     },
   ],
   timestamps: true,
