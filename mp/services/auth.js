@@ -1,8 +1,10 @@
+const config = require('../config.js');
+
 function getAppConfig() {
   return (getApp && getApp()) ? getApp().globalData : {
-    apiUrl: 'http://127.0.0.1:3000/api',
+    apiUrl: config.API_URL,
     devOpenId: 'dev-openid-local',
-    useLocalMock: true
+    useLocalMock: false
   };
 }
 

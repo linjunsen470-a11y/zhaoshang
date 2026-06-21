@@ -6,6 +6,7 @@
   background: linear-gradient(135deg, #2563eb 0%, #0f766e 100%);
   color: #ffffff;
   padding: 40rpx;
+  border-radius: 0 !important;
 }
 
 .form-title {
@@ -129,6 +130,60 @@
   font-size: 22rpx;
   color: #64748b;
   margin-top: 10rpx;
+}
+
+.project-context {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+  margin: 0 30rpx 24rpx;
+  padding: 24rpx;
+}
+
+.project-context-cover {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 12rpx;
+  flex-shrink: 0;
+  background: #e2e8f0;
+}
+
+.project-context-label {
+  font-size: 22rpx;
+  color: #64748b;
+  margin-bottom: 8rpx;
+}
+
+.project-context-title {
+  font-size: 28rpx;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+.project-context-fee {
+  font-size: 24rpx;
+  color: #3b82f6;
+  margin-top: 8rpx;
+  font-weight: 600;
+}
+
+.privacy-consent {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 20rpx 30rpx 0;
+  font-size: 24rpx;
+  color: #64748b;
+}
+
+.privacy-text {
+  margin-left: 8rpx;
+}
+
+.privacy-link {
+  color: #3b82f6;
+  font-weight: 600;
 }
 
 .form-actions {

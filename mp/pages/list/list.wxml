@@ -5,7 +5,7 @@
         <icon type="search" size="14" color="#94a3b8" class="search-icon"></icon>
         <input type="text" placeholder="输入关键词搜索项目..."
                confirm-type="search" bindconfirm="onSearch" bindinput="onSearchInput" value="{{keyword}}" />
-        <text class="clear-btn" wx:if="{{keyword}}" bindtap="onResetFilters">×</text>
+        <text class="clear-btn" wx:if="{{keyword}}" bindtap="onClearKeyword">×</text>
       </view>
     </view>
 
@@ -13,6 +13,12 @@
       <view class="filter-tab-item {{selectedDistrict !== '全部' ? 'active-filter' : ''}} {{activeTab === 'district' ? 'tab-open' : ''}}"
             bindtap="onTabTap" data-tab="district">
         <text class="tab-text ellipsis">{{selectedDistrict === '全部' ? '区域' : selectedDistrict}}</text>
+        <text class="arrow-icon">▾</text>
+      </view>
+
+      <view class="filter-tab-item {{selectedOpportunityType !== '全部' ? 'active-filter' : ''}} {{activeTab === 'opportunityType' ? 'tab-open' : ''}}"
+            bindtap="onTabTap" data-tab="opportunityType">
+        <text class="tab-text ellipsis">{{selectedOpportunityType === '全部' ? '来源' : (selectedOpportunityType === 'leasing' ? '重点招商' : '委托转让')}}</text>
         <text class="arrow-icon">▾</text>
       </view>
 
@@ -52,6 +58,13 @@
       </view>
     </scroll-view>
 
+    <scroll-view scroll-y class="drawer-content" wx:if="{{activeTab === 'opportunityType'}}">
+      <view class="option-item {{selectedOpportunityType === item.val ? 'selected-option' : ''}}"
+            wx:for="{{opportunityTypes}}" wx:key="val" bindtap="onSelectOption" data-field="opportunityType" data-val="{{item.val}}">
+        {{item.name}}
+      </view>
+    </scroll-view>
+
     <scroll-view scroll-y class="drawer-content" wx:if="{{activeTab === 'type'}}">
       <view class="option-item {{selectedType === item ? 'selected-option' : ''}}"
             wx:for="{{types}}" wx:key="*this" bindtap="onSelectOption" data-field="type" data-val="{{item}}">
@@ -82,14 +95,22 @@
   </view>
 
   <view class="list-body">
-    <view class="filter-tip flex justify-between align-center" wx:if="{{selectedDistrict !== '全部' || selectedType !== '全部' || selectedBudget !== '全部' || selectedBusiness !== '全部' || selectedStatus !== '全部' || keyword || isRecommendedOnly || isFavoritesOnly}}">
+    <view class="filter-tip flex justify-between align-center" wx:if="{{selectedDistrict !== '全部' || selectedOpportunityType !== '全部' || selectedType !== '全部' || selectedBudget !== '全部' || selectedBusiness !== '全部' || selectedStatus !== '全部' || keyword || isRecommendedOnly || isFavoritesOnly}}">
       <text class="tip-text">已启用筛选条件</text>
       <text class="reset-btn-link" bindtap="onResetFilters">重置筛选</text>
     </view>
 
+    <view class="fav-local-tip" wx:if="{{isFavoritesOnly}}">收藏仅保存在本机，换设备后需重新收藏</view>
+
     <view class="loading-state" wx:if="{{loading}}">
       <view class="spinner"></view>
       <text>正在加载招商铺位...</text>
+    </view>
+
+    <view class="error-state" wx:elif="{{loadError}}">
+      <text class="error-title">加载失败</text>
+      <text class="error-desc">请检查网络后重试</text>
+      <button class="btn btn-primary btn-sm" bindtap="onRetryLoad">点击重试</button>
     </view>
 
     <block wx:else>

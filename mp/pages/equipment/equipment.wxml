@@ -58,6 +58,12 @@
     </view>
   </view>
 
+  <view class="privacy-consent" wx:if="{{!isEditMode}}" bindtap="onTogglePrivacy">
+    <checkbox checked="{{privacyAccepted}}" color="#3b82f6" />
+    <text class="privacy-text">我已阅读并同意</text>
+    <text class="privacy-link" catchtap="onGoPrivacy">《隐私政策》</text>
+  </view>
+
   <view class="form-actions">
     <button class="btn btn-primary" loading="{{submitting}}" disabled="{{submitting || uploadingImages}}" bindtap="onSubmitForm">{{isEditMode ? '保存修改' : '提交设备需求'}}</button>
   </view>

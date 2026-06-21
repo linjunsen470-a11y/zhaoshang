@@ -305,7 +305,41 @@
   font-size: 26rpx;
   padding: 10rpx 40rpx;
 }
+
 .btn-sm {
   height: auto;
   line-height: 1.5;
+}
+
+.fav-local-tip {
+  margin: 0 30rpx 16rpx;
+  padding: 12rpx 20rpx;
+  background: #fffbeb;
+  border: 1rpx solid #fef3c7;
+  border-radius: 12rpx;
+  font-size: 22rpx;
+  color: #d97706;
+  text-align: center;
+}
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100rpx 30rpx;
+  text-align: center;
+}
+
+.error-title {
+  font-size: 30rpx;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 12rpx;
+}
+
+.error-desc {
+  font-size: 24rpx;
+  color: #64748b;
+  margin-bottom: 28rpx;
 }

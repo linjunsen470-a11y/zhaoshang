@@ -26,7 +26,10 @@
       <view class="menu-item flex align-center justify-between" bindtap="onGoToFavorites">
         <view class="flex align-center">
           <text class="menu-icon">☆</text>
-          <text class="menu-text">我的收藏项目</text>
+          <view class="menu-text-group">
+            <text class="menu-text">我的收藏项目</text>
+            <text class="menu-sub">收藏仅保存在本机</text>
+          </view>
         </view>
         <text class="menu-arrow">›</text>
       </view>

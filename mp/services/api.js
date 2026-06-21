@@ -1,4 +1,5 @@
 const auth = require('./auth.js');
+const config = require('../config.js');
 
 const now = Date.now();
 
@@ -108,8 +109,8 @@ async function request(urlPath, method = 'GET', data = {}, options = {}) {
   const retried = Boolean(options.retried);
   const appInstance = getApp() || {
     globalData: {
-      apiUrl: 'http://127.0.0.1:3000/api',
-      useLocalMock: true
+      apiUrl: config.API_URL,
+      useLocalMock: false
     }
   };
   initLocalStorage();

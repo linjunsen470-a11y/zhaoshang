@@ -6,6 +6,7 @@ Page({
     project: null,
     isFavorited: false,
     loading: true,
+    loadError: false,
     formattedUpdateTime: '',
     currentImageIndex: 0
   },
@@ -24,7 +25,7 @@ Page({
   },
 
   loadDetail(id) {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadError: false });
     api.getProjectDetail(id)
       .then(project => {
         if (!project) {
@@ -47,14 +48,19 @@ Page({
           project: { ...project, images },
           formattedUpdateTime: formattedDate,
           currentImageIndex: 0,
-          loading: false
+          loading: false,
+          loadError: false
         });
       })
       .catch(err => {
         console.error(err);
-        this.setData({ loading: false });
+        this.setData({ loading: false, loadError: true });
         wx.showToast({ title: '拉取详情失败', icon: 'none' });
       });
+  },
+
+  onRetryLoad() {
+    if (this.data.projectId) this.loadDetail(this.data.projectId);
   },
 
   checkFavoriteStatus(id) {
@@ -92,17 +98,46 @@ Page({
   },
 
   onCallAdvisor() {
-    getApp().callAdvisor();
+    const phone = getApp().globalData.advisorPhone;
+    wx.showActionSheet({
+      itemList: [`呼叫顾问：${phone}`, '复制电话 (微信同号)'],
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          wx.makePhoneCall({
+            phoneNumber: phone,
+            fail: () => {
+              wx.setClipboardData({
+                data: phone,
+                success: () => {
+                  wx.showToast({
+                    title: '拨打失败，号码已复制',
+                    icon: 'none',
+                    duration: 2500
+                  });
+                }
+              });
+            }
+          });
+        } else if (res.tapIndex === 1) {
+          wx.setClipboardData({
+            data: phone,
+            success: () => {
+              wx.showToast({
+                title: '已复制，可去微信添加好友',
+                icon: 'none',
+                duration: 2000
+              });
+            }
+          });
+        }
+      }
+    });
   },
 
   onGoToConsult() {
     if (this.data.project) {
       wx.navigateTo({ url: `/pages/apply/apply?projectId=${this.data.projectId}` });
     }
-  },
-
-  onShareTap() {
-    wx.showToast({ title: '请点击右上角分享或使用下方按钮', icon: 'none' });
   },
 
   onCopyAddress() {
@@ -115,14 +150,6 @@ Page({
     wx.setClipboardData({
       data: text,
       success: () => wx.showToast({ title: '地址已复制', icon: 'success' })
-    });
-  },
-
-  onCopyPhone() {
-    const phone = getApp().globalData.advisorPhone;
-    wx.setClipboardData({
-      data: phone,
-      success: () => wx.showToast({ title: '电话已复制', icon: 'success' })
     });
   },
 

@@ -4,6 +4,12 @@
     <text>正在加载详情...</text>
   </view>
 
+  <view class="error-state" wx:elif="{{loadError}}">
+    <text class="error-title">加载失败</text>
+    <text class="error-desc">请检查网络后重试</text>
+    <button class="btn btn-primary btn-sm" bindtap="onRetryLoad">点击重试</button>
+  </view>
+
   <block wx:else>
     <view class="swiper-wrap" wx:if="{{project.images && project.images.length}}">
       <swiper class="detail-swiper" indicator-dots="{{project.images.length > 1}}" circular="{{project.images.length > 1}}" autoplay="false" duration="300" bindchange="onSwiperChange" indicator-color="rgba(255, 255, 255, 0.45)" indicator-active-color="#ffffff">
@@ -56,9 +62,13 @@
             <text class="param-label">所在区域</text>
             <text class="param-val">{{project.district}}</text>
           </view>
-          <view class="param-row" wx:if="{{project.addressText}}">
+          <view class="param-row param-row-clickable" wx:if="{{project.addressText}}" bindtap="onCopyAddress" hover-class="param-row-active" hover-stay-time="100">
             <text class="param-label">详细地址</text>
-            <text class="param-val">{{project.addressText}}</text>
+            <view class="param-val address-val flex align-center justify-end">
+              <text class="address-text">{{project.addressText}}</text>
+              <text class="copy-hint-text">（点击复制）</text>
+              <text class="copy-icon">📋</text>
+            </view>
           </view>
         </view>
       </view>
@@ -125,12 +135,6 @@
       </view>
 
       <view class="safe-bottom-space"></view>
-
-      <view class="bottom-extra flex align-center justify-center" style="padding:0 20rpx 12rpx; font-size:24rpx; gap:32rpx; color:#64748b; margin-bottom: 8rpx;">
-        <text bindtap="onCopyPhone" style="padding:8rpx 12rpx;">复制电话</text>
-        <text bindtap="onCopyAddress" style="padding:8rpx 12rpx;">复制地址</text>
-        <button class="btn btn-outline" style="font-size:24rpx; padding:8rpx 20rpx; height:auto; line-height:1.4;" open-type="share" bindtap="onShareTap">分享项目</button>
-      </view>
     </view>
 
     <view class="bottom-action-bar flex align-center justify-between">
@@ -138,6 +142,11 @@
         <text class="fav-icon {{isFavorited ? 'fav-active' : ''}}">{{isFavorited ? '★' : '☆'}}</text>
         <text class="fav-lbl">{{isFavorited ? '已收藏' : '收藏'}}</text>
       </view>
+
+      <button class="share-action flex flex-col align-center justify-center" open-type="share">
+        <text class="share-icon">➦</text>
+        <text class="share-lbl">分享</text>
+      </button>
 
       <button class="btn btn-outline flex-1 action-btn" hover-class="btn-outline-active" bindtap="onCallAdvisor">联系顾问</button>
 

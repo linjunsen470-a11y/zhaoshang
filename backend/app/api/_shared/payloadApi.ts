@@ -56,7 +56,7 @@ export function fromArrayItems(value: unknown) {
 }
 
 function publicBaseUrl() {
-  return (process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3000').replace(/\/$/, '')
+  return (process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://127.0.0.1:3000').replace(/\/$/, '')
 }
 
 function absoluteUrl(url: string) {

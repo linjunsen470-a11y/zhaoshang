@@ -1,12 +1,23 @@
 const api = require('../../services/api.js');
 const upload = require('../../services/upload.js');
-const { clip, validatePhone, validateName, loadLeadForEdit, config } = require('../../utils/form.js');
+const {
+  clip,
+  validatePhone,
+  validateName,
+  validatePrivacyConsent,
+  rememberPrivacyConsent,
+  hasPrivacyConsent,
+  loadLeadForEdit,
+  config
+} = require('../../utils/form.js');
 
 Page({
   data: {
     leadType: 'leasing',
     projectId: '',
     projectTitle: '',
+    projectCover: '',
+    projectFeeText: '',
     name: '',
     phone: '',
     businessType: '',
@@ -22,21 +33,17 @@ Page({
     budgetIndex: -1,
     submitting: false,
     isEditMode: false,
-    leadId: ''
+    leadId: '',
+    privacyAccepted: false
   },
 
   onLoad(options) {
+    this.setData({ privacyAccepted: hasPrivacyConsent() });
     if (options.leadType) this.setData({ leadType: options.leadType });
     if (options.projectId) {
       this.setData({ projectId: options.projectId });
       this.loadProjectTitle(options.projectId);
     }
-    if (options.from === 'budget') {
-      this.setData({
-        remark: '希望顾问协助做开店预算测算，并匹配适合预算的校园铺位。'
-      });
-    }
-
     const userInfo = wx.getStorageSync('userInfo') || getApp().globalData.userInfo;
     if (userInfo && !options.leadId) {
       this.setData({
@@ -76,6 +83,8 @@ Page({
         if (project) {
           this.setData({
             projectTitle: project.title,
+            projectCover: project.coverImage || '',
+            projectFeeText: project.feeText || '',
             regionPreference: project.district
           });
         }
@@ -125,6 +134,14 @@ Page({
     if (urls.length) wx.previewImage({ urls, current });
   },
 
+  onTogglePrivacy() {
+    this.setData({ privacyAccepted: !this.data.privacyAccepted });
+  },
+
+  onGoPrivacy() {
+    wx.navigateTo({ url: '/pages/privacy/privacy' });
+  },
+
   onClearForm() {
     this.setData({
       name: '',
@@ -165,7 +182,13 @@ Page({
       wx.showToast({ title: '请选择投资预算', icon: 'none' });
       return;
     }
+    const privacyError = validatePrivacyConsent(this.data.privacyAccepted);
+    if (privacyError) {
+      wx.showToast({ title: privacyError, icon: 'none' });
+      return;
+    }
 
+    rememberPrivacyConsent();
     this.setData({ submitting: true });
     const payload = {
       leadType,

@@ -1,4 +1,6 @@
 module.exports = {
+  // Plan A: mini-program talks to local Payload/Next API (not built-in wx storage mock).
+  API_URL: 'http://127.0.0.1:3000/api',
   ADVISOR_PHONE: '18888888888',
   MAX_NAME_LENGTH: 20,
   MAX_PHONE_LENGTH: 11,

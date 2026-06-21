@@ -32,7 +32,7 @@
             <view class="spec-grid flex flex-wrap">
               <view class="spec-cell">
                 <text class="spec-lbl">需求类型：</text>
-                <text class="spec-val">{{item.leadType}}</text>
+                <text class="spec-val">{{item.leadTypeLabel}}</text>
               </view>
               <view class="spec-cell" wx:if="{{item.businessType}}">
                 <text class="spec-lbl">品类/设备：</text>

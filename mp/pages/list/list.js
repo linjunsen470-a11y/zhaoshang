@@ -3,6 +3,11 @@ const api = require('../../services/api.js');
 Page({
   data: {
     districts: ['全部', '天河', '番禺', '增城', '白云', '黄埔', '从化'],
+    opportunityTypes: [
+      { val: '全部', name: '全部来源' },
+      { val: 'leasing', name: '重点招商' },
+      { val: 'transfer', name: '委托转让' }
+    ],
     types: ['全部', '食堂档口', '校园商业街', '校内铺位', '校外临校铺位', '校园服务点', '店铺转让', '其他'],
     budgets: ['全部', '5万以内', '5-10万', '10-20万', '20-50万', '50万以上', '面议'],
     businesses: ['全部', '快餐', '粉面', '小吃', '奶茶', '咖啡', '便利店', '水果', '文具', '打印', '快递', '维修', '洗衣'],
@@ -23,7 +28,8 @@ Page({
     isFavoritesOnly: false,
     activeTab: '',
     projectList: [],
-    loading: true
+    loading: true,
+    loadError: false
   },
 
   onLoad(options) {
@@ -45,7 +51,13 @@ Page({
       this.setData(newState, () => this.loadProjects());
       return;
     }
-    this.loadProjects();
+
+    const favs = wx.getStorageSync('favorites') || [];
+    if (this.data.projectList.length > 0) {
+      let list = this.data.projectList.map(p => ({ ...p, isFav: favs.includes(p.id) }));
+      if (this.data.isFavoritesOnly) list = list.filter(p => p.isFav);
+      this.setData({ projectList: list });
+    }
   },
 
   getBaseFilters() {
@@ -84,9 +96,9 @@ Page({
   },
 
   loadProjects(callback) {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadError: false });
 
-    const params = {};
+    const params = { public: true };
     if (this.data.keyword) params.q = this.data.keyword;
     if (this.data.selectedDistrict !== '全部') params.district = this.data.selectedDistrict;
     if (this.data.selectedType !== '全部') params.projectType = this.data.selectedType;
@@ -105,16 +117,32 @@ Page({
 
         this.setData({
           projectList: list.map(p => ({ ...p, isFav: favs.includes(p.id) })),
-          loading: false
+          loading: false,
+          loadError: false
         });
         if (callback) callback();
       })
       .catch(err => {
         console.error(err);
-        this.setData({ loading: false });
-        wx.showToast({ title: '加载项目失败', icon: 'none' });
+        this.setData({ loading: false, loadError: true });
+        wx.showToast({
+          title: '加载失败，请稍后重试',
+          icon: 'none',
+          duration: 2000
+        });
         if (callback) callback();
       });
+  },
+
+  onRetryLoad() {
+    this.loadProjects();
+  },
+
+  onClearKeyword() {
+    this.setData({ keyword: '' }, () => {
+      wx.showLoading({ title: '搜索中...', mask: false });
+      this.loadProjects(() => wx.hideLoading());
+    });
   },
 
   onSearchInput(e) {
@@ -135,8 +163,8 @@ Page({
     const { field, val } = e.currentTarget.dataset;
     const updates = { activeTab: '' };
     if (field === 'district') updates.selectedDistrict = val;
-    else if (field === 'type') updates.selectedType = val;
     else if (field === 'opportunityType') updates.selectedOpportunityType = val;
+    else if (field === 'type') updates.selectedType = val;
     else if (field === 'budget') updates.selectedBudget = val;
     else if (field === 'business') updates.selectedBusiness = val;
     else if (field === 'status') updates.selectedStatus = val;

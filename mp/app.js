@@ -4,15 +4,15 @@ App({
   globalData: {
     userInfo: {
       nickname: '',
-      avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
+      avatarUrl: '/images/tab_my.png',
       phone: ''
     },
     advisorPhone: config.ADVISOR_PHONE,
-    apiUrl: 'http://127.0.0.1:3000/api',
-    fallbackUrl: 'http://127.0.0.1:5173/api',
+    apiUrl: config.API_URL,
     devOpenId: 'dev-openid-local',
-    // true: use built-in mock data without network.
-    // false: request Payload/Next compatible API at apiUrl and use auth token.
+    // Plan A (default): Payload backend at apiUrl.
+    // Start Postgres, then run `pnpm backend:seed` once and `pnpm backend:dev`.
+    // Set true only for offline demo without a running backend.
     useLocalMock: false
   },
 
@@ -34,10 +34,22 @@ App({
           phoneNumber: phone,
           success: () => wx.showToast({ title: '正在拨打...', icon: 'none', duration: 1500 }),
           fail: () => {
-            wx.showToast({
-              title: `模拟拨打：${phone}`,
-              icon: 'none',
-              duration: 2800
+            wx.setClipboardData({
+              data: phone,
+              success: () => {
+                wx.showToast({
+                  title: '拨打失败，号码已复制',
+                  icon: 'none',
+                  duration: 2500
+                });
+              },
+              fail: () => {
+                wx.showToast({
+                  title: `请手动拨打 ${phone}`,
+                  icon: 'none',
+                  duration: 2800
+                });
+              }
             });
           }
         });

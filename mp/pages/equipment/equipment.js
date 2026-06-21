@@ -1,6 +1,15 @@
 const api = require('../../services/api.js');
 const upload = require('../../services/upload.js');
-const { clip, validatePhone, validateName, loadLeadForEdit, config } = require('../../utils/form.js');
+const {
+  clip,
+  validatePhone,
+  validateName,
+  validatePrivacyConsent,
+  rememberPrivacyConsent,
+  hasPrivacyConsent,
+  loadLeadForEdit,
+  config
+} = require('../../utils/form.js');
 
 Page({
   data: {
@@ -17,10 +26,12 @@ Page({
     uploadingImages: false,
     submitting: false,
     isEditMode: false,
-    leadId: ''
+    leadId: '',
+    privacyAccepted: false
   },
 
   onLoad(options) {
+    this.setData({ privacyAccepted: hasPrivacyConsent() });
     const userInfo = wx.getStorageSync('userInfo') || getApp().globalData.userInfo;
     if (userInfo && !options.leadId) {
       this.setData({
@@ -85,6 +96,14 @@ Page({
     if (urls.length) wx.previewImage({ urls, current });
   },
 
+  onTogglePrivacy() {
+    this.setData({ privacyAccepted: !this.data.privacyAccepted });
+  },
+
+  onGoPrivacy() {
+    wx.navigateTo({ url: '/pages/privacy/privacy' });
+  },
+
   onSubmitForm() {
     const { leadType, name, phone, equipmentName, specText, equipmentCondition, budgetRange, regionPreference, remark, attachments, uploadingImages } = this.data;
 
@@ -105,7 +124,13 @@ Page({
       wx.showToast({ title: '请填写设备名称', icon: 'none' });
       return;
     }
+    const privacyError = validatePrivacyConsent(this.data.privacyAccepted);
+    if (privacyError) {
+      wx.showToast({ title: privacyError, icon: 'none' });
+      return;
+    }
 
+    rememberPrivacyConsent();
     this.setData({ submitting: true });
     const payload = {
       leadType,

@@ -3,11 +3,16 @@ const api = require('../../services/api.js');
 Page({
   data: {
     searchKeyword: '',
-    serviceEntrances: [
-      { id: 'find', name: '找校园铺位', desc: '食堂档口/商业街/服务点', icon: '🏫', action: 'list' },
+    primaryService: {
+      id: 'find',
+      name: '找校园铺位',
+      desc: '食堂档口/商业街/服务点',
+      icon: '🏫',
+      action: 'list'
+    },
+    secondaryServices: [
       { id: 'transfer', name: '委托转让', desc: '退店换店，平台撮合', icon: '🔁', action: 'transfer' },
-      { id: 'equipment', name: '买卖设备', desc: '餐饮设备求购/回收', icon: '🧊', action: 'equipment' },
-      { id: 'budget', name: '开店测算', desc: '轻量预算评估', icon: '💡', action: 'budget' }
+      { id: 'equipment', name: '餐饮设备', desc: '设备求购/出售/回收', icon: '🧊', action: 'equipment' }
     ],
     categories: [
       { id: 'cat1', name: '食堂档口', icon: '🍜', type: 'projectType', val: '食堂档口' },
@@ -17,11 +22,12 @@ Page({
       { id: 'cat5', name: '便利零售', icon: '🛒', type: 'business', val: '便利店' },
       { id: 'cat6', name: '店铺转让', icon: '🔁', type: 'opportunityType', val: 'transfer' },
       { id: 'cat7', name: '低预算', icon: '💰', type: 'budget', val: '5万以内' },
-      { id: 'cat8', name: '推荐项目', icon: '🔥', type: 'status', val: 'online' }
+      { id: 'cat8', name: '推荐项目', icon: '🔥', type: 'recommended', val: true }
     ],
     recommendedList: [],
     latestList: [],
-    loading: true
+    loading: true,
+    loadError: false
   },
 
   onLoad() {
@@ -46,7 +52,7 @@ Page({
   },
 
   loadData(callback) {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadError: false });
 
     api.getProjects({ public: true })
       .then(projects => {
@@ -59,16 +65,25 @@ Page({
             .filter(p => p.isRecommended && p.status !== 'offline')
             .map(p => ({ ...p, isFav: favs.includes(p.id) })),
           latestList: activeProjects.slice(0, 4).map(p => ({ ...p, isFav: favs.includes(p.id) })),
-          loading: false
+          loading: false,
+          loadError: false
         });
         if (callback) callback();
       })
       .catch(err => {
         console.error(err);
-        this.setData({ loading: false });
-        wx.showToast({ title: '加载失败', icon: 'none' });
+        this.setData({ loading: false, loadError: true });
+        wx.showToast({
+          title: '加载失败，请稍后重试',
+          icon: 'none',
+          duration: 2000
+        });
         if (callback) callback();
       });
+  },
+
+  onRetryLoad() {
+    this.loadData();
   },
 
   onSearchInput(e) {
@@ -89,8 +104,6 @@ Page({
       wx.navigateTo({ url: '/pages/transfer/transfer' });
     } else if (action === 'equipment') {
       wx.navigateTo({ url: '/pages/equipment-list/equipment-list' });
-    } else if (action === 'budget') {
-      wx.navigateTo({ url: '/pages/apply/apply?leadType=leasing&from=budget' });
     }
   },
 
@@ -102,6 +115,7 @@ Page({
     else if (type === 'budget') filter.budget = val;
     else if (type === 'status') filter.status = val;
     else if (type === 'opportunityType') filter.opportunityType = val;
+    else if (type === 'recommended') filter.recommended = true;
 
     wx.setStorageSync('pendingListFilter', filter);
     wx.switchTab({ url: '/pages/list/list' });

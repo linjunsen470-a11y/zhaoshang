@@ -1,4 +1,16 @@
 <view class="container">
+  <view class="loading-state" wx:if="{{loading}}">
+    <view class="spinner"></view>
+    <text>正在加载招商项目...</text>
+  </view>
+
+  <view class="error-state" wx:elif="{{loadError}}">
+    <text class="error-title">加载失败</text>
+    <text class="error-desc">请检查网络后重试</text>
+    <button class="btn btn-primary btn-sm" bindtap="onRetryLoad">点击重试</button>
+  </view>
+
+  <block wx:else>
   <view class="header-bg">
     <view class="welcome-text">校园开店资源撮合平台</view>
     <view class="search-bar">
@@ -10,11 +22,21 @@
   </view>
 
   <view class="service-grid card">
-    <view class="service-item" wx:for="{{serviceEntrances}}" wx:key="id"
-          bindtap="onServiceTap" data-action="{{item.action}}">
-      <text class="service-icon">{{item.icon}}</text>
-      <view class="service-title">{{item.name}}</view>
-      <view class="service-desc">{{item.desc}}</view>
+    <view class="service-item service-item-primary"
+          bindtap="onServiceTap" data-action="{{primaryService.action}}">
+      <text class="service-icon">{{primaryService.icon}}</text>
+      <view class="service-copy">
+        <view class="service-title">{{primaryService.name}}</view>
+        <view class="service-desc">{{primaryService.desc}}</view>
+      </view>
+    </view>
+    <view class="service-row-secondary">
+      <view class="service-item" wx:for="{{secondaryServices}}" wx:key="id"
+            bindtap="onServiceTap" data-action="{{item.action}}">
+        <text class="service-icon">{{item.icon}}</text>
+        <view class="service-title">{{item.name}}</view>
+        <view class="service-desc">{{item.desc}}</view>
+      </view>
     </view>
   </view>
 
@@ -109,4 +131,5 @@
     </view>
     <view class="call-btn badge">立即联系</view>
   </view>
+  </block>
 </view>

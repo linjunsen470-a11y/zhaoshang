@@ -1,7 +1,16 @@
 <view class="container form-page">
   <view class="form-header card">
     <view class="form-title">{{isEditMode ? '修改咨询信息' : (projectTitle ? '咨询项目' : '提交找铺需求')}}</view>
-    <view class="form-desc">{{projectTitle || '填写你的经营品类、预算和区域偏好，招商顾问会协助匹配合适铺位。'}}</view>
+    <view class="form-desc" wx:if="{{!projectTitle}}">填写你的经营品类、预算和区域偏好，招商顾问会协助匹配合适铺位。</view>
+  </view>
+
+  <view class="project-context card" wx:if="{{projectTitle && !isEditMode}}">
+    <image class="project-context-cover" src="{{projectCover}}" mode="aspectFill" wx:if="{{projectCover}}" />
+    <view class="project-context-info">
+      <view class="project-context-label">正在咨询</view>
+      <view class="project-context-title">{{projectTitle}}</view>
+      <view class="project-context-fee" wx:if="{{projectFeeText}}">{{projectFeeText}}</view>
+    </view>
   </view>
 
   <view class="form-card card">
@@ -51,6 +60,12 @@
         </view>
       </view>
     </view>
+  </view>
+
+  <view class="privacy-consent" wx:if="{{!isEditMode}}" bindtap="onTogglePrivacy">
+    <checkbox checked="{{privacyAccepted}}" color="#3b82f6" />
+    <text class="privacy-text">我已阅读并同意</text>
+    <text class="privacy-link" catchtap="onGoPrivacy">《隐私政策》</text>
   </view>
 
   <view class="form-actions">

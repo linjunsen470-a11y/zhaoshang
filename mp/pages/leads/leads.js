@@ -1,4 +1,5 @@
 const api = require('../../services/api.js');
+const { getLeadTypeLabel } = require('../../utils/form.js');
 
 function formatDateTime(value) {
   const date = new Date(value || Date.now());
@@ -65,6 +66,7 @@ Page({
         const formatted = (res || []).map(lead => ({
           ...lead,
           displayId: formatLeadId(lead.id),
+          leadTypeLabel: getLeadTypeLabel(lead.leadType),
           statusInfo: this.data.statusMap[lead.status] || this.data.statusMap.new,
           formattedTime: formatDateTime(lead.createdAt),
           follows: (lead.follows || []).map(f => ({

@@ -23,10 +23,6 @@ Page({
     this.loadData();
   },
 
-  onShow() {
-    this.loadData();
-  },
-
   onPullDownRefresh() {
     this.loadData(() => {
       wx.stopPullDownRefresh();
