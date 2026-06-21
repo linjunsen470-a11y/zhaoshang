@@ -20,6 +20,6 @@ Page({
   },
 
   onCallAdvisor() {
-    getApp().callAdvisor('18888888888');
+    getApp().callAdvisor();
   }
 });

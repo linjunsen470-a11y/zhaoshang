@@ -92,7 +92,7 @@ Page({
   },
 
   onCallAdvisor() {
-    getApp().callAdvisor('18888888888');
+    getApp().callAdvisor();
   },
 
   onGoToConsult() {
@@ -119,7 +119,7 @@ Page({
   },
 
   onCopyPhone() {
-    const phone = '18888888888';
+    const phone = getApp().globalData.advisorPhone;
     wx.setClipboardData({
       data: phone,
       success: () => wx.showToast({ title: '电话已复制', icon: 'success' })

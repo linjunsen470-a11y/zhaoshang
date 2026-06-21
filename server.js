@@ -22,12 +22,42 @@ const MIME_TYPES = {
 
 const ALL = '全部';
 const PUBLIC_STATUSES = new Set(['online', 'coming', 'full']);
+const ADMIN_ACCESS_KEY = process.env.ADMIN_ACCESS_KEY || 'local-admin';
+const LEAD_USER_FIELDS = [
+  'name', 'phone', 'businessType', 'budgetRange', 'regionPreference', 'hasCampusExperience',
+  'transferDetails', 'equipmentDetails', 'attachments', 'remark', 'leadType', 'sourceChannel', 'projectId',
+];
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Admin-Access',
   'Access-Control-Max-Age': '86400',
 };
+
+function isAdminRequest(req) {
+  return req.headers['x-admin-access'] === ADMIN_ACCESS_KEY;
+}
+
+function pickLeadUserFields(input = {}) {
+  const patch = {};
+  LEAD_USER_FIELDS.forEach(key => {
+    if (input[key] !== undefined) patch[key] = input[key];
+  });
+  return patch;
+}
+
+function maskPublicRegion(value) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  return text.length > 10 ? `${text.slice(0, 10)}…` : text;
+}
+
+function truncatePublicText(value, max = 80) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  return text.length > max ? `${text.slice(0, max)}…` : text;
+}
 
 function readData() {
   try {
@@ -281,12 +311,36 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (urlPath === '/api/leads' && req.method === 'GET') {
+      if (!isAdminRequest(req) && !query.phone) {
+        sendJSON({ error: '未登录或登录已过期' }, 401);
+        return;
+      }
+
       let result = [...data.leads];
-      if (query.phone) result = result.filter(l => l.phone === query.phone);
+      if (!isAdminRequest(req) && query.phone) {
+        result = result.filter(l => l.phone === query.phone);
+      }
       if (query.projectId) result = result.filter(l => l.projectId === query.projectId);
       if (query.status && query.status !== ALL) result = result.filter(l => l.status === query.status);
       if (query.leadType && query.leadType !== ALL) result = result.filter(l => (l.leadType || 'leasing') === query.leadType);
       sendJSON(withFollows(result, data.followRecords));
+      return;
+    }
+
+    const leadItemMatch = urlPath.match(/^\/api\/leads\/([^/]+)$/);
+    if (leadItemMatch && req.method === 'GET') {
+      const id = leadItemMatch[1];
+      const lead = data.leads.find(l => l.id === id);
+      if (!lead) {
+        sendJSON({ error: '线索不存在' }, 404);
+        return;
+      }
+      sendJSON({
+        ...lead,
+        follows: data.followRecords
+          .filter(f => f.leadId === lead.id)
+          .sort((a, b) => b.createdAt - a.createdAt),
+      });
       return;
     }
 
@@ -313,15 +367,15 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    if (urlPath.startsWith('/api/leads/') && req.method === 'PUT') {
-      const id = urlPath.substring('/api/leads/'.length);
+    if (leadItemMatch && req.method === 'PUT') {
+      const id = leadItemMatch[1];
       try {
         const index = data.leads.findIndex(l => l.id === id);
         if (index === -1) {
           sendJSON({ error: '线索不存在' }, 404);
           return;
         }
-        const updateFields = await readBody(req);
+        const updateFields = pickLeadUserFields(await readBody(req));
         data.leads[index] = {
           ...data.leads[index],
           ...updateFields,
@@ -336,8 +390,8 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    if (urlPath.startsWith('/api/leads/') && req.method === 'DELETE') {
-      const id = urlPath.substring('/api/leads/'.length);
+    if (leadItemMatch && req.method === 'DELETE') {
+      const id = leadItemMatch[1];
       const index = data.leads.findIndex(l => l.id === id);
       if (index === -1) {
         sendJSON({ error: '线索不存在' }, 404);
@@ -468,8 +522,8 @@ const server = http.createServer(async (req, res) => {
         leadType: l.leadType,
         businessType: l.businessType,
         budgetRange: l.budgetRange,
-        regionPreference: l.regionPreference,
-        remark: l.remark,
+        regionPreference: maskPublicRegion(l.regionPreference),
+        remark: truncatePublicText(l.remark),
         equipmentDetails: l.equipmentDetails,
         attachments: l.attachments || [],
         createdAt: l.createdAt

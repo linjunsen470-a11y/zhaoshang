@@ -16,17 +16,22 @@ function wxLogin() {
 }
 
 function postLogin(code, config) {
+  const useDevHeaders = Boolean(config.useLocalMock);
+  const devOpenId = config.devOpenId || 'dev-openid-local';
+  const headers = {};
+  const payload = { code };
+
+  if (useDevHeaders) {
+    headers['X-Dev-OpenId'] = devOpenId;
+    payload.devOpenId = devOpenId;
+  }
+
   return new Promise((resolve, reject) => {
     wx.request({
       url: `${config.apiUrl}/auth/wechat-login`,
       method: 'POST',
-      data: {
-        code,
-        devOpenId: config.devOpenId || 'dev-openid-local'
-      },
-      header: {
-        'X-Dev-OpenId': config.devOpenId || 'dev-openid-local'
-      },
+      data: payload,
+      header: headers,
       success: res => {
         if (res.statusCode >= 200 && res.statusCode < 300 && res.data && res.data.token) {
           wx.setStorageSync('authToken', res.data.token);

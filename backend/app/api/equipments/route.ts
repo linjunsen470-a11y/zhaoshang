@@ -1,4 +1,4 @@
-import { getPayloadInstance, json } from '../_shared/payloadApi'
+import { getPayloadInstance, json, maskPublicRegion, truncatePublicText } from '../_shared/payloadApi'
 
 export async function GET(request: Request) {
   const payload = await getPayloadInstance()
@@ -45,8 +45,8 @@ export async function GET(request: Request) {
       leadType: raw.leadType,
       businessType: raw.businessType || '',
       budgetRange: raw.budgetRange || '',
-      regionPreference: raw.regionPreference || '',
-      remark: raw.remark || '',
+      regionPreference: maskPublicRegion(raw.regionPreference),
+      remark: truncatePublicText(raw.remark),
       equipmentDetails: raw.equipmentDetails ? {
         equipmentName: details.equipmentName || '',
         specText: details.specText || '',

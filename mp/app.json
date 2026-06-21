@@ -9,7 +9,8 @@
     "pages/equipment-list/equipment-list",
     "pages/success/success",
     "pages/my/my",
-    "pages/leads/leads"
+    "pages/leads/leads",
+    "pages/privacy/privacy"
   ],
   "window": {
     "backgroundTextStyle": "light",

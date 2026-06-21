@@ -1,4 +1,5 @@
 const API_BASE = '/api';
+const ADMIN_ACCESS_KEY = 'local-admin';
 
 const LEAD_TYPE_MAP = {
   leasing: '找铺咨询',
@@ -401,8 +402,12 @@ function renderStatusBadge(status) {
   return map[status] || escapeHTML(status || '-');
 }
 
-async function fetchJSON(url, options) {
-  const res = await fetch(url, options);
+async function fetchJSON(url, options = {}) {
+  const headers = {
+    'X-Admin-Access': ADMIN_ACCESS_KEY,
+    ...(options.headers || {}),
+  };
+  const res = await fetch(url, { ...options, headers });
   if (!res.ok) {
     let message = '请求失败';
     try {

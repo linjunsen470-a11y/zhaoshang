@@ -7,7 +7,7 @@
   <view class="form-card card">
     <view class="form-item">
       <view class="item-label">称呼</view>
-      <input class="item-input" type="text" placeholder="例如：李老板" bindinput="onInputName" value="{{name}}" />
+      <input class="item-input" type="text" maxlength="20" placeholder="例如：李老板" bindinput="onInputName" value="{{name}}" />
     </view>
     <view class="form-item">
       <view class="item-label">手机号</view>
@@ -15,23 +15,23 @@
     </view>
     <view class="form-item">
       <view class="item-label">店铺位置</view>
-      <input class="item-input" type="text" placeholder="例如：从化某高校商业街中段" bindinput="onInputLocation" value="{{locationText}}" />
+      <input class="item-input" type="text" maxlength="50" placeholder="例如：从化某高校商业街中段" bindinput="onInputLocation" value="{{locationText}}" />
     </view>
     <view class="form-item">
       <view class="item-label">当前业态</view>
-      <input class="item-input" type="text" placeholder="例如：轻食、奶茶、咖啡" bindinput="onInputBusiness" value="{{businessType}}" />
+      <input class="item-input" type="text" maxlength="100" placeholder="例如：轻食、奶茶、咖啡" bindinput="onInputBusiness" value="{{businessType}}" />
     </view>
     <view class="form-item">
       <view class="item-label">面积与费用</view>
-      <input class="item-input" type="text" placeholder="例如：30m²，月租 7800 元" bindinput="onInputFee" value="{{feeText}}" />
+      <input class="item-input" type="text" maxlength="100" placeholder="例如：30m²，月租 7800 元" bindinput="onInputFee" value="{{feeText}}" />
     </view>
     <view class="form-item">
       <view class="item-label">转让费预期</view>
-      <input class="item-input" type="text" placeholder="例如：8 万元，可谈" bindinput="onInputTransferFee" value="{{transferFee}}" />
+      <input class="item-input" type="text" maxlength="100" placeholder="例如：8 万元，可谈" bindinput="onInputTransferFee" value="{{transferFee}}" />
     </view>
     <view class="form-item">
       <view class="item-label">剩余合同期</view>
-      <input class="item-input" type="text" placeholder="例如：18 个月" bindinput="onInputTerm" value="{{remainingTerm}}" />
+      <input class="item-input" type="text" maxlength="100" placeholder="例如：18 个月" bindinput="onInputTerm" value="{{remainingTerm}}" />
     </view>
     <radio-group class="form-item" bindchange="onEquipmentIncludedChange">
       <view class="item-label">是否包含设备</view>
@@ -40,7 +40,7 @@
     </radio-group>
     <view class="form-item">
       <view class="item-label">补充说明</view>
-      <textarea class="item-textarea" placeholder="例如：可带店名、可协助交接、需保密沟通" bindinput="onInputRemark" value="{{remark}}" />
+      <textarea class="item-textarea" maxlength="500" placeholder="例如：可带店名、可协助交接、需保密沟通" bindinput="onInputRemark" value="{{remark}}" />
     </view>
     <view class="form-item border-none">
       <view class="item-label">店铺图片 <text class="label-hint">最多 6 张，上传前自动压缩</text></view>

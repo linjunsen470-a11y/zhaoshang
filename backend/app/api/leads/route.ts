@@ -1,14 +1,26 @@
-import { ALL, getPayloadInstance, json, mapLead, sanitizeLeadInput } from '../_shared/payloadApi'
+import {
+  ALL,
+  getPayloadInstance,
+  json,
+  mapLead,
+  sanitizeLeadCreateInput,
+  validateAttachmentOwnership,
+} from '../_shared/payloadApi'
 import { requireAuth, verifyAuthToken } from '../_shared/auth'
 
 export async function GET(request: Request) {
   const payload = await getPayloadInstance()
   const { searchParams } = new URL(request.url)
   const auth = verifyAuthToken(request.headers.get('authorization'))
+  const phone = searchParams.get('phone')
+
+  if (!auth && !phone) {
+    return json({ error: '未登录或登录已过期' }, 401)
+  }
 
   const where = auth
     ? { submitterOpenId: { equals: auth.openid } }
-    : undefined
+    : { phone: { equals: phone } }
 
   const result = await payload.find({
     collection: 'leads',
@@ -26,13 +38,6 @@ export async function GET(request: Request) {
     if (value && value !== ALL) {
       leads = leads.filter(lead => String(lead[key]) === value)
     }
-  }
-
-  // Phone filtering is intentionally ignored for authenticated mini-program users.
-  // In unauthenticated legacy/admin calls it remains a compatibility filter.
-  const phone = searchParams.get('phone')
-  if (!auth && phone) {
-    leads = leads.filter(lead => String(lead.phone) === phone)
   }
 
   const projectId = searchParams.get('projectId')
@@ -59,10 +64,13 @@ export async function POST(request: Request) {
     return json({ error: '手机号格式不正确' }, 400)
   }
 
+  const attachmentError = await validateAttachmentOwnership(input.attachments, auth.openid)
+  if (attachmentError) return attachmentError
+
   const payload = await getPayloadInstance()
   const doc = await payload.create({
     collection: 'leads',
-    data: sanitizeLeadInput(input, auth.openid),
+    data: sanitizeLeadCreateInput(input, auth.openid),
     overrideAccess: true,
   })
 

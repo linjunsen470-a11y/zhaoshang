@@ -225,7 +225,6 @@ export async function mapLead(doc: Doc) {
       }
       return String(doc.id)
     })(),
-    submitterOpenId: stringValue(doc.submitterOpenId),
     leadType: stringValue(doc.leadType) || 'leasing',
     sourceChannel: stringValue(doc.sourceChannel) || 'mini_program',
     name: stringValue(doc.name),
@@ -244,10 +243,6 @@ export async function mapLead(doc: Doc) {
     status: stringValue(doc.status) || 'new',
     projectId: relationId(doc.project),
     projectTitle: stringValue(doc.projectTitle) || relationTitle(doc.project) || '',
-    owner: stringValue(doc.owner),
-    nextFollowAt: doc.nextFollowAt ? toTimestamp(doc.nextFollowAt) : undefined,
-    closedAmount: doc.closedAmount,
-    lostReason: stringValue(doc.lostReason),
     createdAt: toTimestamp(doc.createdAt),
     updatedAt: toTimestamp(doc.updatedAt),
     follows: follows.docs.map(follow => mapFollow(follow as Doc)),
@@ -312,9 +307,9 @@ export function sanitizeProjectInput(input: Record<string, unknown>) {
   }
 }
 
-export function sanitizeLeadInput(input: Record<string, unknown>, submitterOpenId?: string) {
+function sanitizeLeadUserFields(input: Record<string, unknown>, submitterOpenId: string) {
   return {
-    submitterOpenId: submitterOpenId || input.submitterOpenId,
+    submitterOpenId,
     leadType: input.leadType || 'leasing',
     sourceChannel: input.sourceChannel || 'mini_program',
     name: input.name,
@@ -327,11 +322,65 @@ export function sanitizeLeadInput(input: Record<string, unknown>, submitterOpenI
     equipmentDetails: input.equipmentDetails,
     attachments: ids(input.attachments),
     remark: input.remark,
-    status: input.status || 'new',
     project: toDatabaseId(input.project || input.projectId),
-    owner: input.owner,
-    nextFollowAt: input.nextFollowAt ? new Date(Number(input.nextFollowAt)).toISOString() : undefined,
-    closedAmount: input.closedAmount,
-    lostReason: input.lostReason,
   }
+}
+
+/** Mini-program create: always starts as new, no CRM fields. */
+export function sanitizeLeadCreateInput(input: Record<string, unknown>, submitterOpenId: string) {
+  return {
+    ...sanitizeLeadUserFields(input, submitterOpenId),
+    status: 'new',
+  }
+}
+
+/** Mini-program update: user-editable fields only. */
+export function sanitizeLeadUpdateInput(input: Record<string, unknown>, submitterOpenId: string) {
+  return sanitizeLeadUserFields(input, submitterOpenId)
+}
+
+/** @deprecated Use sanitizeLeadCreateInput or sanitizeLeadUpdateInput */
+export function sanitizeLeadInput(input: Record<string, unknown>, submitterOpenId?: string) {
+  return sanitizeLeadCreateInput(input, submitterOpenId || String(input.submitterOpenId || ''))
+}
+
+export async function validateAttachmentOwnership(
+  attachmentIds: unknown,
+  ownerOpenId: string,
+): Promise<Response | null> {
+  const normalized = ids(attachmentIds)
+  if (!normalized?.length) return null
+
+  const payload = await getPayloadInstance()
+  for (const rawId of normalized) {
+    try {
+      const media = await payload.findByID({
+        collection: 'media',
+        id: rawId,
+        overrideAccess: true,
+      })
+      const owner = typeof media?.ownerOpenId === 'string' ? media.ownerOpenId : ''
+      if (owner && owner !== ownerOpenId) {
+        return json({ error: '无权使用该附件' }, 403)
+      }
+    } catch {
+      return json({ error: '附件不存在' }, 400)
+    }
+  }
+
+  return null
+}
+
+export function maskPublicRegion(value: unknown) {
+  const text = stringValue(value).trim()
+  if (!text) return ''
+  if (text.length <= 10) return text
+  return `${text.slice(0, 10)}…`
+}
+
+export function truncatePublicText(value: unknown, max = 80) {
+  const text = stringValue(value).trim()
+  if (!text) return ''
+  if (text.length <= max) return text
+  return `${text.slice(0, max)}…`
 }

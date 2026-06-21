@@ -1,5 +1,6 @@
 const api = require('../../services/api.js');
 const upload = require('../../services/upload.js');
+const { clip, validatePhone, validateName, loadLeadForEdit, config } = require('../../utils/form.js');
 
 Page({
   data: {
@@ -47,35 +48,24 @@ Page({
     if (options.leadId) {
       this.setData({ isEditMode: true, leadId: options.leadId });
       wx.setNavigationBarTitle({ title: '修改咨询信息' });
-      wx.showLoading({ title: '加载中...' });
-      api.getLeads().then(leads => {
-        const lead = leads.find(l => l.id === options.leadId);
-        if (lead) {
-          const businessIndex = this.data.businesses.indexOf(lead.businessType);
-          const budgetIndex = this.data.budgets.indexOf(lead.budgetRange);
-          this.setData({
-            leadType: lead.leadType || 'leasing',
-            projectId: lead.projectId || '',
-            projectTitle: lead.projectTitle || '',
-            name: lead.name,
-            phone: lead.phone,
-            businessType: lead.businessType,
-            budgetRange: lead.budgetRange,
-            regionPreference: lead.regionPreference || '',
-            hasCampusExperience: lead.hasCampusExperience || false,
-            remark: lead.remark || '',
-            attachments: lead.attachments || [],
-            businessIndex,
-            budgetIndex
-          });
-        } else {
-          wx.showToast({ title: '未找到该咨询记录', icon: 'none' });
-        }
-      }).catch(err => {
-        console.error(err);
-        wx.showToast({ title: '加载失败', icon: 'none' });
-      }).finally(() => {
-        wx.hideLoading();
+      loadLeadForEdit(api, options.leadId, lead => {
+        const businessIndex = this.data.businesses.indexOf(lead.businessType);
+        const budgetIndex = this.data.budgets.indexOf(lead.budgetRange);
+        this.setData({
+          leadType: lead.leadType || 'leasing',
+          projectId: lead.projectId || '',
+          projectTitle: lead.projectTitle || '',
+          name: lead.name,
+          phone: lead.phone,
+          businessType: lead.businessType,
+          budgetRange: lead.budgetRange,
+          regionPreference: lead.regionPreference || '',
+          hasCampusExperience: lead.hasCampusExperience || false,
+          remark: lead.remark || '',
+          attachments: lead.attachments || [],
+          businessIndex,
+          budgetIndex
+        });
       });
     }
   },
@@ -93,10 +83,10 @@ Page({
       .catch(err => console.error('获取项目标题失败', err));
   },
 
-  onInputName(e) { this.setData({ name: e.detail.value.trim() }); },
-  onInputPhone(e) { this.setData({ phone: e.detail.value.trim() }); },
-  onInputRegion(e) { this.setData({ regionPreference: e.detail.value.trim() }); },
-  onInputRemark(e) { this.setData({ remark: e.detail.value.trim() }); },
+  onInputName(e) { this.setData({ name: clip(e.detail.value, config.MAX_NAME_LENGTH) }); },
+  onInputPhone(e) { this.setData({ phone: clip(e.detail.value, config.MAX_PHONE_LENGTH) }); },
+  onInputRegion(e) { this.setData({ regionPreference: clip(e.detail.value, config.MAX_REGION_LENGTH) }); },
+  onInputRemark(e) { this.setData({ remark: clip(e.detail.value, config.MAX_REMARK_LENGTH) }); },
   onBusinessChange(e) {
     const val = e.detail.value;
     this.setData({ businessIndex: val, businessType: this.data.businesses[val] });
@@ -158,11 +148,12 @@ Page({
       wx.showToast({ title: '图片仍在上传', icon: 'none' });
       return;
     }
-    if (!name) {
-      wx.showToast({ title: '请输入称呼', icon: 'none' });
+    const nameError = validateName(name);
+    if (nameError) {
+      wx.showToast({ title: nameError, icon: 'none' });
       return;
     }
-    if (!/^1[3-9]\d{9}$/.test(phone)) {
+    if (!validatePhone(phone)) {
       wx.showToast({ title: '手机号格式不正确', icon: 'none' });
       return;
     }

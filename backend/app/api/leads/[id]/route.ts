@@ -1,4 +1,10 @@
-import { getPayloadInstance, json, mapLead, sanitizeLeadInput } from '../../_shared/payloadApi'
+import {
+  getPayloadInstance,
+  json,
+  mapLead,
+  sanitizeLeadUpdateInput,
+  validateAttachmentOwnership,
+} from '../../_shared/payloadApi'
 import { requireAuth } from '../../_shared/auth'
 
 type Args = {
@@ -11,6 +17,40 @@ function parseLeadId(rawId: string): string {
     return String(idNum - 26000000)
   }
   return rawId
+}
+
+export async function GET(request: Request, { params }: Args) {
+  let auth
+  try {
+    auth = requireAuth(request)
+  } catch (response) {
+    return response as Response
+  }
+
+  const { id: rawId } = await params
+  const id = parseLeadId(rawId)
+  const payload = await getPayloadInstance()
+
+  try {
+    const lead = await payload.findByID({
+      collection: 'leads',
+      id,
+      overrideAccess: true,
+    })
+
+    if (!lead) {
+      return json({ error: '线索不存在' }, 404)
+    }
+
+    if (lead.submitterOpenId !== auth.openid) {
+      return json({ error: '无权查看此线索' }, 403)
+    }
+
+    return json(await mapLead(lead))
+  } catch (err) {
+    console.error('Failed to fetch lead:', err)
+    return json({ error: '线索不存在' }, 404)
+  }
 }
 
 export async function PUT(request: Request, { params }: Args) {
@@ -43,11 +83,13 @@ export async function PUT(request: Request, { params }: Args) {
       return json({ error: '无权修改此线索' }, 403)
     }
 
-    // 3. 执行更新
+    const attachmentError = await validateAttachmentOwnership(input.attachments, auth.openid)
+    if (attachmentError) return attachmentError
+
     const doc = await payload.update({
       collection: 'leads',
       id,
-      data: sanitizeLeadInput(input, auth.openid),
+      data: sanitizeLeadUpdateInput(input, auth.openid),
       overrideAccess: true,
     })
     return json(await mapLead(doc))

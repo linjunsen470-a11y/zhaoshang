@@ -13,7 +13,7 @@
   <view class="form-card card">
     <view class="form-item">
       <view class="item-label">称呼</view>
-      <input class="item-input" type="text" placeholder="例如：陈老板" bindinput="onInputName" value="{{name}}" />
+      <input class="item-input" type="text" maxlength="20" placeholder="例如：陈老板" bindinput="onInputName" value="{{name}}" />
     </view>
     <view class="form-item">
       <view class="item-label">手机号</view>
@@ -21,27 +21,27 @@
     </view>
     <view class="form-item">
       <view class="item-label">设备名称</view>
-      <input class="item-input" type="text" placeholder="例如：冷藏柜、制冰机、炒炉、操作台" bindinput="onInputEquipmentName" value="{{equipmentName}}" />
+      <input class="item-input" type="text" maxlength="100" placeholder="例如：冷藏柜、制冰机、炒炉、操作台" bindinput="onInputEquipmentName" value="{{equipmentName}}" />
     </view>
     <view class="form-item">
       <view class="item-label">数量/规格</view>
-      <input class="item-input" type="text" placeholder="例如：双门、八成新、220V" bindinput="onInputSpec" value="{{specText}}" />
+      <input class="item-input" type="text" maxlength="100" placeholder="例如：双门、八成新、220V" bindinput="onInputSpec" value="{{specText}}" />
     </view>
     <view class="form-item">
       <view class="item-label">设备状态</view>
-      <input class="item-input" type="text" placeholder="例如：正常使用、轻微划痕、需自提" bindinput="onInputCondition" value="{{equipmentCondition}}" />
+      <input class="item-input" type="text" maxlength="100" placeholder="例如：正常使用、轻微划痕、需自提" bindinput="onInputCondition" value="{{equipmentCondition}}" />
     </view>
     <view class="form-item">
       <view class="item-label">{{leadType === 'equipment_buy' ? '采购预算' : '期望价格'}}</view>
-      <input class="item-input" type="text" placeholder="例如：3000 元以内，可议" bindinput="onInputBudget" value="{{budgetRange}}" />
+      <input class="item-input" type="text" maxlength="100" placeholder="例如：3000 元以内，可议" bindinput="onInputBudget" value="{{budgetRange}}" />
     </view>
     <view class="form-item">
       <view class="item-label">所在区域</view>
-      <input class="item-input" type="text" placeholder="例如：广州大学城、天河" bindinput="onInputRegion" value="{{regionPreference}}" />
+      <input class="item-input" type="text" maxlength="50" placeholder="例如：广州大学城、天河" bindinput="onInputRegion" value="{{regionPreference}}" />
     </view>
     <view class="form-item">
       <view class="item-label">补充说明</view>
-      <textarea class="item-textarea" placeholder="例如：可自提、需发票、希望本周成交" bindinput="onInputRemark" value="{{remark}}" />
+      <textarea class="item-textarea" maxlength="500" placeholder="例如：可自提、需发票、希望本周成交" bindinput="onInputRemark" value="{{remark}}" />
     </view>
     <view class="form-item border-none">
       <view class="item-label">设备图片 <text class="label-hint">最多 6 张，上传前自动压缩</text></view>

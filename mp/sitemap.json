@@ -1,6 +1,36 @@
 {
-  "rules": [{
-    "action": "allow",
-    "page": "*"
-  }]
+  "rules": [
+    {
+      "action": "disallow",
+      "page": "pages/my/my"
+    },
+    {
+      "action": "disallow",
+      "page": "pages/leads/leads"
+    },
+    {
+      "action": "disallow",
+      "page": "pages/apply/apply"
+    },
+    {
+      "action": "disallow",
+      "page": "pages/transfer/transfer"
+    },
+    {
+      "action": "disallow",
+      "page": "pages/equipment/equipment"
+    },
+    {
+      "action": "disallow",
+      "page": "pages/success/success"
+    },
+    {
+      "action": "disallow",
+      "page": "pages/privacy/privacy"
+    },
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
 }

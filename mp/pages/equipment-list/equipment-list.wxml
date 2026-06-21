@@ -65,7 +65,7 @@
 
           <!-- 底部动作条 -->
           <view class="card-actions flex align-center justify-between">
-            <text class="privacy-tip">「信息已脱敏 顾问担保对接」</text>
+            <text class="privacy-tip">联系方式已隐藏，请通过顾问对接</text>
             <button class="btn btn-primary btn-action" bindtap="onContactAdvisor">联系顾问</button>
           </view>
         </view>

@@ -4,10 +4,10 @@
       <image src="{{userInfo.avatarUrl}}" mode="aspectFill" class="user-avatar" />
       <view class="user-info flex-1">
         <view class="flex align-center">
-          <text class="user-name">{{userInfo.nickname}}</text>
+          <text class="user-name">{{userInfo.nickname || '未设置称呼'}}</text>
           <text class="user-role-badge">意向商户</text>
         </view>
-        <view class="user-phone">绑定手机：{{userInfo.phone}}</view>
+        <view class="user-phone">联系手机：{{userInfo.phone || '提交咨询时填写'}}</view>
       </view>
       <view class="edit-btn" bindtap="onEditProfile">编辑</view>
     </view>
@@ -33,15 +33,12 @@
     </view>
 
     <view class="card menu-card">
-      <view class="menu-item flex align-center justify-between" bindtap="onShowAdminTip">
+      <view class="menu-item flex align-center justify-between" bindtap="onGoToPrivacy">
         <view class="flex align-center">
-          <text class="menu-icon">PC</text>
-          <text class="menu-text">招商管理后台入口</text>
+          <text class="menu-icon">◎</text>
+          <text class="menu-text">隐私政策</text>
         </view>
-        <view class="flex align-center">
-          <text class="menu-hint-text">查看跟进</text>
-          <text class="menu-arrow" style="margin-left: 10rpx;">›</text>
-        </view>
+        <text class="menu-arrow">›</text>
       </view>
 
       <view class="menu-item flex align-center justify-between" bindtap="onCallService">
@@ -65,7 +62,7 @@
   <view class="edit-modal-mask flex align-center justify-center" wx:if="{{showEditModal}}">
     <view class="edit-modal-box card">
       <view class="modal-title">编辑联系信息</view>
-      <view class="modal-desc">修改后，提交咨询时将自动填充新信息，“我的咨询”也会按新手机号查询。</view>
+      <view class="modal-desc">修改后，提交咨询时将自动填充新信息。咨询记录按当前微信账号关联，与手机号修改无关。</view>
 
       <view class="modal-form">
         <view class="modal-form-item">

@@ -81,7 +81,31 @@ function initLocalStorage() {
   if (!wx.getStorageSync('local_follows')) wx.setStorageSync('local_follows', []);
 }
 
-async function request(urlPath, method = 'GET', data = {}) {
+function createApiError(statusCode, payload) {
+  const message = (payload && payload.error) || `API Error: ${statusCode}`;
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  error.payload = payload;
+  return error;
+}
+
+function needsAuth(urlPath) {
+  return urlPath.startsWith('/leads') || urlPath.startsWith('/uploads');
+}
+
+function wxRequest(options) {
+  return new Promise((resolve, reject) => {
+    wx.request({
+      ...options,
+      timeout: 8000,
+      success: resolve,
+      fail: reject
+    });
+  });
+}
+
+async function request(urlPath, method = 'GET', data = {}, options = {}) {
+  const retried = Boolean(options.retried);
   const appInstance = getApp() || {
     globalData: {
       apiUrl: 'http://127.0.0.1:3000/api',
@@ -95,38 +119,33 @@ async function request(urlPath, method = 'GET', data = {}) {
   }
 
   const header = {};
-  if (urlPath.startsWith('/leads') || urlPath.startsWith('/uploads')) {
-    const token = await auth.getAuthToken();
+  if (needsAuth(urlPath)) {
+    const token = await auth.getAuthToken(retried);
     header.Authorization = `Bearer ${token}`;
   }
 
-  return new Promise((resolve, reject) => {
-    wx.request({
+  let res;
+  try {
+    res = await wxRequest({
       url: `${appInstance.globalData.apiUrl}${urlPath}`,
       method,
       data,
-      header,
-      timeout: 8000,
-      success: res => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          resolve(res.data);
-          return;
-        }
-        if (!appInstance.globalData.useLocalMock) {
-          reject(new Error(`API Error: ${res.statusCode}`));
-          return;
-        }
-        resolve(localFallback(urlPath, method, data));
-      },
-      fail: err => {
-        if (!appInstance.globalData.useLocalMock) {
-          reject(err || new Error('Network error'));
-          return;
-        }
-        resolve(localFallback(urlPath, method, data));
-      }
+      header
     });
-  });
+  } catch (err) {
+    throw err || new Error('Network error');
+  }
+
+  if (res.statusCode >= 200 && res.statusCode < 300) {
+    return res.data;
+  }
+
+  if (res.statusCode === 401 && needsAuth(urlPath) && !retried) {
+    wx.removeStorageSync('authToken');
+    return request(urlPath, method, data, { retried: true });
+  }
+
+  throw createApiError(res.statusCode, res.data);
 }
 
 function getBudgetCategory(project) {
@@ -151,6 +170,9 @@ function getCurrentOpenId() {
 function localFallback(urlPath, method, requestData = {}) {
   if (urlPath === '/projects' && method === 'GET') {
     let list = wx.getStorageSync('local_projects') || [];
+    if (requestData.public) {
+      list = list.filter(p => ['online', 'coming', 'full'].includes(p.status) && p.auditStatus !== 'rejected');
+    }
     if (requestData.opportunityType && requestData.opportunityType !== '全部') list = list.filter(p => (p.opportunityType || 'leasing') === requestData.opportunityType);
     if (requestData.q) {
       const q = requestData.q.toLowerCase().trim();
@@ -224,17 +246,42 @@ function localFallback(urlPath, method, requestData = {}) {
     if (requestData.leadType && requestData.leadType !== '全部') {
       list = list.filter(l => l.leadType === requestData.leadType);
     }
+    const maskRegion = value => {
+      const text = String(value || '').trim();
+      if (!text) return '';
+      return text.length > 10 ? `${text.slice(0, 10)}…` : text;
+    };
+    const truncate = (value, max = 80) => {
+      const text = String(value || '').trim();
+      if (!text) return '';
+      return text.length > max ? `${text.slice(0, max)}…` : text;
+    };
     return list.map(l => ({
       id: l.id,
       leadType: l.leadType,
       businessType: l.businessType,
       budgetRange: l.budgetRange,
-      regionPreference: l.regionPreference,
-      remark: l.remark,
+      regionPreference: maskRegion(l.regionPreference),
+      remark: truncate(l.remark),
       equipmentDetails: l.equipmentDetails,
       attachments: l.attachments || [],
       createdAt: l.createdAt
     })).sort((a, b) => b.createdAt - a.createdAt);
+  }
+
+  if (urlPath.startsWith('/leads/') && method === 'GET') {
+    const id = urlPath.substring('/leads/'.length);
+    const openid = getCurrentOpenId();
+    const follows = wx.getStorageSync('local_follows') || [];
+    const lead = (wx.getStorageSync('local_leads') || []).find(item => item.id === id);
+    if (!lead) return null;
+    if (lead.submitterOpenId && lead.submitterOpenId !== openid) {
+      throw createApiError(403, { error: '无权查看此线索' });
+    }
+    return {
+      ...lead,
+      follows: follows.filter(f => f.leadId === lead.id).sort((a, b) => b.createdAt - a.createdAt)
+    };
   }
 
   if (urlPath.startsWith('/leads/') && method === 'PUT') {
@@ -245,12 +292,18 @@ function localFallback(urlPath, method, requestData = {}) {
 
     const openid = getCurrentOpenId();
     if (leads[index].submitterOpenId && leads[index].submitterOpenId !== openid) {
-      throw new Error('无权修改此线索');
+      throw createApiError(403, { error: '无权修改此线索' });
     }
+
+    const allowed = ['name', 'phone', 'businessType', 'budgetRange', 'regionPreference', 'hasCampusExperience', 'transferDetails', 'equipmentDetails', 'attachments', 'remark', 'leadType', 'sourceChannel', 'projectId'];
+    const patch = {};
+    allowed.forEach(key => {
+      if (requestData[key] !== undefined) patch[key] = requestData[key];
+    });
 
     leads[index] = {
       ...leads[index],
-      ...requestData,
+      ...patch,
       id,
       updatedAt: Date.now()
     };
@@ -266,7 +319,7 @@ function localFallback(urlPath, method, requestData = {}) {
 
     const openid = getCurrentOpenId();
     if (leads[index].submitterOpenId && leads[index].submitterOpenId !== openid) {
-      throw new Error('无权删除此线索');
+      throw createApiError(403, { error: '无权删除此线索' });
     }
 
     leads.splice(index, 1);
@@ -281,6 +334,7 @@ module.exports = {
   getProjects: params => request('/projects', 'GET', params),
   getProjectDetail: id => request(`/projects/${id}`, 'GET'),
   getLeads: () => request('/leads', 'GET'),
+  getLead: id => request(`/leads/${id}`, 'GET'),
   submitLead: leadData => request('/leads', 'POST', leadData),
   submitTransfer: leadData => request('/leads', 'POST', { ...leadData, leadType: 'transfer' }),
   submitEquipment: leadData => request('/leads', 'POST', leadData),

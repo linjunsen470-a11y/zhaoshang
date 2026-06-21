@@ -3,9 +3,9 @@ const app = getApp();
 Page({
   data: {
     userInfo: {
-      nickname: '商户老板',
+      nickname: '',
       avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&q=80',
-      phone: '13800138000'
+      phone: ''
     },
     showEditModal: false,
     editNickname: '',
@@ -90,7 +90,11 @@ Page({
   },
 
   onCallService() {
-    getApp().callAdvisor('18888888888');
+    getApp().callAdvisor();
+  },
+
+  onGoToPrivacy() {
+    wx.navigateTo({ url: '/pages/privacy/privacy' });
   },
 
   onShowAbout() {
@@ -102,20 +106,4 @@ Page({
     });
   },
 
-  onShowAdminTip() {
-    wx.showModal({
-      title: 'Web 管理后台入口',
-      content: '本地 Mock 后台：http://localhost:5173/admin/index.html\n\nPayload CMS 后台：http://localhost:3000/admin',
-      confirmText: '复制链接',
-      cancelText: '取消',
-      success: (res) => {
-        if (res.confirm) {
-          wx.setClipboardData({
-            data: 'http://localhost:3000/admin',
-            success: () => wx.showToast({ title: '链接已复制', icon: 'success' })
-          });
-        }
-      }
-    });
-  }
 });

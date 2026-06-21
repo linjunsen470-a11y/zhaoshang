@@ -1,5 +1,6 @@
 const api = require('../../services/api.js');
 const upload = require('../../services/upload.js');
+const { clip, validatePhone, validateName, loadLeadForEdit, config } = require('../../utils/form.js');
 
 Page({
   data: {
@@ -31,43 +32,32 @@ Page({
     if (options.leadId) {
       this.setData({ isEditMode: true, leadId: options.leadId });
       wx.setNavigationBarTitle({ title: '修改转让信息' });
-      wx.showLoading({ title: '加载中...' });
-      api.getLeads().then(leads => {
-        const lead = leads.find(l => l.id === options.leadId);
-        if (lead) {
-          const details = lead.transferDetails || {};
-          this.setData({
-            name: lead.name,
-            phone: lead.phone,
-            locationText: details.locationText || lead.regionPreference || '',
-            businessType: lead.businessType,
-            feeText: details.feeText || '',
-            transferFee: details.transferFee || lead.budgetRange || '',
-            remainingTerm: details.remainingTerm || '',
-            includesEquipment: details.includesEquipment !== undefined ? details.includesEquipment : true,
-            remark: lead.remark || '',
-            attachments: lead.attachments || []
-          });
-        } else {
-          wx.showToast({ title: '未找到该咨询记录', icon: 'none' });
-        }
-      }).catch(err => {
-        console.error(err);
-        wx.showToast({ title: '加载失败', icon: 'none' });
-      }).finally(() => {
-        wx.hideLoading();
+      loadLeadForEdit(api, options.leadId, lead => {
+        const details = lead.transferDetails || {};
+        this.setData({
+          name: lead.name,
+          phone: lead.phone,
+          locationText: details.locationText || lead.regionPreference || '',
+          businessType: lead.businessType,
+          feeText: details.feeText || '',
+          transferFee: details.transferFee || lead.budgetRange || '',
+          remainingTerm: details.remainingTerm || '',
+          includesEquipment: details.includesEquipment !== undefined ? details.includesEquipment : true,
+          remark: lead.remark || '',
+          attachments: lead.attachments || []
+        });
       });
     }
   },
 
-  onInputName(e) { this.setData({ name: e.detail.value.trim() }); },
-  onInputPhone(e) { this.setData({ phone: e.detail.value.trim() }); },
-  onInputLocation(e) { this.setData({ locationText: e.detail.value.trim() }); },
-  onInputBusiness(e) { this.setData({ businessType: e.detail.value.trim() }); },
-  onInputFee(e) { this.setData({ feeText: e.detail.value.trim() }); },
-  onInputTransferFee(e) { this.setData({ transferFee: e.detail.value.trim() }); },
-  onInputTerm(e) { this.setData({ remainingTerm: e.detail.value.trim() }); },
-  onInputRemark(e) { this.setData({ remark: e.detail.value.trim() }); },
+  onInputName(e) { this.setData({ name: clip(e.detail.value, config.MAX_NAME_LENGTH) }); },
+  onInputPhone(e) { this.setData({ phone: clip(e.detail.value, config.MAX_PHONE_LENGTH) }); },
+  onInputLocation(e) { this.setData({ locationText: clip(e.detail.value, config.MAX_REGION_LENGTH) }); },
+  onInputBusiness(e) { this.setData({ businessType: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
+  onInputFee(e) { this.setData({ feeText: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
+  onInputTransferFee(e) { this.setData({ transferFee: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
+  onInputTerm(e) { this.setData({ remainingTerm: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
+  onInputRemark(e) { this.setData({ remark: clip(e.detail.value, config.MAX_REMARK_LENGTH) }); },
   onEquipmentIncludedChange(e) { this.setData({ includesEquipment: e.detail.value === 'true' }); },
 
   async onChooseImages() {
@@ -102,11 +92,12 @@ Page({
       wx.showToast({ title: '图片仍在上传', icon: 'none' });
       return;
     }
-    if (!name) {
-      wx.showToast({ title: '请输入称呼', icon: 'none' });
+    const nameError = validateName(name);
+    if (nameError) {
+      wx.showToast({ title: nameError, icon: 'none' });
       return;
     }
-    if (!/^1[3-9]\d{9}$/.test(phone)) {
+    if (!validatePhone(phone)) {
       wx.showToast({ title: '手机号格式不正确', icon: 'none' });
       return;
     }
