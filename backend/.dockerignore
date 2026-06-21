@@ -1,15 +1,51 @@
+# Dependencies (reinstalled in the deps stage)
 node_modules
+.pnpm-store
+
+# Build output and caches
 .next
 out
 build
 coverage
+*.tsbuildinfo
+next-env.d.ts
+.turbo
+.cache
+.eslintcache
+
+# Runtime data and secrets
 .env
 .env.*
 !.env.example
-*.log
-.git
-.vercel
 media
 uploads
-next-env.d.ts
-*.tsbuildinfo
+*.pem
+
+# Version control and container metadata
+.git
+.gitignore
+.dockerignore
+Dockerfile
+
+# Editor and OS junk
+.idea
+.vscode
+.cursor
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Logs and deployment tooling
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.vercel
+
+# Docs and lint config (not needed for production image build)
+README.md
+*.md
+eslint.config.mjs
+
+# Generated types (recreated during Payload/Next build)
+payload-types.ts

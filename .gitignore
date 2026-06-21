@@ -28,21 +28,31 @@ backend/out/
 backend/build/
 backend/next-env.d.ts
 *.tsbuildinfo
+.turbo/
+.cache/
+.eslintcache
 
-# Payload / uploads runtime data
+# Payload generated types and runtime uploads
+backend/payload-types.ts
 backend/media/
 backend/uploads/
 uploads/
 
-# local IDE and OS files
+# local IDE, agent tooling, and OS files
 .DS_Store
 Thumbs.db
 .idea/
 .vscode/
+.cursor/
+mcps/
 
 # WeChat DevTools local files
 project.private.config.json
 mp/project.private.config.json
+mp/miniprogram_npm/
 
 # deployment tool state
 .vercel/
+
+# TLS material (never commit private keys)
+*.pem

@@ -2,6 +2,7 @@
 node_modules/
 .pnp/
 .pnp.*
+.pnpm-store/
 
 # testing
 coverage/
@@ -11,11 +12,15 @@ coverage/
 out/
 next-env.d.ts
 *.tsbuildinfo
+.turbo/
+.cache/
+.eslintcache
 
 # production build output
 build/
 
-# Payload runtime files
+# Payload generated types and runtime files
+payload-types.ts
 media/
 uploads/
 
@@ -31,7 +36,13 @@ pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# misc
+# local IDE and OS files
 .DS_Store
-*.pem
+Thumbs.db
+.idea/
+.vscode/
+.cursor/
+
+# deployment and TLS material
 .vercel/
+*.pem
