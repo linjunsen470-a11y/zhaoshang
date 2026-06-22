@@ -40,8 +40,10 @@ Page({
   },
 
   onLoad() {
-    this.refreshLeads();
+    // onLoad is followed immediately by onShow in WeChat mini-program page lifecycles.
+    // We only perform refreshLeads inside onShow to avoid concurrent duplicate requests.
   },
+
 
   onPullDownRefresh() {
     this.refreshLeads(() => {

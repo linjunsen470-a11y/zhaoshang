@@ -28,12 +28,21 @@ const LEAD_USER_FIELDS = [
   'transferDetails', 'equipmentDetails', 'attachments', 'remark', 'leadType', 'sourceChannel', 'projectId',
 ];
 
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Admin-Access',
-  'Access-Control-Max-Age': '86400',
-};
+function getCORSHeaders(req) {
+  const origin = req ? req.headers.origin : '';
+  const isAllowed = origin && (
+    origin.startsWith('http://localhost:') ||
+    origin.startsWith('http://127.0.0.1:') ||
+    origin.startsWith('http://192.168.') ||
+    origin.startsWith('http://10.')
+  );
+  return {
+    'Access-Control-Allow-Origin': isAllowed ? origin : 'http://localhost:5173',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Admin-Access',
+    'Access-Control-Max-Age': '86400',
+  };
+}
 
 function isAdminRequest(req) {
   return req.headers['x-admin-access'] === ADMIN_ACCESS_KEY;
@@ -81,6 +90,7 @@ function writeData(data) {
 
 function generateId(prefix) {
   if (prefix === 'l') {
+    const data = readData();
     const leads = data.leads || [];
     const maxId = leads.reduce((max, l) => {
       const cleaned = String(l.id).replace(/^l_?/, '');
@@ -107,8 +117,13 @@ function parseQueryParams(urlStr) {
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
+    const MAX_SIZE = 1024 * 1024; // 1MB limit
     req.on('data', chunk => {
       body += chunk;
+      if (body.length > MAX_SIZE) {
+        req.destroy();
+        reject(new Error('Payload too large'));
+      }
     });
     req.on('end', () => {
       try {
@@ -119,6 +134,7 @@ function readBody(req) {
     });
   });
 }
+
 
 function getProjectBudgetCategory(project) {
   const text = project.feeText || '';
@@ -221,8 +237,9 @@ function withFollows(leads, followRecords) {
 }
 
 const server = http.createServer(async (req, res) => {
+  const corsHeaders = getCORSHeaders(req);
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, CORS_HEADERS);
+    res.writeHead(204, corsHeaders);
     res.end();
     return;
   }
@@ -230,10 +247,11 @@ const server = http.createServer(async (req, res) => {
   const sendJSON = (data, statusCode = 200) => {
     res.writeHead(statusCode, {
       'Content-Type': 'application/json; charset=utf-8',
-      ...CORS_HEADERS,
+      ...corsHeaders,
     });
     res.end(JSON.stringify(data));
   };
+
 
   const urlPath = req.url.split('?')[0];
   const query = parseQueryParams(req.url);
@@ -580,11 +598,17 @@ const server = http.createServer(async (req, res) => {
   const decodedUrl = decodeURIComponent(urlPath);
   if (decodedUrl === '/' || decodedUrl === '/admin' || decodedUrl === '/admin/') {
     filePath = path.join(__dirname, 'admin', 'index.html');
-  } else if (decodedUrl.startsWith('/admin/')) {
-    filePath = path.join(__dirname, decodedUrl);
   } else {
     filePath = path.join(__dirname, decodedUrl);
   }
+
+  const resolvedPath = path.resolve(filePath);
+  if (!resolvedPath.startsWith(path.resolve(__dirname))) {
+    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('403 Forbidden - Directory Traversal Detected');
+    return;
+  }
+
 
   fs.stat(filePath, (err, stats) => {
     if (err || !stats.isFile()) {

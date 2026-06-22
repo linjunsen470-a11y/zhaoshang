@@ -27,6 +27,7 @@ ENV NODE_ENV=production
 # Payload needs a secret while Next collects route data during build.
 # Runtime containers still receive the real secret from docker compose.
 RUN PAYLOAD_SECRET=build-time-placeholder-secret PAYLOAD_DB_PUSH=true pnpm build
+RUN pnpm prune --prod
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -35,7 +36,6 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PAYLOAD_PUBLIC_SERVER_URL=https://your-domain.com
-ENV LD_LIBRARY_PATH=/app/node_modules/.pnpm/@img+sharp-libvips-linuxmusl-x64@1.3.0/node_modules/@img/sharp-libvips-linuxmusl-x64/lib
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -50,7 +50,7 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Next standalone tracing can miss sharp's optional libvips package on Alpine.
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.pnpm/@img+sharp-libvips-linuxmusl-x64@1.3.0/node_modules/@img/sharp-libvips-linuxmusl-x64 ./node_modules/.pnpm/@img+sharp-libvips-linuxmusl-x64@1.3.0/node_modules/@img/sharp-libvips-linuxmusl-x64
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.pnpm/@img+sharp-libvips-* ./node_modules/.pnpm/
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/payload.config.ts ./payload.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/collections ./collections
@@ -63,4 +63,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-CMD ["node", "server.js"]
+CMD ["sh", "-c", "export LD_LIBRARY_PATH=$(find /app/node_modules -name 'libvips-*.so*' -exec dirname {} \\; | head -n 1) && node server.js"]
+

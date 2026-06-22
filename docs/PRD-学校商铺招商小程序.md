@@ -321,7 +321,10 @@ CRM 字段仅允许在 CMS 或内部管理流程中修改，不允许小程序 A
 |------|------|------|
 | POST | `/api/auth/wechat-login` | 否 |
 | GET | `/api/projects` | 否 |
-| GET | `/api/projects/:id` | 否 |
+| GET | `/api/projects/:id` | 否（非 staff 仅公开项目） |
+| POST | `/api/projects` | 后台 |
+| PUT | `/api/projects/:id` | 后台 |
+| DELETE | `/api/projects/:id` | 后台 |
 | GET | `/api/leads` | 是 |
 | GET | `/api/leads/:id` | 是 |
 | POST | `/api/leads` | 是 |
@@ -329,7 +332,8 @@ CRM 字段仅允许在 CMS 或内部管理流程中修改，不允许小程序 A
 | DELETE | `/api/leads/:id` | 是 |
 | GET | `/api/equipments` | 否 |
 | POST | `/api/uploads/lead-image` | 是 |
-| GET | `/api/stats` | 否 |
+| GET | `/api/stats` | 后台 |
+| POST | `/api/leads/:id/follow` | 后台 |
 | POST | `/api/leads/:id/convert` | 后台 |
 | POST | `/api/leads/:id/sync-merchant` | 后台 |
 
@@ -338,13 +342,15 @@ CRM 字段仅允许在 CMS 或内部管理流程中修改，不允许小程序 A
 - `POST /api/auth/wechat-login` 返回 `{ token, openid, expiresAt, mode }`。
 - 小程序调用线索和上传接口时带 `Authorization: Bearer <token>`。
 - 未认证访问 `GET /api/leads` 返回 `401`。
-- Token 过期时，客户端应清缓存并重新登录后重试。
+- Token 过期时，客户端应清缓存并重新登录后重试；客户端在过期前 30 分钟会主动刷新 token。
+- 生产环境 `WECHAT_AUTH_MODE=dev` 不可用；必须配置真实 `WECHAT_APPID` 与 `WECHAT_APP_SECRET`。
 
 线索写入约束：
 
 - `POST /api/leads` 固定 `status=new`，忽略客户端传入的 CRM 字段。
 - `PUT /api/leads/:id` 仅接受用户可编辑字段。
-- `attachments` 中的 media id 必须属于当前用户。
+- `attachments` 中的 media id 必须属于当前用户；`lead_attachment` 无归属或不匹配时拒绝，`seed_demo` / `admin` 来源禁止引用。
+- `GET /api/projects/:id` 对小程序仅返回已公开且未驳回的项目；草稿项目对非 staff 返回 404。
 
 响应约束：
 
@@ -353,8 +359,8 @@ CRM 字段仅允许在 CMS 或内部管理流程中修改，不允许小程序 A
 
 上传：
 
-- `/api/uploads/lead-image` 接收 multipart `file`。
-- 后端限制图片类型和大小，压缩为 JPEG 后写入 `media`。
+- `/api/uploads/lead-image` 接收 multipart `file`，要求 Bearer Token；无效 token 返回 `401`。
+- 后端限制图片类型和大小，压缩为 JPEG 后写入 `media`，并记录 `ownerOpenId`。
 - 表单提交时传 `attachments: string[]`，数组元素为 media id。
 
 ## 6. 调试模式

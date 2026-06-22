@@ -4,6 +4,7 @@ import {
   mapLead,
   sanitizeLeadUpdateInput,
   validateAttachmentOwnership,
+  LEAD_ID_OFFSET,
 } from '../../_shared/payloadApi'
 import { requireAuth } from '../../_shared/auth'
 
@@ -13,18 +14,19 @@ type Args = {
 
 function parseLeadId(rawId: string): string {
   const idNum = parseInt(rawId, 10)
-  if (!isNaN(idNum) && idNum > 26000000) {
-    return String(idNum - 26000000)
+  if (!isNaN(idNum) && idNum > LEAD_ID_OFFSET) {
+    return String(idNum - LEAD_ID_OFFSET)
   }
   return rawId
 }
+
 
 export async function GET(request: Request, { params }: Args) {
   let auth
   try {
     auth = requireAuth(request)
-  } catch (response) {
-    return response as Response
+  } catch (err) {
+    return json({ error: err instanceof Error ? err.message : '未登录或登录已过期' }, 401)
   }
 
   const { id: rawId } = await params
@@ -57,13 +59,18 @@ export async function PUT(request: Request, { params }: Args) {
   let auth
   try {
     auth = requireAuth(request)
-  } catch (response) {
-    return response as Response
+  } catch (err) {
+    return json({ error: err instanceof Error ? err.message : '未登录或登录已过期' }, 401)
   }
 
   const { id: rawId } = await params
   const id = parseLeadId(rawId)
-  const input = await request.json() as Record<string, unknown>
+  let input: Record<string, unknown>
+  try {
+    input = await request.json() as Record<string, unknown>
+  } catch {
+    return json({ error: '无效的 JSON 请求体' }, 400)
+  }
   const payload = await getPayloadInstance()
 
   try {
@@ -103,8 +110,8 @@ export async function DELETE(request: Request, { params }: Args) {
   let auth
   try {
     auth = requireAuth(request)
-  } catch (response) {
-    return response as Response
+  } catch (err) {
+    return json({ error: err instanceof Error ? err.message : '未登录或登录已过期' }, 401)
   }
 
   const { id: rawId } = await params
@@ -140,5 +147,6 @@ export async function DELETE(request: Request, { params }: Args) {
     return json({ error: '删除线索失败' }, 500)
   }
 }
+
 
 

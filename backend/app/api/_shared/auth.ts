@@ -1,8 +1,18 @@
 import { createHmac, timingSafeEqual } from 'crypto'
+import { headers } from 'next/headers'
+import { getPayloadInstance } from './payloadApi'
+import { isStaffUser, canManageProjects, canManageLeads } from '../../../collections/shared/access'
 
 export type AuthContext = {
   openid: string
   expiresAt: number
+}
+
+export class AuthError extends Error {
+  constructor(message = '未登录或登录已过期') {
+    super(message)
+    this.name = 'AuthError'
+  }
 }
 
 function base64Url(input: Buffer | string) {
@@ -10,8 +20,13 @@ function base64Url(input: Buffer | string) {
 }
 
 function secret() {
-  return process.env.PAYLOAD_SECRET || 'local-dev-secret'
+  const s = process.env.PAYLOAD_SECRET
+  if (!s && process.env.NODE_ENV === 'production') {
+    throw new Error('FATAL ERROR: PAYLOAD_SECRET environment variable is missing!')
+  }
+  return s || 'local-dev-secret'
 }
+
 
 export function signAuthToken(openid: string, ttlMs = 7 * 24 * 60 * 60 * 1000) {
   const payload = {
@@ -56,10 +71,35 @@ export function verifyAuthToken(token: string | null | undefined): AuthContext |
 export function requireAuth(request: Request) {
   const auth = verifyAuthToken(request.headers.get('authorization'))
   if (!auth) {
-    throw new Response(JSON.stringify({ error: '未登录或登录已过期' }), {
-      status: 401,
-      headers: { 'content-type': 'application/json' },
-    })
+    throw new AuthError()
   }
   return auth
 }
+
+export async function getAdminUser() {
+  try {
+    const payload = await getPayloadInstance()
+    const reqHeaders = await headers()
+    const { user } = await payload.auth({
+      headers: reqHeaders,
+    })
+    return user
+  } catch {
+    return null
+  }
+}
+
+export async function getAuthenticatedStaff(requiredPermission?: 'leads' | 'projects') {
+  const user = await getAdminUser()
+  if (!user) return null
+
+  if (requiredPermission === 'leads') {
+    if (canManageLeads(user)) return user
+  } else if (requiredPermission === 'projects') {
+    if (canManageProjects(user)) return user
+  } else {
+    if (isStaffUser(user)) return user
+  }
+  return null
+}
+

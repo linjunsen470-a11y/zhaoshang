@@ -3,6 +3,8 @@ import { getPayload } from 'payload'
 
 export const ALL = '全部'
 export const PUBLIC_STATUSES = ['online', 'coming', 'full']
+export const LEAD_ID_OFFSET = 26000000
+
 
 type Doc = Record<string, unknown> & {
   id: string | number
@@ -59,7 +61,8 @@ function publicBaseUrl() {
   return (process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://127.0.0.1:3000').replace(/\/$/, '')
 }
 
-function absoluteUrl(url: string) {
+export function absoluteUrl(url: string) {
+
   if (/^https?:\/\//i.test(url)) return url
   return `${publicBaseUrl()}${url.startsWith('/') ? url : `/${url}`}`
 }
@@ -201,53 +204,81 @@ export function mapProject(doc: Doc) {
     isRecommended: booleanValue(doc.isRecommended),
     sort: numberValue(doc.sort),
     remark: stringValue(doc.remark),
+    budgetCategory: getProjectBudgetCategory(doc as { feeText?: unknown }),
     createdAt: toTimestamp(doc.createdAt),
     updatedAt: toTimestamp(doc.updatedAt),
   }
 }
 
-export async function mapLead(doc: Doc) {
+
+export async function mapLeads(docs: Doc[]) {
+  if (docs.length === 0) return []
   const payload = await getPayloadInstance()
-  const follows = await payload.find({
+  const leadIds = docs.map(doc => doc.id)
+
+  const allFollowsResult = await payload.find({
     collection: 'follow-records',
-    where: { lead: { equals: doc.id } },
+    where: { lead: { in: leadIds } },
     sort: '-createdAt',
-    limit: 100,
+    limit: 1000,
     depth: 0,
     overrideAccess: true,
   })
 
-  return {
-    id: (() => {
-      const num = Number(doc.id)
-      if (!isNaN(num) && num < 10000000) {
-        return String(26000000 + num)
+  const followsByLeadId: Record<string | number, Doc[]> = {}
+  allFollowsResult.docs.forEach(follow => {
+    const leadId = typeof follow.lead === 'object' && follow.lead !== null ? (follow.lead as { id?: string | number }).id : follow.lead
+    if (leadId) {
+
+      if (!followsByLeadId[leadId]) {
+        followsByLeadId[leadId] = []
       }
-      return String(doc.id)
-    })(),
-    leadType: stringValue(doc.leadType) || 'leasing',
-    sourceChannel: stringValue(doc.sourceChannel) || 'mini_program',
-    name: stringValue(doc.name),
-    phone: stringValue(doc.phone),
-    businessType: stringValue(doc.businessType),
-    budgetRange: stringValue(doc.budgetRange),
-    regionPreference: stringValue(doc.regionPreference),
-    hasCampusExperience: booleanValue(doc.hasCampusExperience),
-    transferDetails: mapTransferDetails(doc.transferDetails),
-    equipmentDetails: mapEquipmentDetails(doc.equipmentDetails),
-    attachments: Array.isArray(doc.attachments) ? doc.attachments.map(item => {
-      if (item && typeof item === 'object') return mapMedia(item as Doc)
-      return { id: String(item), url: undefined }
-    }) : [],
-    remark: stringValue(doc.remark),
-    status: stringValue(doc.status) || 'new',
-    projectId: relationId(doc.project),
-    projectTitle: stringValue(doc.projectTitle) || relationTitle(doc.project) || '',
-    createdAt: toTimestamp(doc.createdAt),
-    updatedAt: toTimestamp(doc.updatedAt),
-    follows: follows.docs.map(follow => mapFollow(follow as Doc)),
-  }
+      followsByLeadId[leadId].push(follow as Doc)
+    }
+  })
+
+  return Promise.all(docs.map(async (doc) => {
+    const follows = followsByLeadId[doc.id] || []
+
+    return {
+      id: (() => {
+        const num = Number(doc.id)
+        if (!isNaN(num) && num < 10000000) {
+          return String(LEAD_ID_OFFSET + num)
+        }
+        return String(doc.id)
+      })(),
+
+      leadType: stringValue(doc.leadType) || 'leasing',
+      sourceChannel: stringValue(doc.sourceChannel) || 'mini_program',
+      name: stringValue(doc.name),
+      phone: stringValue(doc.phone),
+      businessType: stringValue(doc.businessType),
+      budgetRange: stringValue(doc.budgetRange),
+      regionPreference: stringValue(doc.regionPreference),
+      hasCampusExperience: booleanValue(doc.hasCampusExperience),
+      transferDetails: mapTransferDetails(doc.transferDetails),
+      equipmentDetails: mapEquipmentDetails(doc.equipmentDetails),
+      attachments: Array.isArray(doc.attachments) ? doc.attachments.map(item => {
+        if (item && typeof item === 'object') return mapMedia(item as Doc)
+        return { id: String(item), url: undefined }
+      }) : [],
+      remark: stringValue(doc.remark),
+      status: stringValue(doc.status) || 'new',
+      projectId: relationId(doc.project),
+      projectTitle: stringValue(doc.projectTitle) || relationTitle(doc.project) || '',
+      createdAt: toTimestamp(doc.createdAt),
+      updatedAt: toTimestamp(doc.updatedAt),
+      follows: follows.map(follow => mapFollow(follow as Doc)),
+    }
+  }))
 }
+
+export async function mapLead(doc: Doc) {
+  const mapped = await mapLeads([doc])
+  return mapped[0]
+}
+
 
 export function mapFollow(doc: Doc) {
   return {
@@ -360,7 +391,14 @@ export async function validateAttachmentOwnership(
         overrideAccess: true,
       })
       const owner = typeof media?.ownerOpenId === 'string' ? media.ownerOpenId : ''
-      if (owner && owner !== ownerOpenId) {
+      const source = typeof media?.source === 'string' ? media.source : ''
+      if (source === 'lead_attachment') {
+        if (!owner || owner !== ownerOpenId) {
+          return json({ error: '无权使用该附件' }, 403)
+        }
+      } else if (source === 'seed_demo' || source === 'admin') {
+        return json({ error: '无权使用该附件' }, 403)
+      } else if (owner && owner !== ownerOpenId) {
         return json({ error: '无权使用该附件' }, 403)
       }
     } catch {

@@ -7,8 +7,9 @@ type StaffUser = {
 
 function getRole(user: PayloadRequest['user']): string {
   if (!user || typeof user !== 'object') return ''
-  return String((user as StaffUser).role || 'admin')
+  return String((user as StaffUser).role || 'advisor')
 }
+
 
 export function isAdminUser(user: PayloadRequest['user']): boolean {
   return getRole(user) === 'admin'

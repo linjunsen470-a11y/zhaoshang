@@ -1,4 +1,5 @@
-import { getPayloadInstance, json, maskPublicRegion, truncatePublicText } from '../_shared/payloadApi'
+import { getPayloadInstance, json, maskPublicRegion, truncatePublicText, absoluteUrl } from '../_shared/payloadApi'
+
 
 export async function GET(request: Request) {
   const payload = await getPayloadInstance()
@@ -58,11 +59,12 @@ export async function GET(request: Request) {
           const media = item as Record<string, unknown>
           return {
             id: String(media.id),
-            url: media.url ? ((process.env.PAYLOAD_PUBLIC_SERVER_URL || 'http://localhost:3000').replace(/\/$/, '') + media.url) : undefined
+            url: media.url ? absoluteUrl(String(media.url)) : undefined
           }
         }
         return { id: String(item), url: undefined }
       }) : [],
+
       createdAt: typeof raw.createdAt === 'string' ? Date.parse(raw.createdAt) : (typeof raw.createdAt === 'number' ? raw.createdAt : Date.now()),
     }
   })

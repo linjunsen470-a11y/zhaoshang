@@ -13,12 +13,13 @@ export async function POST(request: Request) {
   const input = await request.json().catch(() => ({})) as Record<string, unknown>
   const mode = process.env.WECHAT_AUTH_MODE || 'dev'
 
-  if (mode === 'dev') {
+  if (mode === 'dev' && process.env.NODE_ENV !== 'production') {
     const requestedOpenId = request.headers.get('x-dev-openid') || String(input.devOpenId || '')
     const openid = requestedOpenId || process.env.WECHAT_AUTH_DEV_OPENID || 'dev-openid-local'
     const token = signAuthToken(openid)
     return json({ token, openid, expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, mode: 'dev' })
   }
+
 
   const code = String(input.code || '')
   if (!code) return json({ error: '缺少微信登录 code' }, 400)

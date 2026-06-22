@@ -38,6 +38,8 @@ function postLogin(code, config) {
         if (res.statusCode >= 200 && res.statusCode < 300 && res.data && res.data.token) {
           wx.setStorageSync('authToken', res.data.token);
           wx.setStorageSync('authOpenId', res.data.openid);
+          // Store token expiration time (default to 7 days if not provided)
+          wx.setStorageSync('authTokenExpiresAt', res.data.expiresAt || (Date.now() + 7 * 24 * 60 * 60 * 1000));
           resolve(res.data.token);
         } else {
           reject(res.data || res);
@@ -53,11 +55,17 @@ async function getAuthToken(forceRefresh = false) {
   if (config.useLocalMock) return '';
 
   const cached = wx.getStorageSync('authToken');
-  if (cached && !forceRefresh) return cached;
+  const expiresAt = wx.getStorageSync('authTokenExpiresAt');
+  
+  // Proactively refresh if the token is within 30 minutes of expiration or has already expired
+  const isExpired = expiresAt ? (Date.now() + 30 * 60 * 1000 > Number(expiresAt)) : true;
+
+  if (cached && !isExpired && !forceRefresh) return cached;
 
   const code = await wxLogin();
   return postLogin(code, config);
 }
+
 
 module.exports = {
   getAuthToken

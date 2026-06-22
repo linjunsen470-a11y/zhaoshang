@@ -1,5 +1,6 @@
 import { DISTRICT_OPTIONS } from '../../../../../collections/shared/fieldOptions'
 import { getPayloadInstance, json, toDatabaseId } from '../../../_shared/payloadApi'
+import { getAuthenticatedStaff } from '../../../_shared/auth'
 
 const VALID_DISTRICTS = new Set(DISTRICT_OPTIONS.map(option => option.value))
 
@@ -16,8 +17,14 @@ type Args = {
 }
 
 export async function POST(request: Request, { params }: Args) {
+  const staff = await getAuthenticatedStaff('projects')
+  if (!staff) {
+    return json({ error: '权限不足，无法执行线索转换' }, 403)
+  }
+
   const { id } = await params
   const payload = await getPayloadInstance()
+
 
   interface LeadDoc {
     leadType?: string
@@ -132,7 +139,7 @@ export async function POST(request: Request, { params }: Args) {
     return json({ success: true, projectId: project.id, projectTitle: project.title })
   } catch (err) {
     console.error('Failed to convert lead to project:', err)
-    const errMsg = err instanceof Error ? err.message : String(err)
-    return json({ error: errMsg || '转换项目失败' }, 500)
+    return json({ error: '转换项目失败，请联系管理员或稍后再试' }, 500)
   }
+
 }

@@ -49,7 +49,8 @@ services:
     volumes:
       - payload-data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"  # optional for local debug
+      - "127.0.0.1:5432:5432"  # restrict to localhost for security, local debug only
+
 
 volumes:
   payload-data:

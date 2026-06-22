@@ -1,4 +1,5 @@
 import { getPayloadInstance, json, toDatabaseId } from '../../../_shared/payloadApi'
+import { getAuthenticatedStaff } from '../../../_shared/auth'
 
 type Args = {
   params: Promise<{ id: string }>
@@ -8,9 +9,15 @@ function uniqueIds(values: Array<string | number | undefined>) {
   return [...new Set(values.map(value => String(value)).filter(Boolean))]
 }
 
-export async function POST(_request: Request, { params }: Args) {
+export async function POST(request: Request, { params }: Args) {
+  const staff = await getAuthenticatedStaff('leads')
+  if (!staff) {
+    return json({ error: '权限不足，无法同步商户档案' }, 403)
+  }
+
   const { id } = await params
   const payload = await getPayloadInstance()
+
 
   interface LeadDoc {
     name?: string

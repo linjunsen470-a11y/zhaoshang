@@ -152,7 +152,10 @@ devOpenId: 'dev-openid-local'
 |------|------|------|------|
 | POST | `/api/auth/wechat-login` | 否 | 换取 Bearer Token |
 | GET | `/api/projects` | 否 | 项目列表，支持 `public=true` 等筛选 |
-| GET | `/api/projects/:id` | 否 | 项目详情 |
+| GET | `/api/projects/:id` | 否 | 项目详情（非 staff 仅可访问已公开项目） |
+| POST | `/api/projects` | 后台 | 创建项目（需 staff 会话） |
+| PUT | `/api/projects/:id` | 后台 | 更新项目 |
+| DELETE | `/api/projects/:id` | 后台 | 删除项目 |
 | GET | `/api/leads` | 是 | 当前用户的线索列表 |
 | GET | `/api/leads/:id` | 是 | 单条线索详情（校验所有权） |
 | POST | `/api/leads` | 是 | 创建线索 |
@@ -160,7 +163,8 @@ devOpenId: 'dev-openid-local'
 | DELETE | `/api/leads/:id` | 是 | 删除线索（校验所有权） |
 | GET | `/api/equipments` | 否 | 设备供需公开列表（脱敏） |
 | POST | `/api/uploads/lead-image` | 是 | 上传线索图片 |
-| GET | `/api/stats` | 否 | 运营统计 |
+| GET | `/api/stats` | 后台 | 运营统计（需 staff 会话） |
+| POST | `/api/leads/:id/follow` | 后台 | 添加跟进记录（需 staff 会话） |
 | POST | `/api/leads/:id/convert` | 后台 | 将线索转为招商/转让项目（CMS 快捷操作） |
 | POST | `/api/leads/:id/sync-merchant` | 后台 | 将线索沉淀为商户档案并建立关联 |
 
@@ -175,7 +179,10 @@ devOpenId: 'dev-openid-local'
 
 - 小程序创建线索时，`status` 固定为 `new`，不接受客户端传入 CRM 字段。
 - 小程序更新线索时，仅允许修改称呼、联系方式、需求内容、附件等用户字段。
-- 创建/更新线索时，后端会校验 `attachments` 中媒体 ID 的 `ownerOpenId` 归属。
+- 创建/更新线索时，后端会校验 `attachments` 中媒体 ID 归属：`lead_attachment` 必须属于当前用户；`seed_demo` / `admin` 来源禁止引用。
+- `GET /api/projects/:id` 对未登录 staff 仅返回 `status` 为 `online` / `coming` / `full` 且未驳回的项目，草稿项目返回 404。
+- 管理端写操作（项目 CRUD、统计、跟进、转换、商户沉淀）要求 Payload CMS 登录会话，不接受小程序 Bearer Token。
+- 生产环境必须配置 `PAYLOAD_SECRET`；`WECHAT_AUTH_MODE=dev` 在生产环境不可用。
 - API 响应不返回 `submitterOpenId`、`owner`、`closedAmount` 等内部字段。
 
 ## 数据模型摘要

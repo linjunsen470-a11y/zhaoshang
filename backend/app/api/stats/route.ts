@@ -1,6 +1,12 @@
-import { getPayloadInstance, json, mapLead, mapProject } from '../_shared/payloadApi'
+import { getPayloadInstance, json, mapProject } from '../_shared/payloadApi'
+import { getAuthenticatedStaff } from '../_shared/auth'
 
 export async function GET() {
+  const staff = await getAuthenticatedStaff()
+  if (!staff) {
+    return json({ error: '权限不足，无法查看统计看板' }, 403)
+  }
+
   const payload = await getPayloadInstance()
   const [projectsResult, leadsResult] = await Promise.all([
     payload.find({ collection: 'projects', limit: 1000, depth: 0, overrideAccess: true }),
@@ -8,7 +14,7 @@ export async function GET() {
   ])
 
   const projects = projectsResult.docs.map(doc => mapProject(doc))
-  const leads = await Promise.all(leadsResult.docs.map(doc => mapLead(doc)))
+  const leads = leadsResult.docs
 
   const todayStart = new Date()
   todayStart.setHours(0, 0, 0, 0)
@@ -16,26 +22,39 @@ export async function GET() {
   monthStart.setDate(1)
   monthStart.setHours(0, 0, 0, 0)
 
-  const leadTypeCounts = leads.reduce<Record<string, number>>((acc, lead) => {
-    const type = String(lead.leadType || 'leasing')
+  const leadTypeCounts = leads.reduce<Record<string, number>>((acc, doc) => {
+    const type = String(doc.leadType || 'leasing')
     acc[type] = (acc[type] || 0) + 1
     return acc
   }, {})
 
-  const projectLeadCounts = leads.reduce<Record<string, number>>((acc, lead) => {
-    if (lead.projectId) acc[String(lead.projectId)] = (acc[String(lead.projectId)] || 0) + 1
+  const projectLeadCounts = leads.reduce<Record<string, number>>((acc, doc) => {
+    const projId = doc.project && typeof doc.project === 'object' ? (doc.project as { id?: string | number }).id : doc.project
+    if (projId) {
+      acc[String(projId)] = (acc[String(projId)] || 0) + 1
+    }
     return acc
   }, {})
+
+
+  const toTimestamp = (val: unknown) => {
+    if (val instanceof Date) return val.getTime()
+    if (typeof val === 'string') {
+      const time = Date.parse(val)
+      return Number.isNaN(time) ? Date.now() : time
+    }
+    return Date.now()
+  }
 
   return json({
     totalProjects: projects.length,
     onlineProjects: projects.filter(project => project.status === 'online').length,
     transferProjects: projects.filter(project => project.opportunityType === 'transfer').length,
-    equipmentLeads: leads.filter(lead => ['equipment_sell', 'equipment_buy'].includes(String(lead.leadType))).length,
-    todayLeads: leads.filter(lead => Number(lead.createdAt) >= todayStart.getTime()).length,
-    monthLeads: leads.filter(lead => Number(lead.createdAt) >= monthStart.getTime()).length,
-    pendingLeads: leads.filter(lead => lead.status === 'new').length,
-    closedLeads: leads.filter(lead => lead.status === 'closed').length,
+    equipmentLeads: leads.filter(doc => ['equipment_sell', 'equipment_buy'].includes(String(doc.leadType))).length,
+    todayLeads: leads.filter(doc => toTimestamp(doc.createdAt) >= todayStart.getTime()).length,
+    monthLeads: leads.filter(doc => toTimestamp(doc.createdAt) >= monthStart.getTime()).length,
+    pendingLeads: leads.filter(doc => (doc.status || 'new') === 'new').length,
+    closedLeads: leads.filter(doc => doc.status === 'closed').length,
     leadTypeCounts,
     popularProjects: projects
       .map(project => ({
@@ -48,3 +67,4 @@ export async function GET() {
       .slice(0, 5),
   })
 }
+

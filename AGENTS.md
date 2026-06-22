@@ -64,7 +64,10 @@ Additional security expectations:
 
 - `GET /api/leads` must not return all leads without authentication.
 - Mini-program lead updates must not accept CRM fields from the client.
-- Uploaded media IDs must be ownership-checked before being attached to leads.
+- Uploaded media IDs must be ownership-checked before being attached to leads. `lead_attachment` media must belong to the current user; `seed_demo` and `admin` media must be rejected.
+- `GET /api/projects/:id` must not expose draft or rejected projects to non-staff callers.
+- Staff-only routes (`POST/PUT/DELETE /api/projects`, `/api/stats`, `/api/leads/:id/follow`, `/api/leads/:id/convert`, `/api/leads/:id/sync-merchant`) must use `getAuthenticatedStaff()`, not the mini-program bearer token.
 - Production must use `WECHAT_AUTH_MODE=wechat`; do not rely on `X-Dev-OpenId` outside local mock mode.
+- `PAYLOAD_SECRET` is required in production.
 - The mock admin uses `X-Admin-Access` to list all leads from `server.js`; do not treat that as a production pattern.
 - Keep advisor phone and form length limits centralized in `mp/config.js`.

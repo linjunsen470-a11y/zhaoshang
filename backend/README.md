@@ -120,8 +120,9 @@ Helpers in `collections/shared/access.ts` enforce these rules on collection acce
 
 Modes:
 
-- `WECHAT_AUTH_MODE=dev`: local debugging. The backend accepts `X-Dev-OpenId`, request body `devOpenId`, `WECHAT_AUTH_DEV_OPENID`, or `dev-openid-local`. The mini-program only sends `X-Dev-OpenId` when `useLocalMock: true`.
+- `WECHAT_AUTH_MODE=dev`: local debugging only (`NODE_ENV !== 'production'`). The backend accepts `X-Dev-OpenId`, request body `devOpenId`, `WECHAT_AUTH_DEV_OPENID`, or `dev-openid-local`. The mini-program only sends `X-Dev-OpenId` when `useLocalMock: true`.
 - `WECHAT_AUTH_MODE=wechat`: production mode. The backend exchanges the mini-program `code` through WeChat `jscode2session`; configure `WECHAT_APPID` and `WECHAT_APP_SECRET`.
+- `PAYLOAD_SECRET` is required in production; missing values cause startup/auth failures instead of falling back to a dev secret.
 
 Authenticated mini-program APIs filter user history by `submitterOpenId`, not by phone number.
 
@@ -129,14 +130,14 @@ Authenticated mini-program APIs filter user history by `submitterOpenId`, not by
 
 ### Read
 
-- `GET /api/leads` requires `Authorization: Bearer <token>`. Unauthenticated requests without a `phone` query param return `401`.
+- `GET /api/leads` requires `Authorization: Bearer <token>`. Unauthenticated requests return `401`.
 - `GET /api/leads/:id` returns a single lead for the authenticated owner only.
 
 ### Create
 
 - `POST /api/leads` requires auth.
 - Uses `sanitizeLeadCreateInput()` so new leads always start with `status: 'new'`.
-- Validates that every `attachments` media ID belongs to the current `ownerOpenId`.
+- Validates attachment ownership before persisting: `lead_attachment` media must belong to the current `ownerOpenId`; `seed_demo` and `admin` media cannot be referenced from the mini-program.
 
 ### Update / Delete
 
@@ -150,7 +151,17 @@ Authenticated mini-program APIs filter user history by `submitterOpenId`, not by
 - `POST /api/leads/:id/convert` — convert a lead into a `projects` record (used by CMS quick actions).
 - `POST /api/leads/:id/sync-merchant` — create or update a `merchant-profiles` record from lead contact/demand fields and link it back to the lead.
 
-These admin routes are intended for authenticated CMS sessions, not the mini-program client.
+These admin routes require an authenticated Payload CMS session (`getAuthenticatedStaff()`), not the mini-program bearer token.
+
+### Projects
+
+- `GET /api/projects` supports `public=true` and other filters at the database layer.
+- `GET /api/projects/:id` returns public projects to anonymous/mini-program callers. Draft or rejected projects return `404` unless the caller has project-management staff permissions.
+- `POST /api/projects`, `PUT /api/projects/:id`, and `DELETE /api/projects/:id` require staff with project permissions.
+
+### Stats
+
+- `GET /api/stats` requires any authenticated staff user.
 
 ### Response Shape
 
@@ -176,7 +187,7 @@ Behavior:
 - Stores the compressed image in Payload `media`.
 - Records `ownerOpenId`, source, original filename, and compressed size.
 
-Mini-program form submissions then pass the returned media IDs in `attachments`. Lead create/update validates attachment ownership before persisting.
+Mini-program form submissions then pass the returned media IDs in `attachments`. Lead create/update validates attachment ownership before persisting. Unauthenticated or expired-token uploads return `401` JSON instead of an internal error.
 
 ## Equipment Public Listing
 
