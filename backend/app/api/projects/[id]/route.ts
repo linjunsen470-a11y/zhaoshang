@@ -1,5 +1,6 @@
 import { getPayloadInstance, json, mapProject, PUBLIC_STATUSES, sanitizeProjectInput } from '../../_shared/payloadApi'
 import { getAuthenticatedStaff } from '../../_shared/auth'
+import { isAdminUser } from '../../../../collections/shared/access'
 
 type Args = {
   params: Promise<{ id: string }>
@@ -21,7 +22,7 @@ export async function GET(request: Request, { params }: Args) {
     if (!staff && !isPublicProject(doc as Record<string, unknown>)) {
       return json({ error: '项目不存在' }, 404)
     }
-    return json(mapProject(doc))
+    return json(mapProject(doc, !!staff))
   } catch {
     return json({ error: '项目不存在' }, 404)
   }
@@ -50,7 +51,7 @@ export async function PUT(request: Request, { params }: Args) {
       data: sanitizeProjectInput(input),
       overrideAccess: true,
     })
-    return json(mapProject(doc))
+    return json(mapProject(doc, !!staff))
   } catch {
     return json({ error: '项目不存在或更新失败' }, 404)
   }
@@ -58,8 +59,8 @@ export async function PUT(request: Request, { params }: Args) {
 
 export async function DELETE(_: Request, { params }: Args) {
   const staff = await getAuthenticatedStaff('projects')
-  if (!staff) {
-    return json({ error: '权限不足' }, 403)
+  if (!staff || !isAdminUser(staff)) {
+    return json({ error: '权限不足，仅管理员可删除项目' }, 403)
   }
 
   const { id } = await params

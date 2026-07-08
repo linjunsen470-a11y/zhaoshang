@@ -1,5 +1,5 @@
-import type { CollectionConfig } from 'payload'
-import { canManageProjects, isAdminUser } from './shared/access'
+import type { CollectionConfig, Where } from 'payload'
+import { canManageProjects, isAdminUser, isStaffUser } from './shared/access'
 import {
   ADMIN_GROUPS,
   BUSINESS_TYPE_OPTIONS,
@@ -22,7 +22,17 @@ export const Projects: CollectionConfig = {
     listSearchableFields: ['title', 'schoolName', 'schoolAlias', 'district', 'addressText'],
   },
   access: {
-    read: () => true,
+    read: ({ req: { user } }) => {
+      if (user && isStaffUser(user)) {
+        return true
+      }
+      return {
+        and: [
+          { status: { in: ['online', 'coming', 'full'] } },
+          { auditStatus: { equals: 'approved' } },
+        ],
+      } as Where
+    },
     create: ({ req: { user } }) => canManageProjects(user),
     update: ({ req: { user } }) => canManageProjects(user),
     delete: ({ req: { user } }) => isAdminUser(user),

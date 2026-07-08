@@ -1,125 +1,44 @@
 const api = require('../../services/api.js');
-const upload = require('../../services/upload.js');
-const {
-  clip,
-  validatePhone,
-  validateName,
-  validatePrivacyConsent,
-  rememberPrivacyConsent,
-  hasPrivacyConsent,
-  loadLeadForEdit,
-  config
-} = require('../../utils/form.js');
+const formBehavior = require('../../utils/formBehavior.js');
+const { clip, config } = require('../../utils/form.js');
 
 Page({
+  behaviors: [formBehavior],
   data: {
-    name: '',
-    phone: '',
     locationText: '',
     businessType: '',
     feeText: '',
     transferFee: '',
     remainingTerm: '',
-    includesEquipment: true,
-    remark: '',
-    attachments: [],
-    uploadingImages: false,
-    submitting: false,
-    isEditMode: false,
-    leadId: '',
-    privacyAccepted: false
+    includesEquipment: true
   },
 
   onLoad(options) {
-    this.setData({ privacyAccepted: hasPrivacyConsent() });
-    const userInfo = wx.getStorageSync('userInfo') || getApp().globalData.userInfo;
-    if (userInfo && !options.leadId) {
+    this.initCommonData(options, lead => {
+      const details = lead.transferDetails || {};
       this.setData({
-        name: userInfo.nickname || '',
-        phone: userInfo.phone || ''
+        locationText: details.locationText || lead.regionPreference || '',
+        businessType: lead.businessType,
+        feeText: details.feeText || '',
+        transferFee: details.transferFee || lead.budgetRange || '',
+        remainingTerm: details.remainingTerm || '',
+        includesEquipment: details.includesEquipment !== undefined ? details.includesEquipment : true
       });
-    }
-
-    if (options.leadId) {
-      this.setData({ isEditMode: true, leadId: options.leadId });
-      wx.setNavigationBarTitle({ title: '修改转让信息' });
-      loadLeadForEdit(api, options.leadId, lead => {
-        const details = lead.transferDetails || {};
-        this.setData({
-          name: lead.name,
-          phone: lead.phone,
-          locationText: details.locationText || lead.regionPreference || '',
-          businessType: lead.businessType,
-          feeText: details.feeText || '',
-          transferFee: details.transferFee || lead.budgetRange || '',
-          remainingTerm: details.remainingTerm || '',
-          includesEquipment: details.includesEquipment !== undefined ? details.includesEquipment : true,
-          remark: lead.remark || '',
-          attachments: lead.attachments || []
-        });
-      });
-    }
+    });
   },
 
-  onInputName(e) { this.setData({ name: clip(e.detail.value, config.MAX_NAME_LENGTH) }); },
-  onInputPhone(e) { this.setData({ phone: clip(e.detail.value, config.MAX_PHONE_LENGTH) }); },
   onInputLocation(e) { this.setData({ locationText: clip(e.detail.value, config.MAX_REGION_LENGTH) }); },
   onInputBusiness(e) { this.setData({ businessType: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
   onInputFee(e) { this.setData({ feeText: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
   onInputTransferFee(e) { this.setData({ transferFee: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
   onInputTerm(e) { this.setData({ remainingTerm: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
-  onInputRemark(e) { this.setData({ remark: clip(e.detail.value, config.MAX_REMARK_LENGTH) }); },
   onEquipmentIncludedChange(e) { this.setData({ includesEquipment: e.detail.value === 'true' }); },
 
-  async onChooseImages() {
-    if (this.data.uploadingImages) return;
-    this.setData({ uploadingImages: true });
-    try {
-      const files = await upload.pickCompressAndUpload(this.data.attachments);
-      this.setData({ attachments: this.data.attachments.concat(files) });
-    } catch (err) {
-      console.error(err);
-      wx.showToast({ title: '图片上传失败', icon: 'none' });
-    } finally {
-      this.setData({ uploadingImages: false });
-    }
-  },
-
-  onRemoveImage(e) {
-    const index = e.currentTarget.dataset.index;
-    this.setData({ attachments: this.data.attachments.filter((_, i) => i !== index) });
-  },
-
-  onPreviewAttachment(e) {
-    const current = e.currentTarget.dataset.url;
-    const urls = this.data.attachments.map(item => item.url || item.localPath).filter(Boolean);
-    if (urls.length) wx.previewImage({ urls, current });
-  },
-
-  onTogglePrivacy() {
-    this.setData({ privacyAccepted: !this.data.privacyAccepted });
-  },
-
-  onGoPrivacy() {
-    wx.navigateTo({ url: '/pages/privacy/privacy' });
-  },
-
   onSubmitForm() {
-    const { name, phone, locationText, businessType, feeText, transferFee, remainingTerm, includesEquipment, remark, attachments, uploadingImages } = this.data;
+    if (!this.validateCommonForm()) return;
 
-    if (uploadingImages) {
-      wx.showToast({ title: '图片仍在上传', icon: 'none' });
-      return;
-    }
-    const nameError = validateName(name);
-    if (nameError) {
-      wx.showToast({ title: nameError, icon: 'none' });
-      return;
-    }
-    if (!validatePhone(phone)) {
-      wx.showToast({ title: '手机号格式不正确', icon: 'none' });
-      return;
-    }
+    const { name, phone, locationText, businessType, feeText, transferFee, remainingTerm, includesEquipment, remark, attachments } = this.data;
+
     if (!locationText) {
       wx.showToast({ title: '请填写店铺位置', icon: 'none' });
       return;
@@ -128,13 +47,8 @@ Page({
       wx.showToast({ title: '请填写当前业态', icon: 'none' });
       return;
     }
-    const privacyError = validatePrivacyConsent(this.data.privacyAccepted);
-    if (privacyError) {
-      wx.showToast({ title: privacyError, icon: 'none' });
-      return;
-    }
 
-    rememberPrivacyConsent();
+    this.saveUserInfo();
     this.setData({ submitting: true });
     const payload = {
       name,
@@ -179,10 +93,7 @@ Page({
         });
     } else {
       api.submitTransfer(payload).then(res => {
-        const userInfo = wx.getStorageSync('userInfo') || {};
-        userInfo.nickname = name;
-        userInfo.phone = phone;
-        wx.setStorageSync('userInfo', userInfo);
+        this.saveUserInfo();
         this.setData({ submitting: false });
         wx.navigateTo({ url: `/pages/success/success?leadId=${res.id}` });
       }).catch(err => {

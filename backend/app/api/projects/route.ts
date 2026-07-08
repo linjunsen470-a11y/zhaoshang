@@ -13,12 +13,14 @@ import { getAuthenticatedStaff } from '../_shared/auth'
 export async function GET(request: Request) {
   const payload = await getPayloadInstance()
   const { searchParams } = new URL(request.url)
+  const staff = await getAuthenticatedStaff('projects')
+  const showPublicOnly = !staff || searchParams.get('public') === 'true'
 
   const andConditions: Where[] = []
 
-  if (searchParams.get('public') === 'true') {
+  if (showPublicOnly) {
     andConditions.push({ status: { in: PUBLIC_STATUSES } })
-    andConditions.push({ auditStatus: { not_equals: 'rejected' } })
+    andConditions.push({ auditStatus: { equals: 'approved' } })
   }
 
   const opportunityType = searchParams.get('opportunityType')
@@ -94,6 +96,6 @@ export async function POST(request: Request) {
     overrideAccess: true,
   })
 
-  return json(mapProject(doc), 201)
+  return json(mapProject(doc, true), 201)
 }
 

@@ -12,7 +12,8 @@ Page({
     },
     secondaryServices: [
       { id: 'transfer', name: '委托转让', desc: '退店换店，平台撮合', icon: '🔁', action: 'transfer' },
-      { id: 'equipment', name: '餐饮设备', desc: '设备求购/出售/回收', icon: '🧊', action: 'equipment' }
+      { id: 'equipment', name: '餐饮设备', desc: '设备求购/出售/回收', icon: '🧊', action: 'equipment' },
+      { id: 'renovation', name: '商铺装修', desc: '设计施工，一步到位', icon: '🛠', action: 'renovation' }
     ],
     categories: [
       { id: 'cat1', name: '食堂档口', icon: '🍜', type: 'projectType', val: '食堂档口' },
@@ -109,6 +110,8 @@ Page({
       wx.navigateTo({ url: '/pages/transfer/transfer' });
     } else if (action === 'equipment') {
       wx.navigateTo({ url: '/pages/equipment-list/equipment-list' });
+    } else if (action === 'renovation') {
+      wx.navigateTo({ url: '/pages/renovation/renovation' });
     }
   },
 

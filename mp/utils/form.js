@@ -7,7 +7,8 @@ const LEAD_TYPE_LABELS = {
   transfer: '店铺转让',
   equipment_sell: '设备出售',
   equipment_buy: '设备求购',
-  equipment_recycle: '设备回收'
+  equipment_recycle: '设备回收',
+  renovation_consult: '装修咨询'
 };
 
 function clip(value, max) {

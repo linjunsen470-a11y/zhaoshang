@@ -1,0 +1,16 @@
+@import "../apply/apply.wxss";
+
+.picker-inner {
+  height: 90rpx;
+  line-height: 90rpx;
+  background: #f8fafc;
+  border: 1rpx solid #e2e8f0;
+  border-radius: 8rpx;
+  padding: 0 24rpx;
+  font-size: 28rpx;
+  color: #1e293b;
+}
+
+.picker-inner.placeholder {
+  color: #94a3b8;
+}

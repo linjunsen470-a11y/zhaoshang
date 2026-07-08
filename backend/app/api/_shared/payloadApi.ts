@@ -168,7 +168,18 @@ function mapEquipmentDetails(value: unknown) {
   }
 }
 
-export function mapProject(doc: Doc) {
+function mapRenovationDetails(value: unknown) {
+  const details = objectValue(value)
+  return {
+    shopArea: stringValue(details.shopArea),
+    renovationType: stringValue(details.renovationType),
+    designStyle: stringValue(details.designStyle),
+    budgetText: stringValue(details.budgetText),
+    expectedStartDate: stringValue(details.expectedStartDate),
+  }
+}
+
+export function mapProject(doc: Doc, isStaff = false) {
   const opportunityType = doc.opportunityType === 'transfer' ? 'transfer' : 'leasing'
   const images = Array.isArray(doc.images) ? doc.images.map(imageUrl).filter(Boolean) : []
   const coverImage = imageUrl(doc.coverImage)
@@ -190,9 +201,9 @@ export function mapProject(doc: Doc) {
     suitableBusiness: toArrayItems(doc.suitableBusiness),
     unsuitableBusiness: toArrayItems(doc.unsuitableBusiness),
     highlights: toArrayItems(doc.highlights),
-    trafficTags: toArrayItems(doc.trafficTags),
-    facilityTags: toArrayItems(doc.facilityTags),
-    advisorTips: stringValue(doc.advisorTips),
+    trafficTags: isStaff ? toArrayItems(doc.trafficTags) : [],
+    facilityTags: isStaff ? toArrayItems(doc.facilityTags) : [],
+    advisorTips: isStaff ? stringValue(doc.advisorTips) : '',
     customerInfo: stringValue(doc.customerInfo),
     cooperationMode: stringValue(doc.cooperationMode),
     viewingTimeText: stringValue(doc.viewingTimeText),
@@ -203,7 +214,7 @@ export function mapProject(doc: Doc) {
     auditStatus: stringValue(doc.auditStatus) || 'approved',
     isRecommended: booleanValue(doc.isRecommended),
     sort: numberValue(doc.sort),
-    remark: stringValue(doc.remark),
+    remark: isStaff ? stringValue(doc.remark) : '',
     budgetCategory: getProjectBudgetCategory(doc as { feeText?: unknown }),
     createdAt: toTimestamp(doc.createdAt),
     updatedAt: toTimestamp(doc.updatedAt),
@@ -259,6 +270,7 @@ export async function mapLeads(docs: Doc[]) {
       hasCampusExperience: booleanValue(doc.hasCampusExperience),
       transferDetails: mapTransferDetails(doc.transferDetails),
       equipmentDetails: mapEquipmentDetails(doc.equipmentDetails),
+      renovationDetails: mapRenovationDetails(doc.renovationDetails),
       attachments: Array.isArray(doc.attachments) ? doc.attachments.map(item => {
         if (item && typeof item === 'object') return mapMedia(item as Doc)
         return { id: String(item), url: undefined }
@@ -351,6 +363,7 @@ function sanitizeLeadUserFields(input: Record<string, unknown>, submitterOpenId:
     hasCampusExperience: booleanValue(input.hasCampusExperience),
     transferDetails: input.transferDetails,
     equipmentDetails: input.equipmentDetails,
+    renovationDetails: input.renovationDetails,
     attachments: ids(input.attachments),
     remark: input.remark,
     project: toDatabaseId(input.project || input.projectId),

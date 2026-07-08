@@ -1,136 +1,50 @@
 const api = require('../../services/api.js');
-const upload = require('../../services/upload.js');
-const {
-  clip,
-  validatePhone,
-  validateName,
-  validatePrivacyConsent,
-  rememberPrivacyConsent,
-  hasPrivacyConsent,
-  loadLeadForEdit,
-  config
-} = require('../../utils/form.js');
+const formBehavior = require('../../utils/formBehavior.js');
+const { clip, config } = require('../../utils/form.js');
 
 Page({
+  behaviors: [formBehavior],
   data: {
     leadType: 'equipment_sell',
-    name: '',
-    phone: '',
     equipmentName: '',
     specText: '',
     equipmentCondition: '',
     budgetRange: '',
-    regionPreference: '',
-    remark: '',
-    attachments: [],
-    uploadingImages: false,
-    submitting: false,
-    isEditMode: false,
-    leadId: '',
-    privacyAccepted: false
+    regionPreference: ''
   },
 
   onLoad(options) {
-    this.setData({ privacyAccepted: hasPrivacyConsent() });
-    const userInfo = wx.getStorageSync('userInfo') || getApp().globalData.userInfo;
-    if (userInfo && !options.leadId) {
+    this.initCommonData(options, lead => {
+      const details = lead.equipmentDetails || {};
       this.setData({
-        name: userInfo.nickname || '',
-        phone: userInfo.phone || ''
+        leadType: lead.leadType || 'equipment_sell',
+        equipmentName: details.equipmentName || lead.businessType || '',
+        specText: details.specText || '',
+        equipmentCondition: details.equipmentCondition || '',
+        budgetRange: details.expectedPrice || lead.budgetRange || '',
+        regionPreference: lead.regionPreference || ''
       });
-    }
-
-    if (options.leadId) {
-      this.setData({ isEditMode: true, leadId: options.leadId });
-      wx.setNavigationBarTitle({ title: '修改供需信息' });
-      loadLeadForEdit(api, options.leadId, lead => {
-        const details = lead.equipmentDetails || {};
-        this.setData({
-          leadType: lead.leadType || 'equipment_sell',
-          name: lead.name,
-          phone: lead.phone,
-          equipmentName: details.equipmentName || lead.businessType || '',
-          specText: details.specText || '',
-          equipmentCondition: details.equipmentCondition || '',
-          budgetRange: details.expectedPrice || lead.budgetRange || '',
-          regionPreference: lead.regionPreference || '',
-          remark: lead.remark || '',
-          attachments: lead.attachments || []
-        });
-      });
-    }
+    });
   },
 
   onTypeTap(e) { this.setData({ leadType: e.currentTarget.dataset.type }); },
-  onInputName(e) { this.setData({ name: clip(e.detail.value, config.MAX_NAME_LENGTH) }); },
-  onInputPhone(e) { this.setData({ phone: clip(e.detail.value, config.MAX_PHONE_LENGTH) }); },
   onInputEquipmentName(e) { this.setData({ equipmentName: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
   onInputSpec(e) { this.setData({ specText: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
   onInputCondition(e) { this.setData({ equipmentCondition: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
   onInputBudget(e) { this.setData({ budgetRange: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
   onInputRegion(e) { this.setData({ regionPreference: clip(e.detail.value, config.MAX_REGION_LENGTH) }); },
-  onInputRemark(e) { this.setData({ remark: clip(e.detail.value, config.MAX_REMARK_LENGTH) }); },
-
-  async onChooseImages() {
-    if (this.data.uploadingImages) return;
-    this.setData({ uploadingImages: true });
-    try {
-      const files = await upload.pickCompressAndUpload(this.data.attachments);
-      this.setData({ attachments: this.data.attachments.concat(files) });
-    } catch (err) {
-      console.error(err);
-      wx.showToast({ title: '图片上传失败', icon: 'none' });
-    } finally {
-      this.setData({ uploadingImages: false });
-    }
-  },
-
-  onRemoveImage(e) {
-    const index = e.currentTarget.dataset.index;
-    this.setData({ attachments: this.data.attachments.filter((_, i) => i !== index) });
-  },
-
-  onPreviewAttachment(e) {
-    const current = e.currentTarget.dataset.url;
-    const urls = this.data.attachments.map(item => item.url || item.localPath).filter(Boolean);
-    if (urls.length) wx.previewImage({ urls, current });
-  },
-
-  onTogglePrivacy() {
-    this.setData({ privacyAccepted: !this.data.privacyAccepted });
-  },
-
-  onGoPrivacy() {
-    wx.navigateTo({ url: '/pages/privacy/privacy' });
-  },
 
   onSubmitForm() {
-    const { leadType, name, phone, equipmentName, specText, equipmentCondition, budgetRange, regionPreference, remark, attachments, uploadingImages } = this.data;
+    if (!this.validateCommonForm()) return;
 
-    if (uploadingImages) {
-      wx.showToast({ title: '图片仍在上传', icon: 'none' });
-      return;
-    }
-    const nameError = validateName(name);
-    if (nameError) {
-      wx.showToast({ title: nameError, icon: 'none' });
-      return;
-    }
-    if (!validatePhone(phone)) {
-      wx.showToast({ title: '手机号格式不正确', icon: 'none' });
-      return;
-    }
+    const { leadType, name, phone, equipmentName, specText, equipmentCondition, budgetRange, regionPreference, remark, attachments } = this.data;
+
     if (!equipmentName) {
       wx.showToast({ title: '请填写设备名称', icon: 'none' });
       return;
     }
-    const privacyError = validatePrivacyConsent(this.data.privacyAccepted);
-    if (privacyError) {
-      wx.showToast({ title: privacyError, icon: 'none' });
-      return;
-    }
 
-    rememberPrivacyConsent();
+    this.saveUserInfo();
     this.setData({ submitting: true });
     const payload = {
       leadType,
@@ -175,10 +89,7 @@ Page({
         });
     } else {
       api.submitEquipment(payload).then(res => {
-        const userInfo = wx.getStorageSync('userInfo') || {};
-        userInfo.nickname = name;
-        userInfo.phone = phone;
-        wx.setStorageSync('userInfo', userInfo);
+        this.saveUserInfo();
         this.setData({ submitting: false });
         wx.navigateTo({ url: `/pages/success/success?leadId=${res.id}` });
       }).catch(err => {

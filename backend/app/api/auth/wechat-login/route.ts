@@ -11,7 +11,7 @@ type WechatSessionResponse = {
 
 export async function POST(request: Request) {
   const input = await request.json().catch(() => ({})) as Record<string, unknown>
-  const mode = process.env.WECHAT_AUTH_MODE || 'dev'
+  const mode = process.env.WECHAT_AUTH_MODE || 'wechat'
 
   if (mode === 'dev' && process.env.NODE_ENV !== 'production') {
     const requestedOpenId = request.headers.get('x-dev-openid') || String(input.devOpenId || '')

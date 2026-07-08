@@ -25,7 +25,7 @@ const PUBLIC_STATUSES = new Set(['online', 'coming', 'full']);
 const ADMIN_ACCESS_KEY = process.env.ADMIN_ACCESS_KEY || 'local-admin';
 const LEAD_USER_FIELDS = [
   'name', 'phone', 'businessType', 'budgetRange', 'regionPreference', 'hasCampusExperience',
-  'transferDetails', 'equipmentDetails', 'attachments', 'remark', 'leadType', 'sourceChannel', 'projectId',
+  'transferDetails', 'equipmentDetails', 'renovationDetails', 'attachments', 'remark', 'leadType', 'sourceChannel', 'projectId',
 ];
 
 function getCORSHeaders(req) {
@@ -364,7 +364,9 @@ const server = http.createServer(async (req, res) => {
 
     if (urlPath === '/api/leads' && req.method === 'POST') {
       try {
-        const payload = normalizeLead(await readBody(req), data.projects);
+        const rawBody = await readBody(req);
+        const userFields = pickLeadUserFields(rawBody);
+        const payload = normalizeLead(userFields, data.projects);
         if (!payload.name || !payload.phone) {
           sendJSON({ error: '称呼和手机号为必填项' }, 400);
           return;

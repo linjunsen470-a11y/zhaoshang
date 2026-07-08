@@ -122,6 +122,8 @@ Page({
       url = `/pages/transfer/transfer?leadId=${id}`;
     } else if (type.startsWith('equipment')) {
       url = `/pages/equipment/equipment?leadId=${id}`;
+    } else if (type === 'renovation_consult') {
+      url = `/pages/renovation/renovation?leadId=${id}`;
     } else {
       url = `/pages/apply/apply?leadId=${id}`;
     }

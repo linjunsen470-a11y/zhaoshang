@@ -66,4 +66,5 @@ export const LEAD_TYPE_LABELS: Record<string, string> = {
   equipment_buy: '设备求购',
   equipment_recycle: '设备回收',
   brand_cooperation: '品牌合作',
+  renovation_consult: '装修咨询',
 }

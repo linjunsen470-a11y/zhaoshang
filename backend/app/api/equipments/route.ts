@@ -1,4 +1,4 @@
-import { getPayloadInstance, json, maskPublicRegion, truncatePublicText, absoluteUrl } from '../_shared/payloadApi'
+import { getPayloadInstance, json, maskPublicRegion, truncatePublicText, absoluteUrl, LEAD_ID_OFFSET } from '../_shared/payloadApi'
 
 
 export async function GET(request: Request) {
@@ -42,7 +42,13 @@ export async function GET(request: Request) {
     }
     const details = raw.equipmentDetails || {}
     return {
-      id: String(raw.id),
+      id: (() => {
+        const num = Number(raw.id)
+        if (!isNaN(num) && num < 10000000) {
+          return String(LEAD_ID_OFFSET + num)
+        }
+        return String(raw.id)
+      })(),
       leadType: raw.leadType,
       businessType: raw.businessType || '',
       budgetRange: raw.budgetRange || '',

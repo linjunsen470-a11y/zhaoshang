@@ -9,10 +9,16 @@ function getAppConfig() {
 }
 
 function wxLogin() {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     wx.login({
-      success: res => resolve(res.code || 'dev'),
-      fail: () => resolve('dev')
+      success: res => {
+        if (res.code) {
+          resolve(res.code);
+        } else {
+          reject(new Error('微信登录未返回 code'));
+        }
+      },
+      fail: err => reject(err || new Error('微信登录失败'))
     });
   });
 }

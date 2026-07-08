@@ -25,7 +25,7 @@ export const Leads: CollectionConfig = {
   },
   access: {
     read: ({ req: { user } }) => canManageLeads(user),
-    create: () => true,
+    create: ({ req: { user } }) => canManageLeads(user),
     update: ({ req: { user } }) => canManageLeads(user),
     delete: ({ req: { user } }) => isAdminUser(user),
   },
@@ -90,6 +90,7 @@ export const Leads: CollectionConfig = {
                     { label: '求购设备', value: 'equipment_buy' },
                     { label: '回收咨询', value: 'equipment_recycle' },
                     { label: '品牌合作（仅后台）', value: 'brand_cooperation' },
+                    { label: '装修咨询', value: 'renovation_consult' },
                   ],
                 },
                 {
@@ -164,6 +165,30 @@ export const Leads: CollectionConfig = {
                 { name: 'specText', type: 'text', label: '数量/规格' },
                 { name: 'equipmentCondition', type: 'text', label: '成色/说明' },
                 { name: 'expectedPrice', type: 'text', label: '预算/期望价格' },
+              ],
+            },
+            {
+              name: 'renovationDetails',
+              type: 'group',
+              label: '装修专属信息',
+              admin: {
+                condition: (_, siblingData) => siblingData?.leadType === 'renovation_consult',
+              },
+              fields: [
+                { name: 'shopArea', type: 'text', label: '店铺面积' },
+                {
+                  name: 'renovationType',
+                  type: 'select',
+                  label: '装修类型',
+                  options: [
+                    { label: '新铺装修', value: 'new_build' },
+                    { label: '旧铺翻新', value: 'renovation' },
+                    { label: '局部改造', value: 'partial' },
+                  ],
+                },
+                { name: 'designStyle', type: 'text', label: '设计风格偏好' },
+                { name: 'budgetText', type: 'text', label: '装修预算' },
+                { name: 'expectedStartDate', type: 'text', label: '预期开工时间' },
               ],
             },
             {
