@@ -45,7 +45,7 @@ async function main() {
       await client.query(`UPDATE projects SET status = 'draft' WHERE status IN ('online', 'coming', 'full') AND (audit_status IS DISTINCT FROM 'approved'${completenessClause})`)
     }
 
-    await client.query(`UPDATE leads SET status = CASE WHEN status = 'new' THEN 'new' WHEN status IN ('contacted', 'interested', 'viewing_scheduled', 'viewed', 'negotiating') THEN 'contacted' ELSE 'closed' END`)
+    await client.query(`UPDATE leads SET status = (CASE WHEN status = 'new' THEN 'new' WHEN status IN ('contacted', 'interested', 'viewing_scheduled', 'viewed', 'negotiating') THEN 'contacted' ELSE 'closed' END)::enum_leads_status`)
     await client.query(`UPDATE users SET role = 'editor' WHERE role = 'advisor'`)
 
     if (!columns.has('leads.equipment_publication_status')) {
