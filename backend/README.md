@@ -10,8 +10,9 @@ Payload is the only admin interface. Workspace entry points:
 |------|-----|
 | 房源管理 | `/admin`（完整编辑仍走 `/admin/collections/projects/:id`） |
 | 咨询收件箱 | `/admin/workspace/inquiries`（`?category=property\|equipment\|renovation`） |
-| 设备上架 | `/admin/workspace/equipment` |
 | 系统设置 | `/admin/workspace/system` |
+
+设备是否进入小程序公开列表：在咨询详情「处理编辑 → 设备公开设置」中配置（不再单独占侧栏入口）。
 
 - Property workspace: URL-backed filters, table, quick-edit drawer, bulk publish controls.
 - Inquiry inbox: three handling states and one internal note; no CRM timeline or assignment workflow.

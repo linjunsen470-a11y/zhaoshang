@@ -6,9 +6,8 @@
 ## 新信息架构
 
 1. `房源管理`：登录首页 `/admin`；完整编辑使用 Payload 原生文档路由 `/admin/collections/projects/:id`。
-2. `咨询收件箱`：自定义视图 `/admin/workspace/inquiries`（经 `*Route` 服务端壳层挂载 `DefaultTemplate`）；完整详情走 `/admin/collections/leads/:id`。
-3. `设备供需`：自定义视图 `/admin/workspace/equipment`（同样经 `DefaultTemplate` 壳层）；完整详情走 leads 文档路由。
-4. `系统设置`：自定义视图 `/admin/workspace/system`；账号与媒体分别打开 `/admin/collections/users`、`/admin/collections/media`。
+2. `咨询收件箱`：自定义视图 `/admin/workspace/inquiries`；完整详情 `/admin/collections/leads/:id`（设备公开状态在详情「处理编辑」中配置，不再单独占侧栏）。
+3. `系统设置`：自定义视图 `/admin/workspace/system`；账号与媒体分别打开 `/admin/collections/users`、`/admin/collections/media`。
 
 > **路由说明（Payload 3）**：多段自定义 admin view（如 `/workspace/*`）默认不会设置 `templateType: 'default'`，会丢失侧栏与账号菜单。本项目用 `AdminWorkspaceShell` + `*Route` 组件显式包裹 `DefaultTemplate`。`admin.hidden: true` 的集合文档页也会 404，因此 `leads` / `projects` / `users` / `media` 均保持可见；默认集合导航由 CSS 隐藏，主导航使用 `PrimaryNav`。
 
@@ -33,8 +32,7 @@
 
 | 入口 | 用途 |
 |------|------|
-| 咨询收件箱 | 统一处理客户提交：业务线分段 **全部 / 房源 / 设备 / 装修** |
-| 设备上架 | 仅控制设备类咨询是否在小程序公开（`equipmentPublication`） |
+| 咨询收件箱 | 统一处理客户提交：业务线分段 **全部 / 房源 / 设备 / 装修**；设备公开在详情内配置 |
 | 房源管理 | 房源 CRUD 与上下架，与咨询收件分离 |
 
 ### 详情双版本

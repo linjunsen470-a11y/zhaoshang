@@ -170,7 +170,7 @@ export function InquiryInboxView() {
       {categoryMeta ? (
         <p className="cms-help" style={{ marginBottom: 14 }}>
           {categoryMeta.label}：{categoryMeta.description}
-          {activeCategory === 'equipment' ? ' · 要在小程序展示时，再到侧栏「设备上架」发布。' : null}
+          {activeCategory === 'equipment' ? ' · 要在小程序展示时，打开完整详情 →「处理编辑」里改设备公开状态。' : null}
         </p>
       ) : null}
 

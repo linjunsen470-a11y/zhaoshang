@@ -5,11 +5,13 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 /**
- * Single IA for staff:
- * - 房源管理: publish properties
- * - 咨询收件箱: all customer leads (filter by business line in page)
- * - 设备上架: public listing flags for equipment leads only
- * - 系统设置: admin accounts / media
+ * Staff IA (lean):
+ * - 房源管理: property list / publish
+ * - 咨询收件箱: all leads (property / equipment / renovation filters in page)
+ * - 系统设置: admin-only accounts & media
+ *
+ * Equipment public listing is edited on the lead detail form
+ * (处理编辑 → 设备公开设置), not a separate nav item.
  */
 const links = [
   {
@@ -24,11 +26,6 @@ const links = [
     match: (pathname: string) =>
       pathname.startsWith('/admin/workspace/inquiries')
       || pathname.startsWith('/admin/collections/leads'),
-  },
-  {
-    label: '设备上架',
-    href: '/admin/workspace/equipment',
-    match: (pathname: string) => pathname.startsWith('/admin/workspace/equipment'),
   },
 ]
 

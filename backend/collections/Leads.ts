@@ -90,7 +90,7 @@ const workingFields: CollectionConfig['fields'] = [
     label: '设备公开设置',
     admin: {
       condition: (_, siblingData) => EQUIPMENT_TYPES.includes(siblingData?.leadType),
-      description: '与「设备上架」工作台联动：状态为“已发布”时才会出现在小程序设备列表。',
+      description: '状态为“已发布”时才会出现在小程序设备列表。',
     },
     fields: [
       {

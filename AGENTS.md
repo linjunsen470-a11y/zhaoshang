@@ -40,8 +40,7 @@ For Payload admin UX changes:
 - Register custom admin components in `backend/app/admin/components/` and wire them through `backend/app/admin/[[...segments]]/importMap.js`.
 - Custom workspace views belong under `admin.components.views` with a `path` (e.g. `/workspace/inquiries`). Primary nav routes:
   - 房源: `/admin`
-  - 咨询收件箱: `/admin/workspace/inquiries`（业务线：房源 / 设备 / 装修）
-  - 设备上架: `/admin/workspace/equipment`（仅公开状态，不等于咨询处理）
+  - 咨询收件箱: `/admin/workspace/inquiries`（业务线：房源 / 设备 / 装修；设备公开在详情「处理编辑」中设置）
   - 系统: `/admin/workspace/system`
 - Workspace custom views (`/workspace/*`) must use `*Route` server components that wrap content with `AdminWorkspaceShell` (`DefaultTemplate`), otherwise the Payload nav/account chrome is missing.
 - Lead detail has two layers: `customerSnapshot` (immutable original) and editable working fields under the「处理编辑」tab. Populate snapshot on create via `buildLeadSnapshot`; never overwrite on update.
