@@ -169,7 +169,7 @@ export function PropertyWorkspace() {
           <input id="property-search" name="q" value={search} onChange={event => setSearch(event.target.value)} placeholder="搜索标题、学校或地址…" autoComplete="off" />
           <button className="cms-button" type="submit">搜索</button>
         </form>
-        <label><span>门禁</span><select value={searchParams.get('quality') || ''} onChange={event => updateParams({ quality: event.target.value || undefined })}><option value="">全部</option><option value="blocked">未过门禁</option><option value="ready">门禁通过</option></select></label>
+        <label><span>资料</span><select value={searchParams.get('quality') || ''} onChange={event => updateParams({ quality: event.target.value || undefined })}><option value="">全部</option><option value="blocked">还差资料</option><option value="ready">资料齐全</option></select></label>
         <label><span>业务</span><select value={searchParams.get('opportunityType') || ''} onChange={event => updateParams({ opportunityType: event.target.value || undefined })}><option value="">全部</option><option value="leasing">招商铺位</option><option value="transfer">店铺转让</option></select></label>
         <label><span>区域</span><select value={searchParams.get('district') || ''} onChange={event => updateParams({ district: event.target.value || undefined })}><option value="">全部</option>{DISTRICT_OPTIONS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
         <label><span>类型</span><select value={searchParams.get('projectType') || ''} onChange={event => updateParams({ projectType: event.target.value || undefined })}><option value="">全部</option>{PROJECT_TYPE_OPTIONS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
@@ -208,7 +208,7 @@ export function PropertyWorkspace() {
                       </div>
                     ) : (
                       <div className="cms-gate-tags" style={{ marginTop: 6 }}>
-                        <span className="cms-gate-tag cms-gate-tag--ok">门禁通过</span>
+                        <span className="cms-gate-tag cms-gate-tag--ok">资料齐全</span>
                       </div>
                     )}
                   </td>

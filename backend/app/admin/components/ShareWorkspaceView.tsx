@@ -64,7 +64,7 @@ export function ShareWorkspaceView() {
         <div>
           <p className="cms-eyebrow">获客投放</p>
           <h1>分享素材</h1>
-          <p>一键复制小程序路径/文案，并生成带封面与文案的分享海报图。</p>
+          <p>复制分享文案，生成带房源图与扫码入口的海报（开发阶段为示意码）。</p>
         </div>
         <button className="cms-button" type="button" disabled={loading} onClick={() => void load()}>
           {loading ? '刷新中…' : '刷新房源'}

@@ -71,7 +71,7 @@ export function ProjectEditHints() {
   return (
     <div className="cms-editor-panel">
       <section>
-        <h3>上架质量门禁</h3>
+        <h3>上架前检查</h3>
         <span className={`cms-status ${missing.length ? 'cms-status--draft' : 'cms-status--online'}`}>
           {missing.length ? `还差 ${missing.length} 项` : '可以上架'}
         </span>

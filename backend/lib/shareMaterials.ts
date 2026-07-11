@@ -14,8 +14,9 @@ export type ShareableProject = {
   coverImage?: string | null
 }
 
+/** Internal page path (for staff reference / future wxacode API). Not a clickable web URL. */
 export function miniProgramDetailPath(projectId: string | number) {
-  return `/pages/detail/detail?id=${projectId}`
+  return `pages/detail/detail?id=${projectId}`
 }
 
 export function buildShareMaterial(project: ShareableProject) {
@@ -30,22 +31,23 @@ export function buildShareMaterial(project: ShareableProject) {
 
   const lines = [
     `【${type}】${title}`,
-    school ? `📍 学校：${school}` : '',
-    district ? `🗺 区域：${district}` : '',
-    area ? `📐 面积：${area}` : '',
-    fee ? `💰 费用：${fee}` : '',
+    school ? `学校：${school}` : '',
+    district ? `区域：${district}` : '',
+    area ? `面积：${area}` : '',
+    fee ? `费用：${fee}` : '',
     '',
-    '感兴趣可打开小程序查看详情或提交咨询。',
-    `小程序路径：${path}`,
+    '长按识别海报中的小程序码，即可查看详情并提交咨询。',
+    '（开发阶段为示意码，正式上线后替换为微信小程序码）',
   ]
 
   return {
     path,
-    headline: `【校园商铺】${title}`,
+    headline: title,
     copyText: lines.filter(Boolean).join('\n'),
     shortText: [title, school || district, fee].filter(Boolean).join(' · '),
     typeLabel: type,
     coverImage: project.coverImage || '',
+    scanHint: '微信扫码看房源',
   }
 }
 
@@ -99,128 +101,167 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number,
   return lines
 }
 
+/** Deterministic pseudo-QR pattern for pre-launch mock (not a real WeChat code). */
+function drawMockQrCode(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, seed: string) {
+  const modules = 25
+  const cell = size / modules
+  let hash = 0
+  for (let i = 0; i < seed.length; i += 1) hash = (hash * 33 + seed.charCodeAt(i)) >>> 0
+
+  const bit = (row: number, col: number) => {
+    // Finder patterns (top-left, top-right, bottom-left)
+    const inFinder = (r: number, c: number, fr: number, fc: number) => {
+      const dr = r - fr
+      const dc = c - fc
+      if (dr < 0 || dr > 6 || dc < 0 || dc > 6) return null
+      if (dr === 0 || dr === 6 || dc === 0 || dc === 6) return true
+      if (dr >= 2 && dr <= 4 && dc >= 2 && dc <= 4) return true
+      return false
+    }
+    const f1 = inFinder(row, col, 0, 0)
+    if (f1 !== null) return f1
+    const f2 = inFinder(row, col, 0, modules - 7)
+    if (f2 !== null) return f2
+    const f3 = inFinder(row, col, modules - 7, 0)
+    if (f3 !== null) return f3
+    // Timing patterns
+    if (row === 6 || col === 6) return (row + col) % 2 === 0
+    const n = (hash ^ (row * 73856093) ^ (col * 19349663)) >>> 0
+    return (n % 3) !== 0
+  }
+
+  // White quiet zone background
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(x - 8, y - 8, size + 16, size + 16)
+
+  ctx.fillStyle = '#0f172a'
+  for (let row = 0; row < modules; row += 1) {
+    for (let col = 0; col < modules; col += 1) {
+      if (bit(row, col)) {
+        ctx.fillRect(x + col * cell, y + row * cell, Math.ceil(cell), Math.ceil(cell))
+      }
+    }
+  }
+}
+
 /**
- * Compose a 3:4 poster: gradient base + cover photo + text card.
- * Returns a PNG blob suitable for download or clipboard.
+ * Clean listing-style poster: soft paper bg, hero photo, meta, mock mini-program QR.
  */
 export async function renderSharePoster(project: ShareableProject): Promise<Blob> {
   const material = buildShareMaterial(project)
   const width = 750
-  const height = 1000
+  const height = 1200
   const canvas = document.createElement('canvas')
   canvas.width = width
   canvas.height = height
   const ctx = canvas.getContext('2d')
   if (!ctx) throw new Error('无法创建画布')
 
-  // Background gradient
-  const bg = ctx.createLinearGradient(0, 0, width, height)
-  bg.addColorStop(0, '#0f2744')
-  bg.addColorStop(0.45, '#1d4ed8')
-  bg.addColorStop(1, '#0ea5e9')
-  ctx.fillStyle = bg
+  // Soft paper background
+  ctx.fillStyle = '#f4f1ea'
   ctx.fillRect(0, 0, width, height)
 
-  // Decorative circles
-  ctx.fillStyle = 'rgba(255,255,255,0.06)'
-  ctx.beginPath()
-  ctx.arc(620, 120, 180, 0, Math.PI * 2)
-  ctx.fill()
-  ctx.beginPath()
-  ctx.arc(80, 860, 140, 0, Math.PI * 2)
-  ctx.fill()
+  // Subtle top brand strip
+  ctx.fillStyle = '#172033'
+  ctx.fillRect(0, 0, width, 88)
+  ctx.fillStyle = '#f8fafc'
+  ctx.font = '700 28px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif'
+  ctx.fillText('校园商铺', 40, 56)
+  ctx.font = '500 20px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif'
+  ctx.fillStyle = 'rgba(248,250,252,0.72)'
+  ctx.fillText(material.typeLabel, width - 40 - ctx.measureText(material.typeLabel).width, 56)
 
-  // Brand chip
-  ctx.fillStyle = 'rgba(255,255,255,0.16)'
-  roundRect(ctx, 40, 40, 220, 44, 22)
-  ctx.fill()
-  ctx.fillStyle = '#fff'
-  ctx.font = '700 22px system-ui, sans-serif'
-  ctx.fillText('校园商铺 · 精选', 62, 70)
-
-  // Cover card
-  const cardX = 40
-  const cardY = 110
-  const cardW = width - 80
-  const cardH = 420
+  // Hero photo
+  const photoX = 40
+  const photoY = 120
+  const photoW = width - 80
+  const photoH = 520
   ctx.save()
-  roundRect(ctx, cardX, cardY, cardW, cardH, 28)
+  roundRect(ctx, photoX, photoY, photoW, photoH, 20)
   ctx.clip()
-  ctx.fillStyle = '#1e293b'
-  ctx.fillRect(cardX, cardY, cardW, cardH)
+  ctx.fillStyle = '#dbe3ee'
+  ctx.fillRect(photoX, photoY, photoW, photoH)
 
   if (material.coverImage) {
     try {
       const img = await loadImage(material.coverImage)
-      const scale = Math.max(cardW / img.width, cardH / img.height)
+      const scale = Math.max(photoW / img.width, photoH / img.height)
       const iw = img.width * scale
       const ih = img.height * scale
-      const ix = cardX + (cardW - iw) / 2
-      const iy = cardY + (cardH - ih) / 2
-      ctx.drawImage(img, ix, iy, iw, ih)
-      // darken bottom of photo for readability if needed
-      const fade = ctx.createLinearGradient(0, cardY + cardH * 0.55, 0, cardY + cardH)
-      fade.addColorStop(0, 'rgba(15,23,42,0)')
-      fade.addColorStop(1, 'rgba(15,23,42,0.35)')
-      ctx.fillStyle = fade
-      ctx.fillRect(cardX, cardY, cardW, cardH)
+      ctx.drawImage(img, photoX + (photoW - iw) / 2, photoY + (photoH - ih) / 2, iw, ih)
     } catch {
-      ctx.fillStyle = '#334155'
-      ctx.fillRect(cardX, cardY, cardW, cardH)
-      ctx.fillStyle = 'rgba(255,255,255,0.7)'
+      ctx.fillStyle = '#94a3b8'
       ctx.font = '600 28px system-ui, sans-serif'
-      ctx.fillText('暂无封面图', cardX + 40, cardY + cardH / 2)
+      ctx.fillText('封面加载失败', photoX + 40, photoY + photoH / 2)
     }
   } else {
-    ctx.fillStyle = 'rgba(255,255,255,0.7)'
-    ctx.font = '600 28px system-ui, sans-serif'
-    ctx.fillText('暂无封面图 · 请先在房源编辑页上传', cardX + 40, cardY + cardH / 2)
+    ctx.fillStyle = '#64748b'
+    ctx.font = '600 28px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif'
+    ctx.fillText('暂无封面，建议先上传房源首图', photoX + 48, photoY + photoH / 2)
   }
   ctx.restore()
 
-  // Type badge on photo
-  ctx.fillStyle = '#1d4ed8'
-  roundRect(ctx, cardX + 24, cardY + 24, 140, 40, 12)
+  // White content card
+  const cardY = 668
+  const cardH = 460
+  ctx.fillStyle = '#ffffff'
+  roundRect(ctx, 40, cardY, width - 80, cardH, 20)
   ctx.fill()
-  ctx.fillStyle = '#fff'
-  ctx.font = '700 20px system-ui, sans-serif'
-  ctx.fillText(material.typeLabel, cardX + 42, cardY + 51)
+  ctx.strokeStyle = 'rgba(23,32,51,0.06)'
+  ctx.lineWidth = 1
+  roundRect(ctx, 40, cardY, width - 80, cardH, 20)
+  ctx.stroke()
 
-  // Info panel
-  const panelY = 560
-  ctx.fillStyle = 'rgba(255,255,255,0.96)'
-  roundRect(ctx, 40, panelY, width - 80, 360, 28)
-  ctx.fill()
-
-  ctx.fillStyle = '#0f172a'
-  ctx.font = '800 36px system-ui, sans-serif'
-  const titleLines = wrapText(ctx, material.headline.replace(/^【校园商铺】/, ''), width - 160, 2)
+  // Title
+  ctx.fillStyle = '#172033'
+  ctx.font = '800 40px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif'
+  const titleLines = wrapText(ctx, material.headline, width - 280, 2)
   titleLines.forEach((line, index) => {
-    ctx.fillText(line, 72, panelY + 56 + index * 44)
+    ctx.fillText(line, 72, cardY + 64 + index * 48)
   })
 
-  const metaStart = panelY + 56 + titleLines.length * 44 + 20
-  ctx.fillStyle = '#475569'
-  ctx.font = '600 24px system-ui, sans-serif'
+  // Meta rows
+  const metaY = cardY + 64 + titleLines.length * 48 + 28
   const meta = [
-    project.schoolName || project.schoolAlias ? `学校  ${project.schoolName || project.schoolAlias}` : '',
-    project.district ? `区域  ${project.district}` : '',
-    project.areaText ? `面积  ${project.areaText}` : '',
-    project.feeText ? `费用  ${project.feeText}` : '',
-  ].filter(Boolean)
+    { k: '学校', v: (project.schoolName || project.schoolAlias || '').trim() },
+    { k: '区域', v: (project.district || '').trim() },
+    { k: '面积', v: (project.areaText || '').trim() },
+    { k: '费用', v: (project.feeText || '').trim() },
+  ].filter(item => item.v)
 
-  meta.forEach((line, index) => {
-    ctx.fillText(line, 72, metaStart + index * 36)
+  meta.forEach((item, index) => {
+    const y = metaY + index * 42
+    ctx.fillStyle = '#94a3b8'
+    ctx.font = '600 22px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif'
+    ctx.fillText(item.k, 72, y)
+    ctx.fillStyle = '#334155'
+    ctx.font = '700 24px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif'
+    ctx.fillText(item.v, 150, y)
   })
 
-  // Footer path hint
-  ctx.fillStyle = '#1d4ed8'
-  roundRect(ctx, 72, panelY + 280, width - 184, 48, 14)
-  ctx.fill()
-  ctx.fillStyle = '#fff'
-  ctx.font = '700 20px system-ui, sans-serif'
-  const pathText = material.path.length > 34 ? `${material.path.slice(0, 34)}…` : material.path
-  ctx.fillText(pathText, 92, panelY + 311)
+  // Mock mini-program QR (bottom-right of card)
+  const qrSize = 148
+  const qrX = width - 72 - qrSize
+  const qrY = cardY + cardH - 72 - qrSize - 28
+  drawMockQrCode(ctx, qrX, qrY, qrSize, String(project.id))
+
+  ctx.fillStyle = '#64748b'
+  ctx.font = '600 18px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif'
+  const hint = material.scanHint
+  const hintW = ctx.measureText(hint).width
+  ctx.fillText(hint, qrX + (qrSize - hintW) / 2, qrY + qrSize + 28)
+
+  // Dev badge under QR
+  ctx.fillStyle = '#b45309'
+  ctx.font = '600 16px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif'
+  const badge = '示意码 · 未上线'
+  const badgeW = ctx.measureText(badge).width
+  ctx.fillText(badge, qrX + (qrSize - badgeW) / 2, qrY + qrSize + 52)
+
+  // Bottom footer
+  ctx.fillStyle = '#94a3b8'
+  ctx.font = '500 18px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif'
+  ctx.fillText('校园商铺招商 · 扫码查看完整信息', 40, height - 28)
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(blob => {
@@ -228,4 +269,18 @@ export async function renderSharePoster(project: ShareableProject): Promise<Blob
       else resolve(blob)
     }, 'image/png')
   })
+}
+
+/** Standalone mock QR image for UI preview (same algorithm as poster). */
+export function renderMockQrDataUrl(seed: string, size = 200): string {
+  const canvas = document.createElement('canvas')
+  const pad = 16
+  canvas.width = size + pad * 2
+  canvas.height = size + pad * 2
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return ''
+  ctx.fillStyle = '#fff'
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  drawMockQrCode(ctx, pad, pad, size, seed)
+  return canvas.toDataURL('image/png')
 }

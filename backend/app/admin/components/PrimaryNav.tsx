@@ -5,26 +5,14 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 /**
- * Three ops modules are first-class nav items (not nested under one page):
- * - 运营工作台: team todos + funnel
- * - 质量门禁: publish gates
- * - 分享素材: copy + poster
+ * Nav order (business first):
+ * 运营工作台 → 房源管理 → 咨询收件箱 → 分享素材 → 上架检查 → 系统设置
  */
 const links = [
   {
     label: '运营工作台',
     href: '/admin',
     match: (pathname: string) => pathname === '/admin',
-  },
-  {
-    label: '质量门禁',
-    href: '/admin/workspace/quality',
-    match: (pathname: string) => pathname.startsWith('/admin/workspace/quality'),
-  },
-  {
-    label: '分享素材',
-    href: '/admin/workspace/share',
-    match: (pathname: string) => pathname.startsWith('/admin/workspace/share'),
   },
   {
     label: '房源管理',
@@ -37,6 +25,16 @@ const links = [
     match: (pathname: string) =>
       pathname.startsWith('/admin/workspace/inquiries')
       || pathname.startsWith('/admin/collections/leads'),
+  },
+  {
+    label: '分享素材',
+    href: '/admin/workspace/share',
+    match: (pathname: string) => pathname.startsWith('/admin/workspace/share'),
+  },
+  {
+    label: '上架检查',
+    href: '/admin/workspace/quality',
+    match: (pathname: string) => pathname.startsWith('/admin/workspace/quality'),
   },
 ]
 

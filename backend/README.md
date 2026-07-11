@@ -9,10 +9,10 @@ Payload is the only admin interface. Workspace entry points:
 | 模块 | URL |
 |------|-----|
 | 运营工作台 | `/admin`（团队待办 + 咨询漏斗） |
-| 质量门禁 | `/admin/workspace/quality` |
-| 分享素材 | `/admin/workspace/share`（路径/文案/海报图） |
 | 房源管理 | `/admin/collections/projects` |
 | 咨询收件箱 | `/admin/workspace/inquiries` |
+| 分享素材 | `/admin/workspace/share`（文案 / 示意小程序码 / 海报） |
+| 上架检查 | `/admin/workspace/quality`（资料是否齐全） |
 | 系统设置 | `/admin/workspace/system` |
 
 设备是否进入小程序公开列表：在咨询详情「处理编辑 → 设备公开设置」中配置。

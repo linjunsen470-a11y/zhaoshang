@@ -49,7 +49,7 @@ export function QualityWorkspaceView() {
       setData(await readJson<QualityPayload>(await fetch('/api/admin/ops-workbench', { signal })))
     } catch (err) {
       if (!(err instanceof DOMException && err.name === 'AbortError')) {
-        setError(err instanceof Error ? err.message : '质量门禁加载失败')
+        setError(err instanceof Error ? err.message : '上架检查加载失败')
       }
     } finally {
       if (!signal?.aborted) setLoading(false)
@@ -68,12 +68,12 @@ export function QualityWorkspaceView() {
     <main className="cms-page" id="main-content">
       <header className="cms-page-header">
         <div>
-          <p className="cms-eyebrow">房源质检</p>
-          <h1>质量门禁</h1>
-          <p>上架前必填项检查：标题、封面、类型、区域、费用、客群、详情图。</p>
+          <p className="cms-eyebrow">上架前核对</p>
+          <h1>上架检查</h1>
+          <p>看看哪些房源资料还没齐，齐了才能放心上架。</p>
         </div>
         <div className="cms-row-actions">
-          <Link className="cms-button" href="/admin/collections/projects?quality=blocked">房源列表·未过门禁</Link>
+          <Link className="cms-button" href="/admin/collections/projects?quality=blocked">查看资料不全的房源</Link>
           <button className="cms-button" type="button" disabled={loading} onClick={() => void load()}>
             {loading ? '刷新中…' : '刷新'}
           </button>
@@ -86,19 +86,19 @@ export function QualityWorkspaceView() {
       {q ? (
         <>
           <div className="cms-ops-kpis" style={{ marginBottom: 18 }}>
-            <div className="cms-ops-kpi cms-ops-kpi--ok"><span>齐全</span><strong>{q.readyCount}</strong></div>
-            <div className="cms-ops-kpi cms-ops-kpi--warn"><span>未过门禁</span><strong>{q.blockedCount}</strong></div>
-            <div className="cms-ops-kpi"><span>可上架草稿</span><strong>{q.readyToPublishCount}</strong></div>
-            <div className="cms-ops-kpi cms-ops-kpi--danger"><span>已上架仍缺项</span><strong>{q.publicIncompleteCount}</strong></div>
+            <div className="cms-ops-kpi cms-ops-kpi--ok"><span>资料齐全</span><strong>{q.readyCount}</strong></div>
+            <div className="cms-ops-kpi cms-ops-kpi--warn"><span>还差资料</span><strong>{q.blockedCount}</strong></div>
+            <div className="cms-ops-kpi"><span>可以上架</span><strong>{q.readyToPublishCount}</strong></div>
+            <div className="cms-ops-kpi cms-ops-kpi--danger"><span>已上架但缺资料</span><strong>{q.publicIncompleteCount}</strong></div>
           </div>
 
           <p className="cms-help" style={{ marginBottom: 16 }}>
-            必填：{q.requiredFields.join('、')}。已扫描 {q.scanned}/{q.totalProjects} 套。
+            需要准备：{q.requiredFields.join('、')}。当前已检查 {q.scanned}/{q.totalProjects} 套。
           </p>
 
           <section className="cms-panel cms-ops-card" style={{ marginBottom: 16 }}>
             <header>
-              <h3>未过门禁</h3>
+              <h3>还差资料的房源</h3>
               <Link href="/admin/collections/projects?quality=blocked">在列表筛选</Link>
             </header>
             {q.blocked.length ? (
@@ -108,7 +108,7 @@ export function QualityWorkspaceView() {
                     <tr>
                       <th>房源</th>
                       <th>状态</th>
-                      <th>缺失项</th>
+                      <th>还差什么</th>
                       <th>操作</th>
                     </tr>
                   </thead>
@@ -133,12 +133,12 @@ export function QualityWorkspaceView() {
                   </tbody>
                 </table>
               </div>
-            ) : <div className="cms-empty" style={{ padding: 28 }}>扫描范围内全部通过门禁</div>}
+            ) : <div className="cms-empty" style={{ padding: 28 }}>当前检查范围内资料都齐了</div>}
           </section>
 
           <section className="cms-panel cms-ops-card">
             <header>
-              <h3>资料齐全可上架</h3>
+              <h3>资料齐全，可以上架</h3>
               <Link href="/admin/collections/projects?quality=ready">在列表筛选</Link>
             </header>
             {data.team.readyToPublish.length ? (
