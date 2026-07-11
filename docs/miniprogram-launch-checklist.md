@@ -103,6 +103,7 @@ WECHAT_APP_SECRET=
 - [ ] 设置 `WECHAT_AUTH_MODE=wechat`
 - [ ] 填写真实 `WECHAT_APPID`（与 `mp/project.config.json` 中 appid 一致）
 - [ ] 填写真实 `WECHAT_APP_SECRET`（勿提交到 Git）
+- [ ] 设置 `WECHAT_CODE_ENV_VERSION=release`，并实测分享海报中的真实小程序码
 - [ ] 生产环境**不得**依赖 `X-Dev-OpenId` 或 `devOpenId` 调试头
 
 **说明：** 线索按 `submitterOpenId` 隔离。若仍使用 dev 模式，不同用户可能共用同一 openid，咨询记录会混乱。
@@ -118,7 +119,9 @@ WECHAT_APP_SECRET=
 - [ ] 使用 `docker compose up -d --build` 或等价方式部署 Payload + PostgreSQL
 - [ ] 设置强随机 `PAYLOAD_SECRET`
 - [ ] 设置 `PAYLOAD_PUBLIC_SERVER_URL` 为真实 HTTPS 域名（用于后台链接和媒体 URL）
-- [ ] 确保 `WECHAT_*` 环境变量传入容器（当前 `docker-compose.yml` 需自行补充）
+- [x] `docker-compose.yml` 已将 `WECHAT_*` 环境变量传入 Payload 容器
+- [ ] 确认 `payload-media` 卷纳入备份，容器重建后图片仍可访问
+- [ ] 保持 `PAYLOAD_DB_PUSH=false`；结构变更前备份并显式运行 schema profile
 - [ ] CMS 中录入真实招商项目（非空列表、非纯 demo 图）
 - [ ] 房源 `status` 为 `online` / `coming` / `full` 才会在小程序公开展示
 
@@ -213,7 +216,7 @@ pnpm backend:build
 |-------------|------|
 | 根目录 `.env` | `PAYLOAD_SECRET`、`PAYLOAD_PUBLIC_SERVER_URL`、`POSTGRES_PASSWORD` |
 | `backend/.env` 或 compose 环境变量 | `WECHAT_AUTH_MODE=wechat`、`WECHAT_APPID`、`WECHAT_APP_SECRET` |
-| `docker-compose.yml` | 视需要将 `WECHAT_*` 变量传入 `payload` 服务 |
+| `docker-compose.yml` | 已传入 `WECHAT_*`；部署方需提供真实值并保留 `payload-media` 卷 |
 | Payload CMS | 录入并审核上线真实项目 |
 
 ### 6.3 微信公众平台

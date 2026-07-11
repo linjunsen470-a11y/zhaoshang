@@ -1,7 +1,7 @@
 <view class="container form-page">
   <view class="form-header card">
     <view class="form-title">{{isEditMode ? '修改供需信息' : '设备供需登记'}}</view>
-    <view class="form-desc">发布餐饮设备出售、求购或回收需求，平台协助撮合。</view>
+    <view class="form-desc">提交餐饮设备出售、求购或回收需求；平台审核通过后才会公开展示并协助撮合。</view>
   </view>
 
   <view class="type-tabs card">
@@ -65,6 +65,6 @@
   </view>
 
   <view class="form-actions">
-    <button class="btn btn-primary" loading="{{submitting}}" disabled="{{submitting || uploadingImages}}" bindtap="onSubmitForm">{{isEditMode ? '保存修改' : '提交设备需求'}}</button>
+    <button class="btn btn-primary" loading="{{submitting}}" disabled="{{submitting || uploadingImages}}" bindtap="onSubmitForm">{{isEditMode ? '保存修改' : '提交审核'}}</button>
   </view>
 </view>

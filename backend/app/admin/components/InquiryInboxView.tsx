@@ -78,10 +78,9 @@ export function InquiryInboxView() {
   }, [pathname, query, router])
 
   const load = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true)
-    setError('')
     try {
       setData(await json<ResponseData>(await fetch(`/api/admin/inquiries?${query}`, { signal })))
+      setError('')
     } catch (err) {
       if (!(err instanceof DOMException && err.name === 'AbortError')) {
         setError(err instanceof Error ? err.message : '咨询加载失败')
@@ -93,8 +92,11 @@ export function InquiryInboxView() {
 
   useEffect(() => {
     const controller = new AbortController()
-    void load(controller.signal)
-    return () => controller.abort()
+    const timer = window.setTimeout(() => void load(controller.signal), 0)
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
   }, [load])
 
   useEffect(() => {

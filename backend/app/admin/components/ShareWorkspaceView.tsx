@@ -35,12 +35,11 @@ export function ShareWorkspaceView() {
   const [error, setError] = useState('')
 
   const load = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true)
-    setError('')
     try {
       const data = await readJson<SharePayload>(await fetch('/api/admin/ops-workbench', { signal }))
       setProjects(data.share.projects)
       setShareId(prev => prev || data.share.projects[0]?.id || '')
+      setError('')
     } catch (err) {
       if (!(err instanceof DOMException && err.name === 'AbortError')) {
         setError(err instanceof Error ? err.message : '分享素材加载失败')
@@ -52,9 +51,18 @@ export function ShareWorkspaceView() {
 
   useEffect(() => {
     const controller = new AbortController()
-    void load(controller.signal)
-    return () => controller.abort()
+    const timer = window.setTimeout(() => void load(controller.signal), 0)
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
   }, [load])
+
+  const refresh = () => {
+    setLoading(true)
+    setError('')
+    void load()
+  }
 
   const selected = projects.find(p => p.id === shareId) || projects[0]
 
@@ -64,9 +72,9 @@ export function ShareWorkspaceView() {
         <div>
           <p className="cms-eyebrow">获客投放</p>
           <h1>分享素材</h1>
-          <p>复制分享文案，生成带房源图与扫码入口的海报（开发阶段为示意码）。</p>
+          <p>复制分享文案，生成带房源图与真实微信小程序码的海报。</p>
         </div>
-        <button className="cms-button" type="button" disabled={loading} onClick={() => void load()}>
+        <button className="cms-button" type="button" disabled={loading} onClick={refresh}>
           {loading ? '刷新中…' : '刷新房源'}
         </button>
       </header>
@@ -99,6 +107,7 @@ export function ShareWorkspaceView() {
         <article className="cms-panel cms-ops-card">
           {selected ? (
             <ShareMaterialPanel
+              key={selected.id}
               project={{
                 id: selected.id,
                 title: selected.title,

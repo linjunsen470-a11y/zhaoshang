@@ -14,6 +14,15 @@ export { getProjectMissingFields } from '../lib/cmsRules.mjs'
 
 export const PUBLIC_PROJECT_STATUSES = ['online', 'coming', 'full'] as const
 
+function relationId(value: unknown): string | number | undefined {
+  if (typeof value === 'string' || typeof value === 'number') return value
+  if (value && typeof value === 'object' && 'id' in value) {
+    const id = (value as { id?: unknown }).id
+    if (typeof id === 'string' || typeof id === 'number') return id
+  }
+  return undefined
+}
+
 export const Projects: CollectionConfig = {
   slug: 'projects',
   labels: {
@@ -47,12 +56,23 @@ export const Projects: CollectionConfig = {
   },
   hooks: {
     beforeChange: [
-      ({ data, originalDoc }) => {
+      async ({ data, originalDoc, req }) => {
         const merged = { ...(originalDoc || {}), ...(data || {}) } as Record<string, unknown>
         if (PUBLIC_PROJECT_STATUSES.includes(merged.status as (typeof PUBLIC_PROJECT_STATUSES)[number])) {
           const missing = getProjectMissingFields(merged)
           if (missing.length) {
             throw new Error(`房源暂不能上架，请补充：${missing.join('、')}`)
+          }
+
+          const mediaIds = [
+            relationId(merged.coverImage),
+            ...(Array.isArray(merged.images) ? merged.images.map(relationId) : []),
+          ].filter((id): id is string | number => id !== undefined)
+          for (const id of new Set(mediaIds)) {
+            const media = await req.payload.findByID({ collection: 'media', id, depth: 0, overrideAccess: true })
+            if (media.source === 'lead_attachment') {
+              throw new Error('用户咨询附件不能直接公开，请重新上传已审核的房源图片')
+            }
           }
         }
         return data

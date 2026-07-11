@@ -20,11 +20,11 @@ function base64Url(input: Buffer | string) {
 }
 
 function secret() {
-  const s = process.env.PAYLOAD_SECRET
+  const s = process.env.MINIPROGRAM_TOKEN_SECRET
   if (!s && process.env.NODE_ENV === 'production') {
-    throw new Error('FATAL ERROR: PAYLOAD_SECRET environment variable is missing!')
+    throw new Error('FATAL ERROR: MINIPROGRAM_TOKEN_SECRET environment variable is missing!')
   }
-  return s || 'local-dev-secret'
+  return s || process.env.PAYLOAD_SECRET || 'local-dev-secret'
 }
 
 

@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, Where } from 'payload'
 import { isAdminUser } from './shared/access'
 import { ADMIN_GROUPS } from './shared/fieldOptions'
 
@@ -19,7 +19,11 @@ export const Users: CollectionConfig = {
   },
   access: {
     create: ({ req: { user } }) => isAdminUser(user),
-    read: ({ req: { user } }) => !!user,
+    read: ({ req: { user } }) => {
+      if (isAdminUser(user)) return true
+      if (!user?.id) return false
+      return { id: { equals: user.id } } as Where
+    },
     update: ({ req: { user } }) => isAdminUser(user),
     delete: ({ req: { user } }) => isAdminUser(user),
   },

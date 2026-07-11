@@ -1,5 +1,6 @@
 import config from '@/payload.config'
 import { getPayload } from 'payload'
+import type { Where } from 'payload'
 
 export const ALL = '全部'
 export const PUBLIC_STATUSES = ['online', 'coming', 'full']
@@ -348,6 +349,63 @@ export function sanitizeLeadUpdateInput(
   return sanitizeLeadUserFields(input, submitterOpenId, stable)
 }
 
+const LEAD_TEXT_LIMITS: Record<string, number> = {
+  name: 20,
+  phone: 11,
+  businessType: 100,
+  budgetRange: 100,
+  regionPreference: 50,
+  remark: 500,
+}
+
+const LEAD_GROUP_LIMITS: Record<string, number> = {
+  locationText: 100,
+  feeText: 100,
+  transferFee: 100,
+  remainingTerm: 100,
+  equipmentName: 100,
+  specText: 100,
+  equipmentCondition: 100,
+  expectedPrice: 100,
+  shopArea: 100,
+  renovationType: 100,
+  designStyle: 100,
+  budgetText: 100,
+  expectedStartDate: 100,
+}
+
+/** Server-side boundary checks shared by mini-program lead create/update. */
+export function validateLeadUserInput(input: Record<string, unknown>): string | null {
+  for (const [key, limit] of Object.entries(LEAD_TEXT_LIMITS)) {
+    const value = input[key]
+    if (value !== undefined && typeof value !== 'string') return `${key} 格式无效`
+    if (typeof value === 'string' && value.trim().length > limit) return `${key} 内容过长`
+  }
+
+  if (input.phone !== undefined && !/^1[3-9]\d{9}$/.test(String(input.phone))) {
+    return '手机号格式不正确'
+  }
+  if (input.attachments !== undefined) {
+    if (!Array.isArray(input.attachments)) return '附件格式无效'
+    if (input.attachments.length > 6) return '最多上传 6 张图片'
+  }
+
+  for (const groupName of ['transferDetails', 'equipmentDetails', 'renovationDetails']) {
+    const group = input[groupName]
+    if (group === undefined) continue
+    if (!group || typeof group !== 'object' || Array.isArray(group)) return `${groupName} 格式无效`
+    for (const [key, limit] of Object.entries(LEAD_GROUP_LIMITS)) {
+      const value = (group as Record<string, unknown>)[key]
+      if (value !== undefined && typeof value !== 'string' && typeof value !== 'boolean') {
+        return `${groupName}.${key} 格式无效`
+      }
+      if (typeof value === 'string' && value.trim().length > limit) return `${groupName}.${key} 内容过长`
+    }
+  }
+
+  return null
+}
+
 /** @deprecated Use sanitizeLeadCreateInput or sanitizeLeadUpdateInput */
 export function sanitizeLeadInput(input: Record<string, unknown>, submitterOpenId?: string) {
   return sanitizeLeadCreateInput(input, submitterOpenId || String(input.submitterOpenId || ''))
@@ -385,6 +443,34 @@ export async function validateAttachmentOwnership(
   }
 
   return null
+}
+
+/** Delete lead attachments only after no remaining lead references them. */
+export async function deleteOwnedOrphanAttachments(
+  attachmentIds: (string | number)[],
+  ownerOpenId: string,
+) {
+  if (!attachmentIds.length) return
+  const payload = await getPayloadInstance()
+
+  for (const id of attachmentIds) {
+    try {
+      const references = await payload.find({
+        collection: 'leads',
+        where: { attachments: { contains: id } } as Where,
+        limit: 1,
+        depth: 0,
+        overrideAccess: true,
+      })
+      if (references.totalDocs > 0) continue
+
+      const media = await payload.findByID({ collection: 'media', id, overrideAccess: true })
+      if (media.source !== 'lead_attachment' || media.ownerOpenId !== ownerOpenId) continue
+      await payload.delete({ collection: 'media', id, overrideAccess: true })
+    } catch (error) {
+      console.error('[deleteOwnedOrphanAttachments]', { mediaId: String(id), error })
+    }
+  }
 }
 
 export function maskPublicRegion(value: unknown) {

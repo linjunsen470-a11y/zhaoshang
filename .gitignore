@@ -22,7 +22,7 @@ coverage/
 next-env.d.ts
 payload-types.ts
 media/
-uploads/
+/uploads/
 
 # Logs
 *.log

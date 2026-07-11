@@ -14,7 +14,11 @@ Page({
   },
 
   onLoad(options) {
-    const id = safeIdentifier(options.id);
+    let sceneId = '';
+    try {
+      sceneId = options.scene ? decodeURIComponent(options.scene) : '';
+    } catch (_) {}
+    const id = safeIdentifier(options.id || sceneId);
     if (!id) {
       wx.showToast({ title: '项目参数无效', icon: 'none' });
       return;

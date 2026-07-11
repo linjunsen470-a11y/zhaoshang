@@ -8,13 +8,20 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PAYLOAD_SECRET=${PAYLOAD_SECRET}
-      - PAYLOAD_DB_PUSH=${PAYLOAD_DB_PUSH:-true}
+      - MINIPROGRAM_TOKEN_SECRET=${MINIPROGRAM_TOKEN_SECRET}
+      - PAYLOAD_DB_PUSH=${PAYLOAD_DB_PUSH:-false}
       - DATABASE_URI=postgres://${POSTGRES_USER:-payload}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the root .env file}@db:5432/${POSTGRES_DB:-payload}
       - PAYLOAD_PUBLIC_SERVER_URL=${PAYLOAD_PUBLIC_SERVER_URL:-http://localhost:3000}
+      - WECHAT_AUTH_MODE=${WECHAT_AUTH_MODE:-wechat}
+      - WECHAT_APPID=${WECHAT_APPID}
+      - WECHAT_APP_SECRET=${WECHAT_APP_SECRET}
+      - WECHAT_CODE_ENV_VERSION=${WECHAT_CODE_ENV_VERSION:-release}
     depends_on:
-      migrate:
-        condition: service_completed_successfully
+      db:
+        condition: service_healthy
     restart: unless-stopped
+    volumes:
+      - payload-media:/app/media
 
   migrate:
     build:
@@ -23,10 +30,12 @@ services:
       target: builder
     working_dir: /app
     command: ["npx", "tsx", "scripts/push-schema.ts"]
+    profiles: ["schema"]
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PAYLOAD_SECRET=${PAYLOAD_SECRET}
-      - PAYLOAD_DB_PUSH=${PAYLOAD_DB_PUSH:-true}
+      - MINIPROGRAM_TOKEN_SECRET=${MINIPROGRAM_TOKEN_SECRET}
+      - PAYLOAD_DB_PUSH=${PAYLOAD_DB_PUSH:-false}
       - DATABASE_URI=postgres://${POSTGRES_USER:-payload}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the root .env file}@db:5432/${POSTGRES_DB:-payload}
       - PAYLOAD_PUBLIC_SERVER_URL=${PAYLOAD_PUBLIC_SERVER_URL:-http://localhost:3000}
     depends_on:
@@ -54,3 +63,4 @@ services:
 
 volumes:
   payload-data:
+  payload-media:

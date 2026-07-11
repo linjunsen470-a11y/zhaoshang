@@ -41,7 +41,7 @@ const links = [
 export function PrimaryNav() {
   const pathname = usePathname()
   const { user } = useAuth()
-  const role = String((user as { role?: string } | null)?.role || 'editor')
+  const role = String((user as { role?: string } | null)?.role || '')
   const visibleLinks = role === 'admin'
     ? [
         ...links,

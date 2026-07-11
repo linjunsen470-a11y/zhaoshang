@@ -1,5 +1,6 @@
 import { json } from '../../_shared/payloadApi'
 import { signAuthToken } from '../../_shared/auth'
+import { getClientIp, takeRateLimit } from '../../_shared/rateLimit'
 
 type WechatSessionResponse = {
   openid?: string
@@ -10,6 +11,17 @@ type WechatSessionResponse = {
 }
 
 export async function POST(request: Request) {
+  const contentLength = Number(request.headers.get('content-length') || 0)
+  if (contentLength > 8 * 1024) return json({ error: '登录请求内容过大' }, 413)
+
+  const rate = takeRateLimit(`wechat-login:${getClientIp(request)}`, 30, 10 * 60 * 1000)
+  if (!rate.allowed) {
+    return Response.json(
+      { error: '登录请求过于频繁，请稍后再试' },
+      { status: 429, headers: { 'Retry-After': String(rate.retryAfterSeconds) } },
+    )
+  }
+
   const input = await request.json().catch(() => ({})) as Record<string, unknown>
   const mode = process.env.WECHAT_AUTH_MODE || 'wechat'
 

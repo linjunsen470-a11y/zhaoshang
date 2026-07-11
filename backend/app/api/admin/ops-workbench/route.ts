@@ -77,7 +77,7 @@ export async function GET() {
       }),
       payload.find({
         collection: 'projects',
-        limit: 200,
+        limit: 500,
         depth: 0,
         overrideAccess: true,
         sort: '-updatedAt',

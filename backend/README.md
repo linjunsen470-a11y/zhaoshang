@@ -11,7 +11,7 @@ Payload is the only admin interface. Workspace entry points:
 | 运营工作台 | `/admin`（团队待办 + 咨询漏斗） |
 | 房源管理 | `/admin/collections/projects` |
 | 咨询收件箱 | `/admin/workspace/inquiries` |
-| 分享素材 | `/admin/workspace/share`（文案 / 示意小程序码 / 海报） |
+| 分享素材 | `/admin/workspace/share`（文案 / 真实小程序码 / 海报） |
 | 上架检查 | `/admin/workspace/quality`（资料是否齐全） |
 | 系统设置 | `/admin/workspace/system` |
 
@@ -55,10 +55,11 @@ Payload `db push` can hang on interactive enum rename prompts leftover from the 
 pnpm --dir backend schema:ensure-leads
 ```
 
-Full Payload push (choose **create** for new enums, not rename):
+Full Payload push (choose **create** for new enums, not rename). In Docker this is deliberately behind the `schema` profile:
 
 ```bash
 pnpm --dir backend schema:push
+# or: docker compose --profile schema run --rm migrate
 ```
 
 ## Migration from the retired CRM admin
@@ -74,10 +75,14 @@ The migrate command creates timestamped backup tables and maps legacy states. Pr
 
 - Mini-program inquiry CRUD requires a signed bearer token and validates `submitterOpenId` ownership.
 - Attachment IDs are ownership-checked before they are linked to inquiries.
+- Public equipment images are served only when the parent equipment inquiry has been reviewed and published.
+- Transfer inquiry attachments may prefill a draft, but public properties must replace them with staff-reviewed media before publishing.
+- Public submissions and uploads use lightweight per-IP/per-openid rate limits; use a shared limiter if the service scales to multiple instances.
 - Public property reads only expose `online`, `coming`, and `full` records.
 - Admin APIs use the Payload session through `getAuthenticatedStaff()`.
 - Only `admin` can manage accounts or permanently delete content.
 - `PAYLOAD_SECRET` is mandatory in production; production WeChat auth must use `WECHAT_AUTH_MODE=wechat`.
+- `MINIPROGRAM_TOKEN_SECRET` is mandatory in production and must differ from `PAYLOAD_SECRET`.
 
 ## Verification
 

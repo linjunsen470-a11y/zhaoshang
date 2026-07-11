@@ -6,9 +6,11 @@ import {
   json,
   mapLeads,
   sanitizeLeadCreateInput,
+  validateLeadUserInput,
   validateAttachmentOwnership,
 } from '../_shared/payloadApi'
 import { requireAuth, verifyAuthToken } from '../_shared/auth'
+import { getClientIp, takeRateLimit } from '../_shared/rateLimit'
 
 export async function GET(request: Request) {
   const auth = verifyAuthToken(request.headers.get('authorization'))
@@ -64,6 +66,19 @@ export async function POST(request: Request) {
     return json({ error: err instanceof Error ? err.message : '未登录或登录已过期' }, 401)
   }
 
+  const ipRate = takeRateLimit(`lead-create-ip:${getClientIp(request)}`, 30, 60 * 60 * 1000)
+  const userRate = takeRateLimit(`lead-create-user:${auth.openid}`, 10, 60 * 60 * 1000)
+  const retryAfterSeconds = Math.max(ipRate.retryAfterSeconds, userRate.retryAfterSeconds)
+  if (!ipRate.allowed || !userRate.allowed) {
+    return Response.json(
+      { error: '提交过于频繁，请稍后再试' },
+      { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } },
+    )
+  }
+
+  const contentLength = Number(request.headers.get('content-length') || 0)
+  if (contentLength > 64 * 1024) return json({ error: '提交内容过大' }, 413)
+
   let input: Record<string, unknown>
   try {
     input = await request.json() as Record<string, unknown>
@@ -80,6 +95,8 @@ export async function POST(request: Request) {
   if (!MINI_PROGRAM_LEAD_TYPES.includes(String(input.leadType || 'leasing'))) {
     return json({ error: '线索类型无效' }, 400)
   }
+  const validationError = validateLeadUserInput(input)
+  if (validationError) return json({ error: validationError }, 400)
 
   const attachmentError = await validateAttachmentOwnership(input.attachments, auth.openid)
   if (attachmentError) return attachmentError

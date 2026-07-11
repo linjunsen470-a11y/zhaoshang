@@ -359,7 +359,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 const PORT = 5173;
-server.listen(PORT, '0.0.0.0', () => {
+server.listen(PORT, '127.0.0.1', () => {
   console.log('===================================================');
   console.log(' 校园商铺小程序 Mock API 已启动');
   console.log(` API: http://localhost:${PORT}/api`);

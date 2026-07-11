@@ -24,7 +24,7 @@ Payload 是唯一管理后台。旧静态 Mock 后台已删除，`server.js` 不
 
 - `房源管理`：搜索、筛选、快速修改、批量上下架和完整编辑。
 - `咨询收件箱`：仅维护待联系、已联系、已结束和一条内部备注。
-- `设备供需`：独立维护待整理、已发布和已下架。
+- 设备供需：普通用户提交后先进入咨询收件箱，后台审核通过并设为“已发布”后才进入小程序公开列表；不再占用独立主导航。
 - `系统设置`：管理员维护账号；媒体库仅管理员可见。
 
 后台角色只有：
@@ -93,6 +93,12 @@ pnpm --dir backend exec tsx scripts/push-schema.ts
 
 Schema push 会删除已退出配置的商户档案、跟进记录和高级 CRM 字段。生产执行前请另做数据库快照。
 
+生产 Compose 不会自动 push schema。需变更结构时，先备份数据库，再显式执行：
+
+```bash
+docker compose --profile schema run --rm migrate
+```
+
 ## 主要 API
 
 | 方法 | 路径 | 用途 |
@@ -107,9 +113,11 @@ Schema push 会删除已退出配置的商户档案、跟进记录和高级 CRM 
 | GET/PATCH | `/api/admin/properties` | CMS 房源工作台 |
 | GET/PATCH | `/api/admin/inquiries` | CMS 咨询收件箱 |
 | GET/PATCH | `/api/admin/equipment` | CMS 设备供需 |
+| GET | `/api/admin/wechat-code?projectId=...` | 为公开房源生成真实小程序码 |
 | POST | `/api/admin/inquiries/:id/create-property` | 转让咨询生成房源草稿 |
 
 小程序 API 使用 Bearer Token 并按 `submitterOpenId` 隔离；管理 API 只接受 Payload 登录会话。
+普通用户提交的设备信息默认不公开；转让咨询只能生成草稿，且用户咨询附件不能直接作为公开房源图片。
 
 ## 验证
 
@@ -125,8 +133,11 @@ pnpm backend:build
 ## 生产配置
 
 - 必须设置强随机 `PAYLOAD_SECRET`。
+- 必须设置独立的强随机 `MINIPROGRAM_TOKEN_SECRET`；修改后现有小程序登录会话会失效并自动重新登录。
 - 必须使用真实 HTTPS `PAYLOAD_PUBLIC_SERVER_URL`。
 - 生产设置 `WECHAT_AUTH_MODE=wechat` 并配置真实微信 AppID/AppSecret。
+- 保持 `PAYLOAD_DB_PUSH=false`；结构变更通过显式迁移执行。
+- Compose 的 `payload-media` 卷用于持久化上传图片，备份时须与数据库一起处理。
 - 不提交 `.env`、`.next/`、`node_modules/`、上传目录或日志。
 
 详细上线步骤见 [docs/miniprogram-launch-checklist.md](docs/miniprogram-launch-checklist.md)，后台设计说明见 [docs/payload-admin-ux-audit.md](docs/payload-admin-ux-audit.md)。

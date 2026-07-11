@@ -53,14 +53,13 @@ export async function GET(request: Request) {
       equipmentPublication?: Record<string, unknown>
     }
     const details = raw.equipmentDetails || {}
+    const publicLeadId = (() => {
+      const num = Number(raw.id)
+      if (!isNaN(num) && num < 10000000) return String(LEAD_ID_OFFSET + num)
+      return String(raw.id)
+    })()
     return {
-      id: (() => {
-        const num = Number(raw.id)
-        if (!isNaN(num) && num < 10000000) {
-          return String(LEAD_ID_OFFSET + num)
-        }
-        return String(raw.id)
-      })(),
+      id: publicLeadId,
       leadType: raw.leadType,
       businessType: raw.businessType || '',
       budgetRange: raw.budgetRange || '',
@@ -79,7 +78,7 @@ export async function GET(request: Request) {
           const media = item as Record<string, unknown>
           return {
             id: String(media.id),
-            url: media.url ? absoluteUrl(String(media.url)) : undefined
+            url: absoluteUrl(`/api/equipments/${publicLeadId}/images/${String(media.id)}`),
           }
         }
         return { id: String(item), url: undefined }

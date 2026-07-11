@@ -3,7 +3,9 @@ import {
   json,
   mapLead,
   sanitizeLeadUpdateInput,
+  validateLeadUserInput,
   validateAttachmentOwnership,
+  deleteOwnedOrphanAttachments,
   LEAD_ID_OFFSET,
 } from '../../_shared/payloadApi'
 import { requireAuth } from '../../_shared/auth'
@@ -18,6 +20,14 @@ function parseLeadId(rawId: string): string {
     return String(idNum - LEAD_ID_OFFSET)
   }
   return rawId
+}
+
+function attachmentIds(value: unknown): (string | number)[] {
+  if (!Array.isArray(value)) return []
+  return value.map(item => {
+    if (typeof item === 'string' || typeof item === 'number') return item
+    return item && typeof item === 'object' && 'id' in item ? item.id : undefined
+  }).filter((id): id is string | number => typeof id === 'string' || typeof id === 'number')
 }
 
 
@@ -71,6 +81,8 @@ export async function PUT(request: Request, { params }: Args) {
   } catch {
     return json({ error: '无效的 JSON 请求体' }, 400)
   }
+  const validationError = validateLeadUserInput(input)
+  if (validationError) return json({ error: validationError }, 400)
   const payload = await getPayloadInstance()
 
   try {
@@ -102,6 +114,11 @@ export async function PUT(request: Request, { params }: Args) {
       }),
       overrideAccess: true,
     })
+    if (Array.isArray(input.attachments)) {
+      const retained = new Set(attachmentIds(doc.attachments).map(String))
+      const removed = attachmentIds(lead.attachments).filter(attachmentId => !retained.has(String(attachmentId)))
+      await deleteOwnedOrphanAttachments(removed, auth.openid)
+    }
     return json(await mapLead(doc))
   } catch (err) {
     console.error('Failed to update lead:', err)
@@ -139,11 +156,14 @@ export async function DELETE(request: Request, { params }: Args) {
     }
 
     // 3. 执行删除
+    const leadAttachmentIds = attachmentIds(lead.attachments)
+
     await payload.delete({
       collection: 'leads',
       id,
       overrideAccess: true,
     })
+    await deleteOwnedOrphanAttachments(leadAttachmentIds, auth.openid)
     return json({ success: true })
   } catch (err) {
     console.error('Failed to delete lead:', err)

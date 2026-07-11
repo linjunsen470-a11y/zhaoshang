@@ -75,8 +75,8 @@
       <view class="empty-state" wx:else>
         <text class="empty-icon">🧊</text>
         <text class="empty-title">当前尚无此类设备信息</text>
-        <text class="empty-desc">没有找到相关设备？发布您的供需，顾问将为您寻找配对。</text>
-        <button class="btn btn-primary reset-btn" bindtap="onPublishTap">发布设备供需</button>
+        <text class="empty-desc">没有找到相关设备？提交您的供需，平台审核后再公开展示。</text>
+        <button class="btn btn-primary reset-btn" bindtap="onPublishTap">提交设备供需</button>
       </view>
     </block>
   </view>
@@ -84,6 +84,6 @@
   <!-- 悬浮发布按钮 -->
   <view class="floating-btn" bindtap="onPublishTap">
     <text class="plus-icon">+</text>
-    <text class="btn-text">发布供需</text>
+    <text class="btn-text">提交供需</text>
   </view>
 </view>

@@ -17,6 +17,7 @@ type QualityPayload = {
   generatedAt: string
   quality: {
     scanned: number
+    truncated: boolean
     totalProjects: number
     readyCount: number
     blockedCount: number
@@ -43,10 +44,9 @@ export function QualityWorkspaceView() {
   const [error, setError] = useState('')
 
   const load = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true)
-    setError('')
     try {
       setData(await readJson<QualityPayload>(await fetch('/api/admin/ops-workbench', { signal })))
+      setError('')
     } catch (err) {
       if (!(err instanceof DOMException && err.name === 'AbortError')) {
         setError(err instanceof Error ? err.message : '上架检查加载失败')
@@ -58,9 +58,18 @@ export function QualityWorkspaceView() {
 
   useEffect(() => {
     const controller = new AbortController()
-    void load(controller.signal)
-    return () => controller.abort()
+    const timer = window.setTimeout(() => void load(controller.signal), 0)
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
   }, [load])
+
+  const refresh = () => {
+    setLoading(true)
+    setError('')
+    void load()
+  }
 
   const q = data?.quality
 
@@ -74,13 +83,16 @@ export function QualityWorkspaceView() {
         </div>
         <div className="cms-row-actions">
           <Link className="cms-button" href="/admin/collections/projects?quality=blocked">查看资料不全的房源</Link>
-          <button className="cms-button" type="button" disabled={loading} onClick={() => void load()}>
+          <button className="cms-button" type="button" disabled={loading} onClick={refresh}>
             {loading ? '刷新中…' : '刷新'}
           </button>
         </div>
       </header>
 
       {error ? <div className="cms-alert" role="alert">{error}</div> : null}
+      {data?.quality.truncated ? (
+        <div className="cms-alert" role="alert">房源超过 500 条；当前页面仅展示首批检查结果，真正上架仍由保存时的完整校验拦截。</div>
+      ) : null}
       {loading && !data ? <div className="cms-empty">加载中…</div> : null}
 
       {q ? (

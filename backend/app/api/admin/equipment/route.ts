@@ -69,6 +69,10 @@ export async function PATCH(request: Request) {
   const current = await payload.findByID({ collection: 'leads', id, depth: 0, overrideAccess: true })
   if (!EQUIPMENT_TYPES.includes(String(current.leadType || ''))) return json({ error: '该记录不是设备供需' }, 400)
   const publication = (current.equipmentPublication || {}) as Record<string, unknown>
+  const details = (current.equipmentDetails || {}) as Record<string, unknown>
+  if (status === 'online' && !String(details.equipmentName || current.businessType || '').trim()) {
+    return json({ error: '请先补充设备名称，再审核发布' }, 409)
+  }
   const doc = await payload.update({
     collection: 'leads',
     id,

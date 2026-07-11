@@ -7,7 +7,7 @@ type StaffUser = {
 
 export function getStaffRole(user: PayloadRequest['user']): string {
   if (!user || typeof user !== 'object') return ''
-  return String((user as StaffUser).role || 'editor')
+  return String((user as StaffUser).role || '')
 }
 
 

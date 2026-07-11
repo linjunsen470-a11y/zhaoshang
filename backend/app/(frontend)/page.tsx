@@ -1,6 +1,8 @@
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { mapProject } from '../api/_shared/payloadApi'
+import { headers } from 'next/headers'
+import { getClientIp, takeRateLimit } from '../api/_shared/rateLimit'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,13 +26,21 @@ type Opportunity = {
 async function submitWebsiteLead(formData: FormData) {
   'use server'
 
-  const name = String(formData.get('name') || '').trim()
+  const requestHeaders = await headers()
+  const request = new Request('http://local/website-lead', { headers: requestHeaders })
+  const rate = takeRateLimit(`website-lead:${getClientIp(request)}`, 10, 60 * 60 * 1000)
+  if (!rate.allowed) return
+
+  const name = String(formData.get('name') || '').trim().slice(0, 20)
   const phone = String(formData.get('phone') || '').trim()
   const leadType = String(formData.get('leadType') || 'leasing')
-  const businessType = String(formData.get('businessType') || '').trim()
-  const remark = String(formData.get('remark') || '').trim()
+  const businessType = String(formData.get('businessType') || '').trim().slice(0, 100)
+  const remark = String(formData.get('remark') || '').trim().slice(0, 500)
+  const allowedLeadTypes = new Set([
+    'leasing', 'transfer', 'equipment_sell', 'equipment_buy', 'equipment_recycle', 'brand_cooperation',
+  ])
 
-  if (!name || !/^1[3-9]\d{9}$/.test(phone)) return
+  if (!name || !/^1[3-9]\d{9}$/.test(phone) || !allowedLeadTypes.has(leadType)) return
 
   try {
     const payloadInstance = await getPayload({ config })

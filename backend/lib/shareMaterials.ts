@@ -37,7 +37,6 @@ export function buildShareMaterial(project: ShareableProject) {
     fee ? `费用：${fee}` : '',
     '',
     '长按识别海报中的小程序码，即可查看详情并提交咨询。',
-    '（开发阶段为示意码，正式上线后替换为微信小程序码）',
   ]
 
   return {
@@ -145,9 +144,9 @@ function drawMockQrCode(ctx: CanvasRenderingContext2D, x: number, y: number, siz
 }
 
 /**
- * Clean listing-style poster: soft paper bg, hero photo, meta, mock mini-program QR.
+ * Clean listing-style poster: soft paper bg, hero photo, meta, real mini-program code.
  */
-export async function renderSharePoster(project: ShareableProject): Promise<Blob> {
+export async function renderSharePoster(project: ShareableProject, miniProgramCodeUrl: string): Promise<Blob> {
   const material = buildShareMaterial(project)
   const width = 750
   const height = 1200
@@ -239,24 +238,20 @@ export async function renderSharePoster(project: ShareableProject): Promise<Blob
     ctx.fillText(item.v, 150, y)
   })
 
-  // Mock mini-program QR (bottom-right of card)
+  // Real mini-program code (bottom-right of card)
   const qrSize = 148
   const qrX = width - 72 - qrSize
   const qrY = cardY + cardH - 72 - qrSize - 28
-  drawMockQrCode(ctx, qrX, qrY, qrSize, String(project.id))
+  const codeImage = await loadImage(miniProgramCodeUrl)
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16)
+  ctx.drawImage(codeImage, qrX, qrY, qrSize, qrSize)
 
   ctx.fillStyle = '#64748b'
   ctx.font = '600 18px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif'
   const hint = material.scanHint
   const hintW = ctx.measureText(hint).width
   ctx.fillText(hint, qrX + (qrSize - hintW) / 2, qrY + qrSize + 28)
-
-  // Dev badge under QR
-  ctx.fillStyle = '#b45309'
-  ctx.font = '600 16px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif'
-  const badge = '示意码 · 未上线'
-  const badgeW = ctx.measureText(badge).width
-  ctx.fillText(badge, qrX + (qrSize - badgeW) / 2, qrY + qrSize + 52)
 
   // Bottom footer
   ctx.fillStyle = '#94a3b8'

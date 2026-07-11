@@ -97,6 +97,7 @@ export function ProjectEditHints() {
 
       {id ? (
         <ShareMaterialPanel
+          key={String(id)}
           project={{
             id,
             title,

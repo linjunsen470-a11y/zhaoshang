@@ -30,14 +30,6 @@ export function ShareMaterialPanel({ project, compact }: Props) {
     }
   }, [posterUrl])
 
-  useEffect(() => {
-    setPosterUrl(prev => {
-      if (prev) URL.revokeObjectURL(prev)
-      return ''
-    })
-    setMessage('')
-  }, [project.id, project.coverImage, project.title])
-
   const copy = async (text: string, ok: string) => {
     try {
       await navigator.clipboard.writeText(text)
@@ -52,7 +44,18 @@ export function ShareMaterialPanel({ project, compact }: Props) {
     setPosterBusy(true)
     setMessage('')
     try {
-      const blob = await renderSharePoster(project)
+      const codeResponse = await fetch(`/api/admin/wechat-code?projectId=${encodeURIComponent(String(project.id))}`)
+      if (!codeResponse.ok) {
+        const error = await codeResponse.json().catch(() => ({})) as { error?: string }
+        throw new Error(error.error || '真实小程序码生成失败')
+      }
+      const codeUrl = URL.createObjectURL(await codeResponse.blob())
+      let blob: Blob
+      try {
+        blob = await renderSharePoster(project, codeUrl)
+      } finally {
+        URL.revokeObjectURL(codeUrl)
+      }
       const url = URL.createObjectURL(blob)
       setPosterUrl(prev => {
         if (prev) URL.revokeObjectURL(prev)
@@ -119,7 +122,7 @@ export function ShareMaterialPanel({ project, compact }: Props) {
         <div>
           <p className="cms-snapshot__badge">朋友圈 / 社群投放</p>
           <h3>{project.title || '房源素材'}</h3>
-          <p>用户通过<strong>扫小程序码</strong>进入详情；开发阶段以下为示意码，正式上线后替换为微信小程序码。</p>
+          <p>生成海报时会向微信接口申请真实小程序码；房源未公开或微信凭据未配置时不会生成。</p>
         </div>
       </header>
 
@@ -129,8 +132,8 @@ export function ShareMaterialPanel({ project, compact }: Props) {
             // eslint-disable-next-line @next/next/no-img-element
             <img src={mockQr} alt="小程序示意码" width={168} height={168} />
           ) : null}
-          <strong>扫码看房源</strong>
-          <small>示意码 · 未正式上线</small>
+          <strong>路径示意预览</strong>
+          <small>最终海报使用真实小程序码</small>
           <span className="cms-share__path-ref">内部页：{material.path}</span>
         </div>
 

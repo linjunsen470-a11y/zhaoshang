@@ -78,10 +78,9 @@ export function OpsWorkbenchView() {
   const [revealedPhoneId, setRevealedPhoneId] = useState('')
 
   const load = useCallback(async (signal?: AbortSignal) => {
-    setLoading(true)
-    setError('')
     try {
       setData(await readJson<WorkbenchData>(await fetch('/api/admin/ops-workbench', { signal })))
+      setError('')
     } catch (err) {
       if (!(err instanceof DOMException && err.name === 'AbortError')) {
         setError(err instanceof Error ? err.message : '工作台加载失败')
@@ -93,9 +92,18 @@ export function OpsWorkbenchView() {
 
   useEffect(() => {
     const controller = new AbortController()
-    void load(controller.signal)
-    return () => controller.abort()
+    const timer = window.setTimeout(() => void load(controller.signal), 0)
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
   }, [load])
+
+  const refresh = () => {
+    setLoading(true)
+    setError('')
+    void load()
+  }
 
   const staleIds = useMemo(
     () => new Set((data?.team.staleLeads || []).map(item => item.id)),
@@ -128,7 +136,7 @@ export function OpsWorkbenchView() {
           <p className="cms-eyebrow">团队运营</p>
           <h1>运营工作台</h1>
         </div>
-        <button className="cms-button" type="button" disabled={loading} onClick={() => void load()}>
+        <button className="cms-button" type="button" disabled={loading} onClick={refresh}>
           {loading ? '刷新中…' : '刷新数据'}
         </button>
       </header>

@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto'
 import sharp from 'sharp'
 import { requireAuth } from '../../_shared/auth'
 import { getPayloadInstance, json, mapMedia } from '../../_shared/payloadApi'
+import { getClientIp, takeRateLimit } from '../../_shared/rateLimit'
 
 export const runtime = 'nodejs'
 
@@ -23,6 +24,16 @@ export async function POST(request: Request) {
     auth = requireAuth(request)
   } catch (err) {
     return uploadError(err instanceof Error ? err.message : '未登录或登录已过期', 401)
+  }
+
+  const ipRate = takeRateLimit(`lead-upload-ip:${getClientIp(request)}`, 60, 60 * 60 * 1000)
+  const userRate = takeRateLimit(`lead-upload-user:${auth.openid}`, 30, 60 * 60 * 1000)
+  const retryAfterSeconds = Math.max(ipRate.retryAfterSeconds, userRate.retryAfterSeconds)
+  if (!ipRate.allowed || !userRate.allowed) {
+    return Response.json(
+      { error: '图片上传过于频繁，请稍后再试' },
+      { status: 429, headers: { 'Retry-After': String(retryAfterSeconds) } },
+    )
   }
 
   let formData: FormData
