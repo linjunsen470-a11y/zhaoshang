@@ -1,6 +1,7 @@
 import type { CollectionConfig, Where } from 'payload'
 import { canManageProjects, isAdminUser, isStaffUser } from './shared/access'
 import {
+  ADMIN_GROUPS,
   BUSINESS_TYPE_OPTIONS,
   CITY_OPTIONS,
   DISTRICT_OPTIONS,
@@ -20,11 +21,13 @@ export const Projects: CollectionConfig = {
     singular: '房源',
   },
   admin: {
-    hidden: true,
+    // Visible so document routes (/create, /:id) work. Default Payload nav groups
+    // are hidden via admin-theme.css; primary entry is /admin dashboard.
     useAsTitle: 'title',
     defaultColumns: ['title', 'opportunityType', 'status', 'district', 'feeText', 'isRecommended', 'updatedAt'],
     description: '整理、修改并上下架小程序中的校园商铺房源。',
     listSearchableFields: ['title', 'schoolName', 'schoolAlias', 'district', 'addressText'],
+    group: ADMIN_GROUPS.properties,
     components: {
       views: {
         list: {

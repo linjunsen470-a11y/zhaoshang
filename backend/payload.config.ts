@@ -34,6 +34,10 @@ export default buildConfig({
         dashboard: {
           Component: '@/app/admin/components/PropertyWorkspace',
         },
+        inquiryInbox: {
+          Component: '@/app/admin/components/InquiryInboxView',
+          path: '/workspace/inquiries',
+        },
         equipmentWorkspace: {
           Component: '@/app/admin/components/EquipmentWorkspaceView',
           path: '/workspace/equipment',

@@ -5,9 +5,22 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const links = [
-  { label: '房源管理', href: '/admin/collections/projects', match: ['/admin', '/admin/collections/projects'] },
-  { label: '咨询收件箱', href: '/admin/collections/leads', match: ['/admin/collections/leads'] },
-  { label: '设备供需', href: '/admin/workspace/equipment', match: ['/admin/workspace/equipment'] },
+  {
+    label: '房源管理',
+    href: '/admin',
+    // Exact /admin only — workspace routes must not light this item up.
+    match: (pathname: string) => pathname === '/admin' || pathname.startsWith('/admin/collections/projects'),
+  },
+  {
+    label: '咨询收件箱',
+    href: '/admin/workspace/inquiries',
+    match: (pathname: string) => pathname.startsWith('/admin/workspace/inquiries'),
+  },
+  {
+    label: '设备供需',
+    href: '/admin/workspace/equipment',
+    match: (pathname: string) => pathname.startsWith('/admin/workspace/equipment'),
+  },
 ]
 
 export function PrimaryNav() {
@@ -15,16 +28,31 @@ export function PrimaryNav() {
   const { user } = useAuth()
   const role = String((user as { role?: string } | null)?.role || 'editor')
   const visibleLinks = role === 'admin'
-    ? [...links, { label: '系统设置', href: '/admin/workspace/system', match: ['/admin/workspace/system', '/admin/collections/users', '/admin/collections/media'] }]
+    ? [
+        ...links,
+        {
+          label: '系统设置',
+          href: '/admin/workspace/system',
+          match: (path: string) =>
+            path.startsWith('/admin/workspace/system')
+            || path.startsWith('/admin/collections/users')
+            || path.startsWith('/admin/collections/media'),
+        },
+      ]
     : links
 
   return (
     <nav className="cms-nav" aria-label="后台主导航">
       <p className="cms-nav__title">管理中心</p>
       {visibleLinks.map(link => {
-        const active = link.match.some(prefix => prefix === '/admin' ? pathname === '/admin' : pathname.startsWith(prefix))
+        const active = link.match(pathname)
         return (
-          <Link className={`cms-nav__link${active ? ' cms-nav__link--active' : ''}`} href={link.href} key={link.href} aria-current={active ? 'page' : undefined}>
+          <Link
+            className={`cms-nav__link${active ? ' cms-nav__link--active' : ''}`}
+            href={link.href}
+            key={link.href}
+            aria-current={active ? 'page' : undefined}
+          >
             {link.label}
           </Link>
         )

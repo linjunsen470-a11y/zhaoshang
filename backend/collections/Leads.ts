@@ -11,18 +11,13 @@ export const Leads: CollectionConfig = {
     singular: '咨询',
   },
   admin: {
+    // Hidden from collection routes: primary UI is the custom admin view
+    // at /admin/workspace/inquiries (see payload.config.ts).
     hidden: true,
     useAsTitle: 'name',
     defaultColumns: ['status', 'name', 'phone', 'leadType', 'projectTitle', 'createdAt'],
     description: '查看小程序提交的咨询。具体沟通在微信或电话中完成，后台只记录处理状态和内部备注。',
     listSearchableFields: ['name', 'phone', 'businessType', 'regionPreference', 'projectTitle'],
-    components: {
-      views: {
-        list: {
-          Component: '@/app/admin/components/InquiryInboxView',
-        },
-      },
-    },
   },
   access: {
     read: ({ req: { user } }) => canManageLeads(user),

@@ -9,8 +9,9 @@ export const Media: CollectionConfig = {
     singular: '媒体文件',
   },
   admin: {
+    // Not hidden: System Settings links open native collection UI.
+    // Default nav groups are suppressed via admin-theme.css.
     group: ADMIN_GROUPS.system,
-    hidden: true,
     description: '项目图片、线索附件与后台上传素材。线索附件请在线索详情中管理，避免误删用户图片。',
     defaultColumns: ['filename', 'source', 'alt', 'createdAt'],
   },

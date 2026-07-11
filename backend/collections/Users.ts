@@ -10,7 +10,8 @@ export const Users: CollectionConfig = {
   },
   auth: true,
   admin: {
-    hidden: true,
+    // Not hidden: System Settings links open native collection UI.
+    // Default nav groups are suppressed via admin-theme.css.
     group: ADMIN_GROUPS.system,
     useAsTitle: 'displayName',
     defaultColumns: ['displayName', 'email', 'role'],

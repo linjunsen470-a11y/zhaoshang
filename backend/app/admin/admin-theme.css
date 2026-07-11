@@ -137,6 +137,13 @@ button[type='submit'].btn--style-primary:hover { border-color: var(--cms-primary
 .cms-nav__link { display: flex; min-height: 36px; align-items: center; padding: 8px 9px; border-radius: 6px; color: var(--theme-text); font-size: 13px; font-weight: 700; text-decoration: none; }
 .cms-nav__link:hover, .cms-nav__link--active { background: var(--theme-elevation-100); color: var(--cms-primary); }
 
+/* PrimaryNav is the only intended sidebar IA. Keep projects/users/media
+   collections visible to Payload so native edit routes work, but hide the
+   default collection groups to avoid a second parallel nav. */
+.nav .nav-group {
+  display: none !important;
+}
+
 .cms-inline-card, .cms-editor-panel { padding: 16px; border: 1px solid var(--cms-border); border-radius: 10px; background: var(--cms-surface); box-shadow: var(--cms-shadow); }
 .cms-inline-card h3, .cms-editor-panel h3 { margin-bottom: 12px; font-size: 15px; }
 .cms-editor-panel { display: grid; gap: 14px; }

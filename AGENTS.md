@@ -38,11 +38,15 @@ For lead-related backend changes:
 For Payload admin UX changes:
 
 - Register custom admin components in `backend/app/admin/components/` and wire them through `backend/app/admin/[[...segments]]/importMap.js`.
-- Custom collection views (e.g. kanban) belong under `admin.components.views`, not top-level `admin.views`.
+- Custom workspace views belong under `admin.components.views` with a `path` (e.g. `/workspace/inquiries`). Primary nav routes:
+  - 房源: `/admin`
+  - 咨询: `/admin/workspace/inquiries`
+  - 设备: `/admin/workspace/equipment`
+  - 系统: `/admin/workspace/system`
+- Keep `leads` as `admin.hidden: true` (workspace-only). Do **not** link to `/admin/collections/leads` — Payload 3 returns 404 for hidden collection list routes.
+- Keep `projects`, `users`, and `media` visible so native document/list routes work; hide default Payload nav groups via `admin-theme.css` (PrimaryNav is the IA).
 - Keep dropdown labels/options aligned with the mini-program via `backend/collections/shared/fieldOptions.ts`.
-- Follow-up records are added in the lead detail timeline UI; keep the `follow-records` collection hidden from the sidebar.
-- Staff roles are `admin`, `advisor`, and `editor`; enforce permissions through `backend/collections/shared/access.ts`.
-- Admin-only lead actions use `POST /api/leads/:id/convert` and `POST /api/leads/:id/sync-merchant`; do not expose these through the mini-program client.
+- Staff roles are `admin` and `editor`; enforce permissions through `backend/collections/shared/access.ts`.
 
 Schema changes against Postgres may require `PAYLOAD_DB_PUSH=true` during build or via `backend/scripts/push-schema.ts`.
 
@@ -66,7 +70,7 @@ Additional security expectations:
 - Mini-program lead updates must not accept CRM fields from the client.
 - Uploaded media IDs must be ownership-checked before being attached to leads. `lead_attachment` media must belong to the current user; `seed_demo` and `admin` media must be rejected.
 - `GET /api/projects/:id` must not expose draft or rejected projects to non-staff callers.
-- Staff-only routes (`POST/PUT/DELETE /api/projects`, `/api/stats`, `/api/leads/:id/follow`, `/api/leads/:id/convert`, `/api/leads/:id/sync-merchant`) must use `getAuthenticatedStaff()`, not the mini-program bearer token.
+- Staff-only routes (`POST/PUT/DELETE /api/projects`, `/api/stats`, `/api/admin/*`) must use `getAuthenticatedStaff()`, not the mini-program bearer token.
 - Production must use `WECHAT_AUTH_MODE=wechat`; do not rely on `X-Dev-OpenId` outside local mock mode.
 - `PAYLOAD_SECRET` is required in production.
 - The mock admin uses `X-Admin-Access` to list all leads from `server.js`; do not treat that as a production pattern.

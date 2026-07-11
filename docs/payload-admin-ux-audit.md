@@ -5,10 +5,12 @@
 
 ## 新信息架构
 
-1. `房源管理`：登录首页，也是 `projects` 集合列表页。
-2. `咨询收件箱`：只维护待联系、已联系、已结束和内部备注。
-3. `设备供需`：独立维护设备公开状态。
-4. `系统设置`：管理员账号和媒体资源。
+1. `房源管理`：登录首页 `/admin`；完整编辑使用 Payload 原生文档路由 `/admin/collections/projects/:id`。
+2. `咨询收件箱`：自定义视图 `/admin/workspace/inquiries`（`leads` 集合保持 `admin.hidden`，避免集合 List 404）。
+3. `设备供需`：自定义视图 `/admin/workspace/equipment`。
+4. `系统设置`：自定义视图 `/admin/workspace/system`；账号与媒体分别打开 `/admin/collections/users`、`/admin/collections/media`。
+
+> **路由说明（Payload 3）**：`admin.hidden: true` 的集合不会出现在 `visibleEntities` 中，访问 `/admin/collections/<slug>` 列表/文档页会 404。因此仅咨询列表用自定义 workspace 路径；`projects` / `users` / `media` 保持可见以便原生编辑，侧边栏默认集合分组由 CSS 隐藏，主导航使用 `PrimaryNav`。
 
 旧静态 Mock 后台、角色化 V2 工作台、领取池、看板、团队负载、商户档案和跟进时间线均已移除。
 

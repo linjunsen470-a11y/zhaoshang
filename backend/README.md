@@ -4,12 +4,20 @@ Payload CMS 3 + Next.js 16 + PostgreSQL backend for the campus shop platform.
 
 ## Admin
 
-Payload is the only admin interface. `/admin` and `/admin/collections/projects` render the same property workspace.
+Payload is the only admin interface. Workspace entry points:
+
+| 模块 | URL |
+|------|-----|
+| 房源管理 | `/admin`（完整编辑仍走 `/admin/collections/projects/:id`） |
+| 咨询收件箱 | `/admin/workspace/inquiries` |
+| 设备供需 | `/admin/workspace/equipment` |
+| 系统设置 | `/admin/workspace/system` |
 
 - Property workspace: URL-backed filters, table, quick-edit drawer, bulk publish controls.
 - Inquiry inbox: three handling states and one internal note; no CRM timeline or assignment workflow.
 - Equipment workspace: independent public status and public description.
 - Roles: `admin` and `editor`.
+- Do **not** use `/admin/collections/leads` as a nav entry — `leads` stays `admin.hidden` and is only reached via the custom workspace view.
 
 Custom components are under `app/admin/components/`. Data models remain `projects`, `leads`, `media`, and `users` so mini-program API routes stay stable.
 
