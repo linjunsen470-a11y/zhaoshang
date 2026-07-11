@@ -43,14 +43,28 @@ Seed demo data:
 pnpm backend:seed
 ```
 
+## Schema maintenance
+
+Payload `db push` can hang on interactive enum rename prompts leftover from the old CRM. For lead dual-view fields use the non-interactive helper:
+
+```bash
+pnpm --dir backend schema:ensure-leads
+```
+
+Full Payload push (choose **create** for new enums, not rename):
+
+```bash
+pnpm --dir backend schema:push
+```
+
 ## Migration from the retired CRM admin
 
 ```bash
 pnpm --dir backend migrate:property-cms
-pnpm --dir backend exec tsx scripts/push-schema.ts
+pnpm --dir backend schema:ensure-leads
 ```
 
-The first command creates timestamped backup tables and maps legacy property, inquiry, equipment, and user states in a transaction. The second applies the new Payload schema and removes retired CRM structures. Take an external PostgreSQL snapshot before production migration.
+The migrate command creates timestamped backup tables and maps legacy states. Prefer `schema:ensure-leads` over interactive `push-schema` when only lead columns are missing.
 
 ## Security
 

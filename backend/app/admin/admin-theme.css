@@ -136,8 +136,6 @@ button[type='submit'].btn--style-primary:hover { border-color: var(--cms-primary
 .cms-nav__title { margin: 0 0 7px; color: var(--theme-elevation-500); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; }
 .cms-nav__link { display: flex; min-height: 36px; align-items: center; padding: 8px 9px; border-radius: 6px; color: var(--theme-text); font-size: 13px; font-weight: 700; text-decoration: none; }
 .cms-nav__link:hover, .cms-nav__link--active { background: var(--theme-elevation-100); color: var(--cms-primary); }
-.cms-nav__hint { margin: 10px 2px 0; color: var(--theme-elevation-500); font-size: 11px; line-height: 1.45; }
-
 /* Lead detail: contact strip */
 .cms-contact-bar {
   margin: 0 0 20px;

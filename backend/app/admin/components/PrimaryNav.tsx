@@ -4,6 +4,13 @@ import { useAuth } from '@payloadcms/ui'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
+/**
+ * Single IA for staff:
+ * - 房源管理: publish properties
+ * - 咨询收件箱: all customer leads (filter by business line in page)
+ * - 设备上架: public listing flags for equipment leads only
+ * - 系统设置: admin accounts / media
+ */
 const links = [
   {
     label: '房源管理',
@@ -14,7 +21,6 @@ const links = [
   {
     label: '咨询收件箱',
     href: '/admin/workspace/inquiries',
-    // Document routes for 完整详情 stay under this entry.
     match: (pathname: string) =>
       pathname.startsWith('/admin/workspace/inquiries')
       || pathname.startsWith('/admin/collections/leads'),
@@ -60,9 +66,6 @@ export function PrimaryNav() {
           </Link>
         )
       })}
-      <p className="cms-nav__hint">
-        收件箱：房源 / 设备 / 装修咨询；设备上架：控制小程序公开列表。
-      </p>
     </nav>
   )
 }

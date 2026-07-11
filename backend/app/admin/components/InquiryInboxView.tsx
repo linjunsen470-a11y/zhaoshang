@@ -37,8 +37,11 @@ const formatter = new Intl.DateTimeFormat('zh-CN', {
 })
 
 async function json<T>(response: Response): Promise<T> {
-  const data = await response.json().catch(() => ({})) as T & { error?: string }
-  if (!response.ok) throw new Error(data.error || '请求失败，请重试')
+  const data = await response.json().catch(() => ({})) as T & { error?: string; detail?: string }
+  if (!response.ok) {
+    const base = data.error || `请求失败（${response.status}）`
+    throw new Error(data.detail ? `${base}：${data.detail}` : base)
+  }
   return data
 }
 
@@ -139,12 +142,9 @@ export function InquiryInboxView() {
     <main className="cms-page" id="main-content">
       <header className="cms-page-header">
         <div>
-          <p className="cms-eyebrow">统一收件</p>
+          <p className="cms-eyebrow">客户咨询</p>
           <h1>咨询收件箱</h1>
-          <p>
-            按业务线查看客户提交：房源咨询、设备咨询、装修咨询。列表可快速改状态；
-            完整详情中对照「客户原文」与「处理编辑」工作副本。设备公开上架请用侧栏「设备上架」。
-          </p>
+          <p>处理小程序提交的咨询。先按业务线筛选，再快速改状态或进入完整详情。</p>
         </div>
       </header>
 
@@ -169,9 +169,8 @@ export function InquiryInboxView() {
 
       {categoryMeta ? (
         <p className="cms-help" style={{ marginBottom: 14 }}>
-          当前：{categoryMeta.label} — {categoryMeta.description}
-          {activeCategory === 'equipment' ? '。整理完成后可在「设备上架」发布到小程序。' : null}
-          {activeCategory === 'renovation' ? '。装修为独立业务线，与房源/设备列表分离。' : null}
+          {categoryMeta.label}：{categoryMeta.description}
+          {activeCategory === 'equipment' ? ' · 要在小程序展示时，再到侧栏「设备上架」发布。' : null}
         </p>
       ) : null}
 
