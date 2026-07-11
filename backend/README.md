@@ -17,7 +17,8 @@ Payload is the only admin interface. Workspace entry points:
 - Inquiry inbox: three handling states and one internal note; no CRM timeline or assignment workflow.
 - Equipment workspace: independent public status and public description.
 - Roles: `admin` and `editor`.
-- Do **not** use `/admin/collections/leads` as a nav entry — `leads` stays `admin.hidden` and is only reached via the custom workspace view.
+- Primary list for consultations is `/admin/workspace/inquiries`; 「完整详情」opens `/admin/collections/leads/:id`.
+- Custom workspace routes use `*Route` wrappers + `AdminWorkspaceShell` so Payload nav/account chrome is present.
 
 Custom components are under `app/admin/components/`. Data models remain `projects`, `leads`, `media`, and `users` so mini-program API routes stay stable.
 

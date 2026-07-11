@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 import { canManageLeads, isAdminUser } from './shared/access'
-import { EQUIPMENT_PUBLICATION_OPTIONS, LEAD_STATUS_OPTIONS } from './shared/fieldOptions'
+import { ADMIN_GROUPS, EQUIPMENT_PUBLICATION_OPTIONS, LEAD_STATUS_OPTIONS } from './shared/fieldOptions'
 
 const EQUIPMENT_TYPES = ['equipment_sell', 'equipment_buy', 'equipment_recycle']
 
@@ -11,9 +11,10 @@ export const Leads: CollectionConfig = {
     singular: '咨询',
   },
   admin: {
-    // Hidden from collection routes: primary UI is the custom admin view
-    // at /admin/workspace/inquiries (see payload.config.ts).
-    hidden: true,
+    // Visible so document routes (/admin/collections/leads/:id) work for
+    // 「完整详情」. Primary list UI remains /admin/workspace/inquiries;
+    // default Payload nav groups are hidden via admin-theme.css.
+    group: ADMIN_GROUPS.inquiries,
     useAsTitle: 'name',
     defaultColumns: ['status', 'name', 'phone', 'leadType', 'projectTitle', 'createdAt'],
     description: '查看小程序提交的咨询。具体沟通在微信或电话中完成，后台只记录处理状态和内部备注。',

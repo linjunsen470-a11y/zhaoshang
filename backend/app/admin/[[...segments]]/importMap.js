@@ -1,18 +1,20 @@
-import { default as ProjectEditHints } from '@/app/admin/components/ProjectEditHints'
-import { default as InquiryActions } from '@/app/admin/components/InquiryActions'
-import { default as PropertyWorkspace } from '@/app/admin/components/PropertyWorkspace'
-import { default as InquiryInboxView } from '@/app/admin/components/InquiryInboxView'
-import { default as EquipmentWorkspaceView } from '@/app/admin/components/EquipmentWorkspaceView'
-import { default as PrimaryNav } from '@/app/admin/components/PrimaryNav'
-import { default as SystemSettingsView } from '@/app/admin/components/SystemSettingsView'
+import { default as default_4fd6cd6a13ca54f0423d17f636427cc5 } from '@/app/admin/components/ProjectEditHints'
+import { default as default_325caa2fbfcb7a7f2d1bada949bd74a1 } from '@/app/admin/components/PropertyWorkspace'
+import { default as default_f05e5f3b57135fd75925d67e294f4039 } from '@/app/admin/components/InquiryActions'
+import { default as default_b9acfcbfbba04d6e878bd5114b207a18 } from '@/app/admin/components/PrimaryNav'
+import { default as default_20afc57289e6ecfbfbd2abbd385af3b1 } from '@/app/admin/components/InquiryInboxRoute'
+import { default as default_ca704683abd8f98e9b0bad3a44dbf6df } from '@/app/admin/components/EquipmentWorkspaceRoute'
+import { default as default_3611046b4a705376d8428f232803a488 } from '@/app/admin/components/SystemSettingsRoute'
+import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
 export const importMap = {
-  "@/app/admin/components/ProjectEditHints#default": ProjectEditHints,
-  "@/app/admin/components/InquiryActions#default": InquiryActions,
-  "@/app/admin/components/PropertyWorkspace#default": PropertyWorkspace,
-  "@/app/admin/components/InquiryInboxView#default": InquiryInboxView,
-  "@/app/admin/components/EquipmentWorkspaceView#default": EquipmentWorkspaceView,
-  "@/app/admin/components/PrimaryNav#default": PrimaryNav,
-  "@/app/admin/components/SystemSettingsView#default": SystemSettingsView,
+  "@/app/admin/components/ProjectEditHints#default": default_4fd6cd6a13ca54f0423d17f636427cc5,
+  "@/app/admin/components/PropertyWorkspace#default": default_325caa2fbfcb7a7f2d1bada949bd74a1,
+  "@/app/admin/components/InquiryActions#default": default_f05e5f3b57135fd75925d67e294f4039,
+  "@/app/admin/components/PrimaryNav#default": default_b9acfcbfbba04d6e878bd5114b207a18,
+  "@/app/admin/components/InquiryInboxRoute#default": default_20afc57289e6ecfbfbd2abbd385af3b1,
+  "@/app/admin/components/EquipmentWorkspaceRoute#default": default_ca704683abd8f98e9b0bad3a44dbf6df,
+  "@/app/admin/components/SystemSettingsRoute#default": default_3611046b4a705376d8428f232803a488,
+  "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

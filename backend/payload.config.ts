@@ -35,15 +35,16 @@ export default buildConfig({
           Component: '@/app/admin/components/PropertyWorkspace',
         },
         inquiryInbox: {
-          Component: '@/app/admin/components/InquiryInboxView',
+          // Server route wrappers supply DefaultTemplate (nav / account chrome).
+          Component: '@/app/admin/components/InquiryInboxRoute',
           path: '/workspace/inquiries',
         },
         equipmentWorkspace: {
-          Component: '@/app/admin/components/EquipmentWorkspaceView',
+          Component: '@/app/admin/components/EquipmentWorkspaceRoute',
           path: '/workspace/equipment',
         },
         systemSettings: {
-          Component: '@/app/admin/components/SystemSettingsView',
+          Component: '@/app/admin/components/SystemSettingsRoute',
           path: '/workspace/system',
         },
       },

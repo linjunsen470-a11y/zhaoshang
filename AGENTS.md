@@ -43,8 +43,8 @@ For Payload admin UX changes:
   - 咨询: `/admin/workspace/inquiries`
   - 设备: `/admin/workspace/equipment`
   - 系统: `/admin/workspace/system`
-- Keep `leads` as `admin.hidden: true` (workspace-only). Do **not** link to `/admin/collections/leads` — Payload 3 returns 404 for hidden collection list routes.
-- Keep `projects`, `users`, and `media` visible so native document/list routes work; hide default Payload nav groups via `admin-theme.css` (PrimaryNav is the IA).
+- Workspace custom views (`/workspace/*`) must use `*Route` server components that wrap content with `AdminWorkspaceShell` (`DefaultTemplate`), otherwise the Payload nav/account chrome is missing.
+- Keep `leads`, `projects`, `users`, and `media` visible so native document routes work (e.g. 「完整详情」→ `/admin/collections/leads/:id`). Hide default Payload nav groups via `admin-theme.css`; PrimaryNav is the IA.
 - Keep dropdown labels/options aligned with the mini-program via `backend/collections/shared/fieldOptions.ts`.
 - Staff roles are `admin` and `editor`; enforce permissions through `backend/collections/shared/access.ts`.
 

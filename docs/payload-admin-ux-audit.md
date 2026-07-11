@@ -6,11 +6,11 @@
 ## 新信息架构
 
 1. `房源管理`：登录首页 `/admin`；完整编辑使用 Payload 原生文档路由 `/admin/collections/projects/:id`。
-2. `咨询收件箱`：自定义视图 `/admin/workspace/inquiries`（`leads` 集合保持 `admin.hidden`，避免集合 List 404）。
-3. `设备供需`：自定义视图 `/admin/workspace/equipment`。
+2. `咨询收件箱`：自定义视图 `/admin/workspace/inquiries`（经 `*Route` 服务端壳层挂载 `DefaultTemplate`）；完整详情走 `/admin/collections/leads/:id`。
+3. `设备供需`：自定义视图 `/admin/workspace/equipment`（同样经 `DefaultTemplate` 壳层）；完整详情走 leads 文档路由。
 4. `系统设置`：自定义视图 `/admin/workspace/system`；账号与媒体分别打开 `/admin/collections/users`、`/admin/collections/media`。
 
-> **路由说明（Payload 3）**：`admin.hidden: true` 的集合不会出现在 `visibleEntities` 中，访问 `/admin/collections/<slug>` 列表/文档页会 404。因此仅咨询列表用自定义 workspace 路径；`projects` / `users` / `media` 保持可见以便原生编辑，侧边栏默认集合分组由 CSS 隐藏，主导航使用 `PrimaryNav`。
+> **路由说明（Payload 3）**：多段自定义 admin view（如 `/workspace/*`）默认不会设置 `templateType: 'default'`，会丢失侧栏与账号菜单。本项目用 `AdminWorkspaceShell` + `*Route` 组件显式包裹 `DefaultTemplate`。`admin.hidden: true` 的集合文档页也会 404，因此 `leads` / `projects` / `users` / `media` 均保持可见；默认集合导航由 CSS 隐藏，主导航使用 `PrimaryNav`。
 
 旧静态 Mock 后台、角色化 V2 工作台、领取池、看板、团队负载、商户档案和跟进时间线均已移除。
 

@@ -14,7 +14,10 @@ const links = [
   {
     label: '咨询收件箱',
     href: '/admin/workspace/inquiries',
-    match: (pathname: string) => pathname.startsWith('/admin/workspace/inquiries'),
+    // Include native lead document routes used by 「完整详情」.
+    match: (pathname: string) =>
+      pathname.startsWith('/admin/workspace/inquiries')
+      || pathname.startsWith('/admin/collections/leads'),
   },
   {
     label: '设备供需',
