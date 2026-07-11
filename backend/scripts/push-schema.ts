@@ -1,6 +1,17 @@
 import { getPayload } from 'payload'
+import { loadEnvFile } from 'node:process'
+import { fileURLToPath } from 'node:url'
+
+function loadLocalEnv() {
+  try {
+    loadEnvFile(fileURLToPath(new URL('../.env', import.meta.url)))
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error
+  }
+}
 
 async function main() {
+  loadLocalEnv()
   Object.assign(process.env, {
     NODE_ENV: 'development',
     PAYLOAD_DB_PUSH: 'true',

@@ -1,6 +1,8 @@
 const api = require('../../services/api.js');
 const formBehavior = require('../../utils/formBehavior.js');
 const { clip, config } = require('../../utils/form.js');
+const { attachmentIds } = require('../../utils/attachment.js');
+const { safeIdentifier } = require('../../utils/navigation.js');
 
 Page({
   behaviors: [formBehavior],
@@ -16,7 +18,7 @@ Page({
   },
 
   onLoad(options) {
-    this.initCommonData(options, lead => {
+    this.initCommonData({ ...options, leadId: safeIdentifier(options.leadId) }, lead => {
       const details = lead.renovationDetails || {};
       const renovationTypeIndex = this.data.renovationTypeValues.indexOf(details.renovationType);
       this.setData({
@@ -97,7 +99,7 @@ Page({
         budgetText,
         expectedStartDate
       },
-      attachments: attachments.map(item => item.id)
+      attachments: attachmentIds(attachments)
     };
 
     if (this.data.isEditMode) {

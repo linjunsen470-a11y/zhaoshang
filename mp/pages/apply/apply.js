@@ -1,6 +1,8 @@
 const api = require('../../services/api.js');
 const formBehavior = require('../../utils/formBehavior.js');
 const { clip, config } = require('../../utils/form.js');
+const { attachmentIds } = require('../../utils/attachment.js');
+const { allowedValue, safeIdentifier } = require('../../utils/navigation.js');
 
 Page({
   behaviors: [formBehavior],
@@ -21,7 +23,9 @@ Page({
   },
 
   onLoad(options) {
-    this.initCommonData(options, lead => {
+    const leadId = safeIdentifier(options.leadId);
+    const projectId = safeIdentifier(options.projectId);
+    this.initCommonData({ ...options, leadId }, lead => {
       const businessIndex = this.data.businesses.indexOf(lead.businessType);
       const budgetIndex = this.data.budgets.indexOf(lead.budgetRange);
       this.setData({
@@ -37,10 +41,10 @@ Page({
       });
     });
 
-    if (options.leadType) this.setData({ leadType: options.leadType });
-    if (options.projectId) {
-      this.setData({ projectId: options.projectId });
-      this.loadProjectTitle(options.projectId);
+    if (!leadId) this.setData({ leadType: allowedValue(options.leadType, ['leasing'], 'leasing') });
+    if (!leadId && projectId) {
+      this.setData({ projectId });
+      this.loadProjectTitle(projectId);
     }
   },
 
@@ -115,7 +119,7 @@ Page({
       regionPreference: regionPreference || undefined,
       hasCampusExperience,
       remark: remark || undefined,
-      attachments: attachments.map(item => item.id)
+      attachments: attachmentIds(attachments)
     };
 
     if (this.data.isEditMode) {

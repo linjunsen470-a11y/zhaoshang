@@ -7,22 +7,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DATA_FILE = path.join(__dirname, 'data.json');
 
-const MIME_TYPES = {
-  '.html': 'text/html; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.js': 'application/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-};
-
 const ALL = '全部';
 const PUBLIC_STATUSES = new Set(['online', 'coming', 'full']);
-const ADMIN_ACCESS_KEY = process.env.ADMIN_ACCESS_KEY || 'local-admin';
 const LEAD_USER_FIELDS = [
   'name', 'phone', 'businessType', 'budgetRange', 'regionPreference', 'hasCampusExperience',
   'transferDetails', 'equipmentDetails', 'renovationDetails', 'attachments', 'remark', 'leadType', 'sourceChannel', 'projectId',
@@ -39,13 +25,9 @@ function getCORSHeaders(req) {
   return {
     'Access-Control-Allow-Origin': isAllowed ? origin : 'http://localhost:5173',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Admin-Access',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Dev-OpenId',
     'Access-Control-Max-Age': '86400',
   };
-}
-
-function isAdminRequest(req) {
-  return req.headers['x-admin-access'] === ADMIN_ACCESS_KEY;
 }
 
 function pickLeadUserFields(input = {}) {
@@ -71,12 +53,12 @@ function truncatePublicText(value, max = 80) {
 function readData() {
   try {
     if (!fs.existsSync(DATA_FILE)) {
-      return { projects: [], leads: [], followRecords: [] };
+      return { projects: [], leads: [] };
     }
     return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
   } catch (e) {
     console.error('Error reading data file:', e);
-    return { projects: [], leads: [], followRecords: [] };
+    return { projects: [], leads: [] };
   }
 }
 
@@ -155,7 +137,6 @@ function getProjectBudgetCategory(project) {
 function normalizeProject(raw) {
   return {
     opportunityType: raw.opportunityType || 'leasing',
-    auditStatus: raw.auditStatus || 'approved',
     status: raw.status || 'draft',
     suitableBusiness: raw.suitableBusiness || [],
     unsuitableBusiness: raw.unsuitableBusiness || [],
@@ -191,7 +172,7 @@ function filterProjects(projects, query) {
   let result = [...projects];
 
   if (query.public === 'true') {
-    result = result.filter(p => PUBLIC_STATUSES.has(p.status) && p.auditStatus !== 'rejected');
+    result = result.filter(p => PUBLIC_STATUSES.has(p.status));
   }
   if (query.opportunityType && query.opportunityType !== ALL) {
     result = result.filter(p => (p.opportunityType || 'leasing') === query.opportunityType);
@@ -225,17 +206,6 @@ function filterProjects(projects, query) {
   return result;
 }
 
-function withFollows(leads, followRecords) {
-  return leads
-    .map(lead => ({
-      ...lead,
-      follows: followRecords
-        .filter(f => f.leadId === lead.id)
-        .sort((a, b) => b.createdAt - a.createdAt),
-    }))
-    .sort((a, b) => b.createdAt - a.createdAt);
-}
-
 const server = http.createServer(async (req, res) => {
   const corsHeaders = getCORSHeaders(req);
   if (req.method === 'OPTIONS') {
@@ -260,7 +230,6 @@ const server = http.createServer(async (req, res) => {
     const data = readData();
     data.projects = (data.projects || []).map(normalizeProject);
     data.leads = data.leads || [];
-    data.followRecords = data.followRecords || [];
 
     if ((urlPath === '/api/projects' || urlPath === '/api/opportunities') && req.method === 'GET') {
       sendJSON(filterProjects(data.projects, query));
@@ -274,74 +243,13 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    if (urlPath === '/api/projects' && req.method === 'POST') {
-      try {
-        const payload = normalizeProject(await readBody(req));
-        if (!payload.title || !payload.city || !payload.district || !payload.projectType) {
-          sendJSON({ error: '缺少必填字段' }, 400);
-          return;
-        }
-        payload.id = generateId(payload.opportunityType === 'transfer' ? 't' : 'p');
-        payload.createdAt = Date.now();
-        payload.updatedAt = Date.now();
-        data.projects.push(payload);
-        writeData(data);
-        sendJSON(payload, 201);
-      } catch {
-        sendJSON({ error: '无效的 JSON 数据' }, 400);
-      }
-      return;
-    }
-
-    if (urlPath.startsWith('/api/projects/') && req.method === 'PUT') {
-      const id = urlPath.substring('/api/projects/'.length);
-      try {
-        const index = data.projects.findIndex(p => p.id === id);
-        if (index === -1) {
-          sendJSON({ error: '项目不存在' }, 404);
-          return;
-        }
-        data.projects[index] = normalizeProject({
-          ...data.projects[index],
-          ...(await readBody(req)),
-          id,
-          updatedAt: Date.now(),
-        });
-        writeData(data);
-        sendJSON(data.projects[index]);
-      } catch {
-        sendJSON({ error: '无效的 JSON 数据' }, 400);
-      }
-      return;
-    }
-
-    if (urlPath.startsWith('/api/projects/') && req.method === 'DELETE') {
-      const id = urlPath.substring('/api/projects/'.length);
-      const index = data.projects.findIndex(p => p.id === id);
-      if (index === -1) {
-        sendJSON({ error: '项目不存在' }, 404);
-        return;
-      }
-      data.projects.splice(index, 1);
-      writeData(data);
-      sendJSON({ success: true });
-      return;
-    }
-
     if (urlPath === '/api/leads' && req.method === 'GET') {
-      if (!isAdminRequest(req) && !query.phone) {
-        sendJSON({ error: '未登录或登录已过期' }, 401);
-        return;
-      }
-
       let result = [...data.leads];
-      if (!isAdminRequest(req) && query.phone) {
-        result = result.filter(l => l.phone === query.phone);
-      }
+      if (query.phone) result = result.filter(l => l.phone === query.phone);
       if (query.projectId) result = result.filter(l => l.projectId === query.projectId);
       if (query.status && query.status !== ALL) result = result.filter(l => l.status === query.status);
       if (query.leadType && query.leadType !== ALL) result = result.filter(l => (l.leadType || 'leasing') === query.leadType);
-      sendJSON(withFollows(result, data.followRecords));
+      sendJSON(result.sort((a, b) => b.createdAt - a.createdAt));
       return;
     }
 
@@ -353,12 +261,7 @@ const server = http.createServer(async (req, res) => {
         sendJSON({ error: '线索不存在' }, 404);
         return;
       }
-      sendJSON({
-        ...lead,
-        follows: data.followRecords
-          .filter(f => f.leadId === lead.id)
-          .sort((a, b) => b.createdAt - a.createdAt),
-      });
+      sendJSON(lead);
       return;
     }
 
@@ -423,116 +326,11 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    if (urlPath.startsWith('/api/leads/') && urlPath.endsWith('/follow') && req.method === 'POST') {
-      const leadId = urlPath.substring('/api/leads/'.length, urlPath.length - '/follow'.length);
-      try {
-        const record = await readBody(req);
-        if (!record.content) {
-          sendJSON({ error: '跟进内容不能为空' }, 400);
-          return;
-        }
-        if (!data.leads.some(l => l.id === leadId)) {
-          sendJSON({ error: '线索不存在' }, 404);
-          return;
-        }
-        const newFollow = {
-          id: generateId('f'),
-          leadId,
-          content: record.content,
-          nextFollowAt: record.nextFollowAt ? parseInt(record.nextFollowAt, 10) : undefined,
-          operatorId: record.operatorId || 'admin',
-          operatorName: record.operatorName || '系统管理员',
-          createdAt: Date.now(),
-        };
-        data.followRecords.push(newFollow);
-        writeData(data);
-        sendJSON(newFollow, 201);
-      } catch {
-        sendJSON({ error: '无效的 JSON 数据' }, 400);
-      }
-      return;
-    }
-
-    if (urlPath.startsWith('/api/leads/') && urlPath.endsWith('/convert') && req.method === 'POST') {
-      const leadId = urlPath.substring('/api/leads/'.length, urlPath.length - '/convert'.length);
-      const index = data.leads.findIndex(l => l.id === leadId);
-      if (index === -1) {
-        sendJSON({ error: '线索不存在' }, 404);
-        return;
-      }
-      const lead = data.leads[index];
-      if (lead.leadType !== 'transfer') {
-        sendJSON({ error: '只有店铺转让类型的线索才能转为招商机会' }, 400);
-        return;
-      }
-
-      const exists = data.projects.some(p => p.title.includes(`(转让线索ID: ${leadId})`));
-      if (exists) {
-        sendJSON({ error: '该线索已转换过招商项目' }, 400);
-        return;
-      }
-
-      const details = lead.transferDetails || {};
-      const newProject = normalizeProject({
-        id: generateId('p'),
-        opportunityType: 'transfer',
-        title: `${lead.businessType || '商铺'}转让 (${details.locationText || lead.regionPreference || '未指定区域'}) (转让线索ID: ${leadId})`,
-        city: '广州',
-        district: details.locationText || lead.regionPreference || '',
-        addressText: details.locationText || '',
-        schoolName: '',
-        schoolAlias: '',
-        showFullSchoolName: false,
-        projectType: '店铺转让',
-        areaText: '',
-        feeText: details.feeText || '面议',
-        suitableBusiness: lead.businessType ? [lead.businessType] : [],
-        unsuitableBusiness: [],
-        highlights: [],
-        trafficTags: [],
-        facilityTags: [],
-        advisorTips: lead.remark || '',
-        customerInfo: '',
-        cooperationMode: '承接现有合同',
-        viewingTimeText: '需提前预约顾问',
-        coverImage: lead.attachments?.[0] || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80',
-        images: lead.attachments || [],
-        transferInfo: {
-          currentBusiness: lead.businessType || '',
-          monthlyRent: details.feeText || '',
-          remainingTerm: details.remainingTerm || '',
-          includesEquipment: !!details.includesEquipment,
-          expectedTransferFee: details.transferFee || '',
-          contractTransferAllowed: '待核实',
-        },
-        status: 'draft',
-        auditStatus: 'pending',
-        isRecommended: false,
-        sort: 0,
-        remark: `由店铺转让线索一键生成。联系人：${lead.name}，电话：${lead.phone}`,
-        createdAt: Date.now(),
-        updatedAt: Date.now()
-      });
-
-      data.projects.push(newProject);
-      
-      data.leads[index] = {
-        ...lead,
-        status: 'viewed',
-        remark: `${lead.remark || ''}\n【系统提示】已于 ${new Date().toLocaleString()} 一键转为招商项目草稿 (ID: ${newProject.id})。`.trim(),
-        updatedAt: Date.now()
-      };
-
-      writeData(data);
-      sendJSON({ success: true, projectId: newProject.id, projectTitle: newProject.title });
-      return;
-    }
-
     if (urlPath === '/api/equipments' && req.method === 'GET') {
       let list = [...data.leads];
       list = list.filter(l => 
         ['equipment_sell', 'equipment_buy', 'equipment_recycle'].includes(l.leadType) &&
-        !['closed', 'invalid', 'paused'].includes(l.status)
+        (l.equipmentPublication?.status === 'online' || (l.equipmentPublication?.publishStatus === 'approved' && l.equipmentPublication?.isPublic))
       );
       if (query.leadType && query.leadType !== ALL) {
         list = list.filter(l => l.leadType === query.leadType);
@@ -543,7 +341,7 @@ const server = http.createServer(async (req, res) => {
         businessType: l.businessType,
         budgetRange: l.budgetRange,
         regionPreference: maskPublicRegion(l.regionPreference),
-        remark: truncatePublicText(l.remark),
+        remark: truncatePublicText(l.equipmentPublication?.publicRemark),
         equipmentDetails: l.equipmentDetails,
         attachments: l.attachments || [],
         createdAt: l.createdAt
@@ -552,84 +350,18 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    if (urlPath === '/api/stats' && req.method === 'GET') {
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const monthStart = new Date();
-      monthStart.setDate(1);
-      monthStart.setHours(0, 0, 0, 0);
-
-      const leadTypeCounts = data.leads.reduce((acc, lead) => {
-        const type = lead.leadType || 'leasing';
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-      }, {});
-      const projectLeadCounts = data.leads.reduce((acc, lead) => {
-        if (lead.projectId) acc[lead.projectId] = (acc[lead.projectId] || 0) + 1;
-        return acc;
-      }, {});
-
-      sendJSON({
-        totalProjects: data.projects.length,
-        onlineProjects: data.projects.filter(p => p.status === 'online').length,
-        transferProjects: data.projects.filter(p => p.opportunityType === 'transfer').length,
-        equipmentLeads: data.leads.filter(l => ['equipment_sell', 'equipment_buy'].includes(l.leadType)).length,
-        todayLeads: data.leads.filter(l => l.createdAt >= todayStart.getTime()).length,
-        monthLeads: data.leads.filter(l => l.createdAt >= monthStart.getTime()).length,
-        pendingLeads: data.leads.filter(l => l.status === 'new').length,
-        closedLeads: data.leads.filter(l => l.status === 'closed').length,
-        leadTypeCounts,
-        popularProjects: data.projects
-          .map(p => ({
-            id: p.id,
-            title: p.title,
-            schoolName: p.schoolName,
-            leadCount: projectLeadCounts[p.id] || 0,
-          }))
-          .sort((a, b) => b.leadCount - a.leadCount)
-          .slice(0, 5),
-      });
-      return;
-    }
-
     sendJSON({ error: '接口不存在' }, 404);
     return;
   }
 
-  let filePath = '';
-  const decodedUrl = decodeURIComponent(urlPath);
-  if (decodedUrl === '/' || decodedUrl === '/admin' || decodedUrl === '/admin/') {
-    filePath = path.join(__dirname, 'admin', 'index.html');
-  } else {
-    filePath = path.join(__dirname, decodedUrl);
-  }
-
-  const resolvedPath = path.resolve(filePath);
-  if (!resolvedPath.startsWith(path.resolve(__dirname))) {
-    res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('403 Forbidden - Directory Traversal Detected');
-    return;
-  }
-
-
-  fs.stat(filePath, (err, stats) => {
-    if (err || !stats.isFile()) {
-      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('404 Not Found');
-      return;
-    }
-
-    const ext = path.extname(filePath).toLowerCase();
-    res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
-    fs.createReadStream(filePath).pipe(res);
-  });
+  res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8', ...corsHeaders });
+  res.end(JSON.stringify({ error: 'Mock 服务仅提供 /api 接口' }));
 });
 
 const PORT = 5173;
 server.listen(PORT, '0.0.0.0', () => {
   console.log('===================================================');
-  console.log(' 校园商铺招商平台 mock 服务已启动');
+  console.log(' 校园商铺小程序 Mock API 已启动');
   console.log(` API: http://localhost:${PORT}/api`);
-  console.log(` 管理后台: http://localhost:${PORT}/admin/index.html`);
   console.log('===================================================');
 });

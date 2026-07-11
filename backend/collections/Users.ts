@@ -10,10 +10,11 @@ export const Users: CollectionConfig = {
   },
   auth: true,
   admin: {
+    hidden: true,
     group: ADMIN_GROUPS.system,
     useAsTitle: 'displayName',
     defaultColumns: ['displayName', 'email', 'role'],
-    description: '后台登录账号。displayName 会作为跟进记录的默认跟进人。',
+    description: '后台登录账号。管理员可管理账号与删除数据，编辑可维护房源、咨询和设备。',
   },
   access: {
     create: ({ req: { user } }) => isAdminUser(user),
@@ -44,10 +45,9 @@ export const Users: CollectionConfig = {
       name: 'role',
       type: 'select',
       label: '角色',
-      defaultValue: 'advisor',
+      defaultValue: 'editor',
       options: [
         { label: '管理员', value: 'admin' },
-        { label: '招商顾问', value: 'advisor' },
         { label: '内容编辑', value: 'editor' },
       ],
       admin: {

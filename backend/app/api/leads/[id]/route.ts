@@ -96,7 +96,10 @@ export async function PUT(request: Request, { params }: Args) {
     const doc = await payload.update({
       collection: 'leads',
       id,
-      data: sanitizeLeadUpdateInput(input, auth.openid),
+      data: sanitizeLeadUpdateInput(input, auth.openid, {
+        leadType: lead.leadType,
+        sourceChannel: lead.sourceChannel,
+      }),
       overrideAccess: true,
     })
     return json(await mapLead(doc))

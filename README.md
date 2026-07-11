@@ -1,251 +1,132 @@
 # 校园商铺招商平台
 
-这是一个面向校园商铺招商、店铺转让和餐饮设备供需撮合的全栈项目。当前仓库包含微信小程序、Payload CMS 后台、Next.js 网站/API、本地 mock 服务和 Docker 部署配置。
+面向校园商铺房源展示、店铺转让、咨询收集和餐饮设备供需的小程序与管理后台。
 
 ## 项目结构
 
 ```text
-admin/                 静态 mock 管理后台，配合根目录 server.js 使用
-backend/               Payload CMS + Next.js 后台、网站和生产 API
-backend/app/api/       小程序兼容 API、登录 API、上传 API
-backend/collections/   Payload collections：项目、线索、媒体、商户档案等
-backend/app/admin/     Payload 后台自定义组件（工作台、看板、快捷操作等）
-backend/scripts/       demo 数据和 seed 脚本
-docs/                  产品和需求文档
+backend/               Payload CMS、统一房源后台、网站和生产 API
+backend/app/admin/     房源工作台、咨询收件箱、设备供需等自定义后台界面
+backend/collections/   房源、咨询、媒体和后台账号数据模型
+backend/scripts/       数据迁移、Schema push 和演示数据脚本
 mp/                    微信小程序客户端
-mp/config.js           顾问电话、表单长度等客户端配置
-mp/services/           小程序 API、登录和上传服务封装
-mp/utils/              表单校验与编辑加载等共享工具
-data.json              根目录 mock 服务数据文件
+docs/                  产品、上线和体验文档
+server.js              仅供小程序联调的轻量 Mock API
+data.json              Mock API 数据
 docker-compose.yml     Payload + PostgreSQL 容器编排
-server.js              轻量 mock API/admin 服务
 ```
 
-## 主要能力
+Payload 是唯一管理后台。旧静态 Mock 后台已删除，`server.js` 不提供 `/admin` 页面。
 
-- 项目展示：校园铺位、食堂档口、商业街铺位和店铺转让机会。
-- 多图详情：项目详情支持多张图片左右滑动和预览。
-- 线索提交：找铺咨询、店铺转让委托、设备出售/求购/回收需求。
-- 线索管理：用户可查看、编辑、删除自己提交的咨询记录。
-- 图片上传：小程序端压缩图片后上传，后端再次压缩并写入 Payload Media。
-- 用户隔离：小程序提交记录按微信 `openid`（或本地 mock 的 `devOpenId`）隔离。
-- 设备供需广场：公开列表展示设备线索，联系方式隐藏，区域与备注做截断脱敏。
-- 隐私合规：小程序内置隐私政策页面。
-- CMS 管理：Payload 后台维护项目、线索、商户档案和媒体资源；含运营工作台、线索看板与快捷操作。
-- 双模式调试：支持纯本地 mock 演示，也支持小程序直连本地 Payload CMS。
+## 后台结构
 
-## 近期改进（2026-06）
+登录 `http://localhost:3000/admin` 后直接进入房源管理：
 
-### 小程序 UX
+- `房源管理`：搜索、筛选、快速修改、批量上下架和完整编辑。
+- `咨询收件箱`：仅维护待联系、已联系、已结束和一条内部备注。
+- `设备供需`：独立维护待整理、已发布和已下架。
+- `系统设置`：管理员维护账号；媒体库仅管理员可见。
 
-- 首页金刚区：「找校园铺位」独占主入口；「委托转让」与「餐饮设备」并列次入口；已移除名不副实的「开店测算」。
-- 推荐项目快捷筛选修正为 `recommended: true`；找铺页增加「招商/转让」来源筛选。
-- 找铺/转让/设备表单增加隐私政策勾选；咨询记录展示中文 `leadType`。
-- 列表智能刷新、首页/找铺加载态与重试、下拉刷新；搜索清除仅清关键词。
-- 收藏页与「我的」页提示「仅保存在本机」；咨询表单展示关联项目卡片。
-- 本地默认头像、拨号失败可复制号码；成功页文案改为工作日联系。
+后台角色只有：
 
-**暂缓：** 生产 `API_URL` 配置、收藏服务端同步、P2（地图、订阅消息等）。详见 [docs/miniprogram-ux-audit.md](docs/miniprogram-ux-audit.md)。
-
-### Payload 后台 UX
-
-- 侧栏中文化与分组；下拉选项与小程序对齐（`collections/shared/fieldOptions.ts`）。
-- 运营工作台（`OperationsDashboard`）、线索看板（`/admin/collections/leads/kanban`）、线索快捷操作与跟进时间线。
-- 项目编辑提示小程序详情路径；线索可转项目、沉淀商户档案（`POST /api/leads/:id/sync-merchant`）。
-- 角色权限：`admin` / `advisor` / `editor`；`follow-records` 集合侧栏隐藏，跟进在线索详情添加。
-
-详见 [docs/payload-admin-ux-audit.md](docs/payload-admin-ux-audit.md)。
+- `admin`：内容管理、账号管理和永久删除。
+- `editor`：房源上下架、咨询处理和设备发布。
 
 ## 本地开发
 
-### 1. 安装依赖
+安装依赖：
 
 ```bash
 pnpm install
 pnpm --dir backend install
 ```
 
-### 2. 启动轻量 mock 服务
+复制环境变量并启动 PostgreSQL：
 
-适合只调小程序界面和演示数据，不依赖 PostgreSQL。
+```bash
+cp backend/.env.example backend/.env
+docker compose up -d db
+```
+
+启动 Payload：
 
 ```bash
 pnpm dev
 ```
 
-访问：
+常用地址：
 
-- Mock API: `http://localhost:5173/api`
-- Mock admin: `http://localhost:5173/admin/index.html`
+- 网站：`http://localhost:3000`
+- Payload 后台：`http://localhost:3000/admin`
+- 小程序房源 API：`http://localhost:3000/api/projects`
 
-小程序使用该模式时，可在 [mp/app.js](mp/app.js) 中设置：
-
-```js
-useLocalMock: true
-```
-
-Mock 管理后台请求线索列表时会自动携带 `X-Admin-Access: local-admin` 请求头。可通过环境变量 `ADMIN_ACCESS_KEY` 覆盖默认值。
-
-### 3. 启动 Payload CMS 联调
-
-复制后端环境变量：
+需要纯 Mock API 时：
 
 ```bash
-cp backend/.env.example backend/.env
+pnpm mock:api
 ```
 
-本地调试建议配置：
+Mock API 地址为 `http://localhost:5173/api`；访问 `/admin` 返回 404。
 
-```env
-PAYLOAD_SECRET=local-development-secret
-DATABASE_URI=postgres://payload:payload@localhost:5432/payload
-PAYLOAD_PUBLIC_SERVER_URL=http://localhost:3000
-
-WECHAT_AUTH_MODE=dev
-WECHAT_AUTH_DEV_OPENID=dev-openid-local
-WECHAT_APPID=wx22fb8f72be05d5c3
-WECHAT_APP_SECRET=
-```
-
-启动数据库和后端：
-
-```bash
-docker compose up -d db
-pnpm backend:dev
-```
-
-初始化 demo 数据和真实 demo 图片：
+演示数据：
 
 ```bash
 pnpm backend:seed
 ```
 
-访问：
+## 数据迁移
 
-- Website: `http://localhost:3000`
-- Payload admin: `http://localhost:3000/admin`
-- 小程序 API: `http://localhost:3000/api/projects`
+从旧 CRM 后台升级时，先备份并迁移数据，再推送新 Schema：
 
-### 4. 微信小程序联调
-
-用微信开发者工具导入 `mp/project.config.json`。
-
-直连 Payload CMS 时，在 [mp/app.js](mp/app.js) 中设置：
-
-```js
-apiUrl: 'http://127.0.0.1:3000/api',
-useLocalMock: false,
-devOpenId: 'dev-openid-local'
+```bash
+pnpm --dir backend migrate:property-cms
+pnpm --dir backend exec tsx scripts/push-schema.ts
 ```
 
-本地调试需在微信开发者工具中关闭合法域名校验：`详情 -> 本地设置 -> 不校验合法域名、web-view、TLS 版本以及 HTTPS 证书`。
+迁移脚本会：
 
-如需模拟不同用户，把 `devOpenId` 改成不同值，例如 `dev-user-b`。小程序历史记录会按该身份隔离。
+- 在独立 `cms_backup` schema 中备份房源、咨询、账号、媒体及旧 CRM 表。
+- 保留房源和媒体；不完整或未审核公开房源改回草稿。
+- 将旧咨询状态映射为待联系、已联系、已结束。
+- 将设备审核状态映射为待整理、已发布、已下架。
+- 将旧 `advisor` 账号改为 `editor`。
 
-仅在 `useLocalMock: true` 时，登录请求才会发送 `X-Dev-OpenId`；生产联调请勿依赖该请求头。
+Schema push 会删除已退出配置的商户档案、跟进记录和高级 CRM 字段。生产执行前请另做数据库快照。
 
-## Payload API
+## 主要 API
 
-小程序主要使用以下兼容 API：
+| 方法 | 路径 | 用途 |
+|------|------|------|
+| POST | `/api/auth/wechat-login` | 小程序登录 |
+| GET | `/api/projects` | 公开房源列表 |
+| GET | `/api/projects/:id` | 公开房源详情 |
+| GET/POST | `/api/leads` | 当前用户咨询列表/提交 |
+| GET/PUT/DELETE | `/api/leads/:id` | 当前用户咨询详情与维护 |
+| GET | `/api/equipments` | 已发布设备供需 |
+| POST | `/api/uploads/lead-image` | 咨询图片上传 |
+| GET/PATCH | `/api/admin/properties` | CMS 房源工作台 |
+| GET/PATCH | `/api/admin/inquiries` | CMS 咨询收件箱 |
+| GET/PATCH | `/api/admin/equipment` | CMS 设备供需 |
+| POST | `/api/admin/inquiries/:id/create-property` | 转让咨询生成房源草稿 |
 
-| 方法 | 路径 | 认证 | 说明 |
-|------|------|------|------|
-| POST | `/api/auth/wechat-login` | 否 | 换取 Bearer Token |
-| GET | `/api/projects` | 否 | 项目列表，支持 `public=true` 等筛选 |
-| GET | `/api/projects/:id` | 否 | 项目详情（非 staff 仅可访问已公开项目） |
-| POST | `/api/projects` | 后台 | 创建项目（需 staff 会话） |
-| PUT | `/api/projects/:id` | 后台 | 更新项目 |
-| DELETE | `/api/projects/:id` | 后台 | 删除项目 |
-| GET | `/api/leads` | 是 | 当前用户的线索列表 |
-| GET | `/api/leads/:id` | 是 | 单条线索详情（校验所有权） |
-| POST | `/api/leads` | 是 | 创建线索 |
-| PUT | `/api/leads/:id` | 是 | 更新线索（仅用户可编辑字段） |
-| DELETE | `/api/leads/:id` | 是 | 删除线索（校验所有权） |
-| GET | `/api/equipments` | 否 | 设备供需公开列表（脱敏） |
-| POST | `/api/uploads/lead-image` | 是 | 上传线索图片 |
-| GET | `/api/stats` | 后台 | 运营统计（需 staff 会话） |
-| POST | `/api/leads/:id/follow` | 后台 | 添加跟进记录（需 staff 会话） |
-| POST | `/api/leads/:id/convert` | 后台 | 将线索转为招商/转让项目（CMS 快捷操作） |
-| POST | `/api/leads/:id/sync-merchant` | 后台 | 将线索沉淀为商户档案并建立关联 |
+小程序 API 使用 Bearer Token 并按 `submitterOpenId` 隔离；管理 API 只接受 Payload 登录会话。
 
-认证说明：
-
-- 线索相关接口要求 `Authorization: Bearer <token>`。
-- 未带 Token 的 `GET /api/leads` 返回 `401`；不再返回全部线索。
-- Token 过期时，小程序会自动清缓存并重新登录后重试一次。
-- 本地 `WECHAT_AUTH_MODE=dev` 会签发开发 token；生产请使用 `WECHAT_AUTH_MODE=wechat` 并配置真实 `WECHAT_APPID`、`WECHAT_APP_SECRET`。
-
-安全约束：
-
-- 小程序创建线索时，`status` 固定为 `new`，不接受客户端传入 CRM 字段。
-- 小程序更新线索时，仅允许修改称呼、联系方式、需求内容、附件等用户字段。
-- 创建/更新线索时，后端会校验 `attachments` 中媒体 ID 归属：`lead_attachment` 必须属于当前用户；`seed_demo` / `admin` 来源禁止引用。
-- `GET /api/projects/:id` 对未登录 staff 仅返回 `status` 为 `online` / `coming` / `full` 且未驳回的项目，草稿项目返回 404。
-- 管理端写操作（项目 CRUD、统计、跟进、转换、商户沉淀）要求 Payload CMS 登录会话，不接受小程序 Bearer Token。
-- 生产环境必须配置 `PAYLOAD_SECRET`；`WECHAT_AUTH_MODE=dev` 在生产环境不可用。
-- API 响应不返回 `submitterOpenId`、`owner`、`closedAmount` 等内部字段。
-
-## 数据模型摘要
-
-- `projects`：招商铺位和转让机会，支持封面图、多图、适合业态、费用、转让信息等。
-- `leads`：统一线索池，支持 `leasing`、`transfer`、`equipment_sell`、`equipment_buy`、`equipment_recycle`、`brand_cooperation`。
-- `leads.transferDetails`：店铺位置、费用、转让费、剩余合同期、是否含设备。
-- `leads.equipmentDetails`：设备名称、规格、状态、期望价格。
-- `leads.attachments`：用户上传图片，对应 Payload `media`。
-- `leads.submitterOpenId`：小程序用户身份隔离字段（仅 CMS 内部使用，不下发客户端）。
-- `media`：项目 demo 图片和用户上传图片，记录来源、`ownerOpenId`、压缩大小等。
-- `follow-records`：跟进时间线归档（侧栏隐藏；日常在线索详情「跟进历史」标签页维护）。
-- `merchant-profiles`：商户长期需求档案，可与线索双向关联。
-- `users.role`：后台角色 `admin`（全权限）、`advisor`（线索/商户）、`editor`（项目/媒体）。
-
-## 验证命令
+## 验证
 
 ```bash
 pnpm backend:lint
+pnpm --dir backend test:cms
+node backend/node_modules/typescript/bin/tsc --noEmit -p backend/tsconfig.json
 pnpm backend:build
 ```
 
-小程序 JS 语法检查可使用：
+微信开发者工具中应验证房源浏览、咨询提交与编辑、图片上传、设备列表、Token 刷新和隐私政策页面。
 
-```powershell
-Get-ChildItem -Path mp -Recurse -Filter *.js | ForEach-Object { node --check $_.FullName }
-```
+## 生产配置
 
-微信开发者工具中建议验证：
+- 必须设置强随机 `PAYLOAD_SECRET`。
+- 必须使用真实 HTTPS `PAYLOAD_PUBLIC_SERVER_URL`。
+- 生产设置 `WECHAT_AUTH_MODE=wechat` 并配置真实微信 AppID/AppSecret。
+- 不提交 `.env`、`.next/`、`node_modules/`、上传目录或日志。
 
-- 提交找铺/转让/设备线索并上传图片
-- 在「我的咨询记录」中编辑、删除自己的线索
-- Token 过期或重新登录后的接口重试
-- 设备供需列表不展示联系方式
-- 「我的」页可打开隐私政策
-- 首页金刚区布局、推荐筛选、来源筛选、表单隐私勾选与加载重试
-
-## Docker 部署
-
-复制根环境变量：
-
-```bash
-cp .env.example .env
-```
-
-配置强密码和生产域名：
-
-```env
-PAYLOAD_SECRET=change-this-to-a-strong-random-value-in-production
-PAYLOAD_PUBLIC_SERVER_URL=https://your-domain.example
-POSTGRES_USER=payload
-POSTGRES_PASSWORD=change-this-postgres-password
-POSTGRES_DB=payload
-
-WECHAT_AUTH_MODE=wechat
-WECHAT_APPID=your-wechat-appid
-WECHAT_APP_SECRET=your-wechat-app-secret
-```
-
-启动：
-
-```bash
-docker compose up -d --build
-```
-
-生产环境请通过 Nginx、Caddy 或云厂商负载均衡提供 HTTPS，再把小程序 `apiUrl` 改为 `https://your-domain.example/api`，并在微信公众平台配置 request/upload 合法域名。
+详细上线步骤见 [docs/miniprogram-launch-checklist.md](docs/miniprogram-launch-checklist.md)，后台设计说明见 [docs/payload-admin-ux-audit.md](docs/payload-admin-ux-audit.md)。

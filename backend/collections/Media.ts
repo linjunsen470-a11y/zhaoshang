@@ -1,4 +1,4 @@
-import type { CollectionConfig } from 'payload'
+import type { CollectionConfig, Where } from 'payload'
 import { canManageProjects, isAdminUser, isStaffUser } from './shared/access'
 import { ADMIN_GROUPS } from './shared/fieldOptions'
 
@@ -10,11 +10,15 @@ export const Media: CollectionConfig = {
   },
   admin: {
     group: ADMIN_GROUPS.system,
+    hidden: true,
     description: '项目图片、线索附件与后台上传素材。线索附件请在线索详情中管理，避免误删用户图片。',
     defaultColumns: ['filename', 'source', 'alt', 'createdAt'],
   },
   access: {
-    read: () => true,
+    read: ({ req: { user } }) => {
+      if (isStaffUser(user)) return true
+      return { source: { not_equals: 'lead_attachment' } } as Where
+    },
     create: ({ req: { user } }) => isStaffUser(user),
     update: ({ req: { user } }) => canManageProjects(user) || isAdminUser(user),
     delete: ({ req: { user } }) => isAdminUser(user),

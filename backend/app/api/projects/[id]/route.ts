@@ -1,15 +1,9 @@
-import { getPayloadInstance, json, mapProject, PUBLIC_STATUSES, sanitizeProjectInput } from '../../_shared/payloadApi'
+import { getPayloadInstance, isPublicProject, json, mapProject, sanitizeProjectInput } from '../../_shared/payloadApi'
 import { getAuthenticatedStaff } from '../../_shared/auth'
 import { isAdminUser } from '../../../../collections/shared/access'
 
 type Args = {
   params: Promise<{ id: string }>
-}
-
-function isPublicProject(doc: Record<string, unknown>) {
-  const status = typeof doc.status === 'string' ? doc.status : ''
-  const auditStatus = typeof doc.auditStatus === 'string' ? doc.auditStatus : ''
-  return PUBLIC_STATUSES.includes(status) && auditStatus !== 'rejected'
 }
 
 export async function GET(request: Request, { params }: Args) {

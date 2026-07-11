@@ -3,6 +3,8 @@ import { getPayload } from 'payload'
 
 export const ALL = '全部'
 export const PUBLIC_STATUSES = ['online', 'coming', 'full']
+export const MINI_PROGRAM_LEAD_TYPES = ['leasing', 'transfer', 'equipment_sell', 'equipment_buy', 'equipment_recycle', 'renovation_consult']
+export const PUBLIC_EQUIPMENT_LEAD_TYPES = ['equipment_sell', 'equipment_buy', 'equipment_recycle']
 export const LEAD_ID_OFFSET = 26000000
 
 
@@ -201,9 +203,6 @@ export function mapProject(doc: Doc, isStaff = false) {
     suitableBusiness: toArrayItems(doc.suitableBusiness),
     unsuitableBusiness: toArrayItems(doc.unsuitableBusiness),
     highlights: toArrayItems(doc.highlights),
-    trafficTags: isStaff ? toArrayItems(doc.trafficTags) : [],
-    facilityTags: isStaff ? toArrayItems(doc.facilityTags) : [],
-    advisorTips: isStaff ? stringValue(doc.advisorTips) : '',
     customerInfo: stringValue(doc.customerInfo),
     cooperationMode: stringValue(doc.cooperationMode),
     viewingTimeText: stringValue(doc.viewingTimeText),
@@ -211,7 +210,6 @@ export function mapProject(doc: Doc, isStaff = false) {
     images: finalImages,
     transferInfo: mapTransferInfo(doc.transferInfo),
     status: stringValue(doc.status) || 'draft',
-    auditStatus: stringValue(doc.auditStatus) || 'approved',
     isRecommended: booleanValue(doc.isRecommended),
     sort: numberValue(doc.sort),
     remark: isStaff ? stringValue(doc.remark) : '',
@@ -221,37 +219,13 @@ export function mapProject(doc: Doc, isStaff = false) {
   }
 }
 
+export function isPublicProject(doc: Record<string, unknown>) {
+  return PUBLIC_STATUSES.includes(stringValue(doc.status))
+}
+
 
 export async function mapLeads(docs: Doc[]) {
-  if (docs.length === 0) return []
-  const payload = await getPayloadInstance()
-  const leadIds = docs.map(doc => doc.id)
-
-  const allFollowsResult = await payload.find({
-    collection: 'follow-records',
-    where: { lead: { in: leadIds } },
-    sort: '-createdAt',
-    limit: 1000,
-    depth: 0,
-    overrideAccess: true,
-  })
-
-  const followsByLeadId: Record<string | number, Doc[]> = {}
-  allFollowsResult.docs.forEach(follow => {
-    const leadId = typeof follow.lead === 'object' && follow.lead !== null ? (follow.lead as { id?: string | number }).id : follow.lead
-    if (leadId) {
-
-      if (!followsByLeadId[leadId]) {
-        followsByLeadId[leadId] = []
-      }
-      followsByLeadId[leadId].push(follow as Doc)
-    }
-  })
-
-  return Promise.all(docs.map(async (doc) => {
-    const follows = followsByLeadId[doc.id] || []
-
-    return {
+  return docs.map(doc => ({
       id: (() => {
         const num = Number(doc.id)
         if (!isNaN(num) && num < 10000000) {
@@ -281,9 +255,7 @@ export async function mapLeads(docs: Doc[]) {
       projectTitle: stringValue(doc.projectTitle) || relationTitle(doc.project) || '',
       createdAt: toTimestamp(doc.createdAt),
       updatedAt: toTimestamp(doc.updatedAt),
-      follows: follows.map(follow => mapFollow(follow as Doc)),
-    }
-  }))
+    }))
 }
 
 export async function mapLead(doc: Doc) {
@@ -291,17 +263,6 @@ export async function mapLead(doc: Doc) {
   return mapped[0]
 }
 
-
-export function mapFollow(doc: Doc) {
-  return {
-    id: String(doc.id),
-    leadId: relationId(doc.lead),
-    content: stringValue(doc.content),
-    nextFollowAt: doc.nextFollowAt ? toTimestamp(doc.nextFollowAt) : undefined,
-    operatorName: stringValue(doc.operatorName),
-    createdAt: toTimestamp(doc.createdAt),
-  }
-}
 
 export function getProjectBudgetCategory(project: { feeText?: unknown }) {
   const text = typeof project.feeText === 'string' ? project.feeText : ''
@@ -335,26 +296,26 @@ export function sanitizeProjectInput(input: Record<string, unknown>) {
     suitableBusiness: fromArrayItems(input.suitableBusiness),
     unsuitableBusiness: fromArrayItems(input.unsuitableBusiness),
     highlights: fromArrayItems(input.highlights),
-    trafficTags: fromArrayItems(input.trafficTags),
-    facilityTags: fromArrayItems(input.facilityTags),
-    advisorTips: input.advisorTips,
     customerInfo: input.customerInfo,
     cooperationMode: input.cooperationMode,
     viewingTimeText: input.viewingTimeText,
     transferInfo: input.transferInfo,
     status: input.status || 'draft',
-    auditStatus: input.auditStatus || 'approved',
     isRecommended: booleanValue(input.isRecommended),
     sort: Number.parseInt(String(input.sort || 0), 10) || 0,
     remark: input.remark,
   }
 }
 
-function sanitizeLeadUserFields(input: Record<string, unknown>, submitterOpenId: string) {
+function sanitizeLeadUserFields(
+  input: Record<string, unknown>,
+  submitterOpenId: string,
+  stable?: { leadType?: unknown; sourceChannel?: unknown },
+) {
   return {
     submitterOpenId,
-    leadType: input.leadType || 'leasing',
-    sourceChannel: input.sourceChannel || 'mini_program',
+    leadType: stable?.leadType || input.leadType || 'leasing',
+    sourceChannel: stable?.sourceChannel || input.sourceChannel || 'mini_program',
     name: input.name,
     phone: input.phone,
     businessType: input.businessType,
@@ -379,8 +340,12 @@ export function sanitizeLeadCreateInput(input: Record<string, unknown>, submitte
 }
 
 /** Mini-program update: user-editable fields only. */
-export function sanitizeLeadUpdateInput(input: Record<string, unknown>, submitterOpenId: string) {
-  return sanitizeLeadUserFields(input, submitterOpenId)
+export function sanitizeLeadUpdateInput(
+  input: Record<string, unknown>,
+  submitterOpenId: string,
+  stable: { leadType?: unknown; sourceChannel?: unknown },
+) {
+  return sanitizeLeadUserFields(input, submitterOpenId, stable)
 }
 
 /** @deprecated Use sanitizeLeadCreateInput or sanitizeLeadUpdateInput */

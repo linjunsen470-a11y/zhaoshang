@@ -16,7 +16,6 @@ type Opportunity = {
   feeText?: string
   suitableBusiness?: string[]
   highlights?: string[]
-  advisorTips?: string
   coverImage?: string
   status?: string
   isRecommended?: boolean
@@ -88,10 +87,7 @@ async function getOpportunities() {
     const result = await payloadInstance.find({
       collection: 'projects',
       where: {
-        and: [
-          { status: { not_in: ['offline', 'draft'] } },
-          { auditStatus: { equals: 'approved' } },
-        ],
+        status: { in: ['online', 'coming', 'full'] },
       },
       sort: '-isRecommended',
       limit: 6,
@@ -194,7 +190,7 @@ export default async function Home() {
                 <p className="mt-2 text-sm text-slate-500">{item.schoolName || item.projectType}</p>
                 <p className="mt-3 text-base font-bold text-red-600">{item.feeText}</p>
                 <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">
-                  {item.advisorTips || item.highlights?.join('、')}
+                  {item.highlights?.join('、')}
                 </p>
               </div>
             </article>

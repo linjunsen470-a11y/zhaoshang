@@ -47,7 +47,7 @@
       <view class="item-label">设备图片 <text class="label-hint">最多 6 张，上传前自动压缩</text></view>
       <view class="attachment-grid">
         <view class="attachment-card" wx:for="{{attachments}}" wx:key="id">
-          <image class="attachment-img" src="{{item.url || item.localPath}}" mode="aspectFill" bindtap="onPreviewAttachment" data-url="{{item.url || item.localPath}}" />
+          <image class="attachment-img" src="{{item.displayUrl}}" mode="aspectFill" bindtap="onPreviewAttachment" data-url="{{item.displayUrl}}" />
           <text class="attachment-remove" bindtap="onRemoveImage" data-index="{{index}}">×</text>
         </view>
         <view class="upload-tile" bindtap="onChooseImages" wx:if="{{attachments.length < 6}}">

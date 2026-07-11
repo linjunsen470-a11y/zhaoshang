@@ -20,7 +20,6 @@ export async function GET(request: Request) {
 
   if (showPublicOnly) {
     andConditions.push({ status: { in: PUBLIC_STATUSES } })
-    andConditions.push({ auditStatus: { equals: 'approved' } })
   }
 
   const opportunityType = searchParams.get('opportunityType')
@@ -61,7 +60,7 @@ export async function GET(request: Request) {
     overrideAccess: true,
   })
 
-  let projects = result.docs.map(doc => mapProject(doc))
+  let projects = result.docs.map(doc => mapProject(doc, Boolean(staff)))
 
   const budget = searchParams.get('budget')
   if (budget && budget !== ALL) {

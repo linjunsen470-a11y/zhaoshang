@@ -1,6 +1,10 @@
 const api = require('../../services/api.js');
 const formBehavior = require('../../utils/formBehavior.js');
 const { clip, config } = require('../../utils/form.js');
+const { attachmentIds } = require('../../utils/attachment.js');
+const { allowedValue, safeIdentifier } = require('../../utils/navigation.js');
+
+const EQUIPMENT_LEAD_TYPES = ['equipment_sell', 'equipment_buy', 'equipment_recycle'];
 
 Page({
   behaviors: [formBehavior],
@@ -14,10 +18,10 @@ Page({
   },
 
   onLoad(options) {
-    this.initCommonData(options, lead => {
+    this.initCommonData({ ...options, leadId: safeIdentifier(options.leadId) }, lead => {
       const details = lead.equipmentDetails || {};
       this.setData({
-        leadType: lead.leadType || 'equipment_sell',
+        leadType: allowedValue(lead.leadType, EQUIPMENT_LEAD_TYPES, 'equipment_sell'),
         equipmentName: details.equipmentName || lead.businessType || '',
         specText: details.specText || '',
         equipmentCondition: details.equipmentCondition || '',
@@ -27,7 +31,10 @@ Page({
     });
   },
 
-  onTypeTap(e) { this.setData({ leadType: e.currentTarget.dataset.type }); },
+  onTypeTap(e) {
+    if (this.data.isEditMode) return;
+    this.setData({ leadType: allowedValue(e.currentTarget.dataset.type, EQUIPMENT_LEAD_TYPES, this.data.leadType) });
+  },
   onInputEquipmentName(e) { this.setData({ equipmentName: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
   onInputSpec(e) { this.setData({ specText: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
   onInputCondition(e) { this.setData({ equipmentCondition: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
@@ -61,7 +68,7 @@ Page({
         equipmentCondition,
         expectedPrice: budgetRange
       },
-      attachments: attachments.map(item => item.id)
+      attachments: attachmentIds(attachments)
     };
 
     if (this.data.isEditMode) {

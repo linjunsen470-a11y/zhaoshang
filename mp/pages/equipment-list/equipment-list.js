@@ -1,4 +1,6 @@
 const api = require('../../services/api.js');
+const { normalizeAttachments, previewUrls } = require('../../utils/attachment.js');
+const { allowedValue } = require('../../utils/navigation.js');
 
 function formatTime(timestamp) {
   if (!timestamp) return '';
@@ -42,6 +44,7 @@ Page({
       .then(res => {
         const formatted = (res || []).map(item => ({
           ...item,
+          attachments: normalizeAttachments(item.attachments),
           formattedDate: formatTime(item.createdAt),
           tagText: item.leadType === 'equipment_sell' ? '出售' : (item.leadType === 'equipment_buy' ? '求购' : '回收'),
           tagClass: item.leadType === 'equipment_sell' ? 'tag-sell' : (item.leadType === 'equipment_buy' ? 'tag-buy' : 'tag-recycle')
@@ -62,7 +65,7 @@ Page({
   },
 
   onTabTap(e) {
-    const tab = e.currentTarget.dataset.tab;
+    const tab = allowedValue(e.currentTarget.dataset.tab, this.data.tabs.map(item => item.val), '全部');
     this.setData({ activeTab: tab }, () => {
       this.loadData();
     });
@@ -74,11 +77,11 @@ Page({
     const item = this.data.equipmentList[itemIndex];
     if (!item || !item.attachments) return;
 
-    const urls = item.attachments.map(att => att.url).filter(Boolean);
+    const urls = previewUrls(item.attachments);
     if (urls.length > 0) {
       wx.previewImage({
         urls,
-        current
+        current: urls.includes(current) ? current : urls[0]
       });
     }
   },

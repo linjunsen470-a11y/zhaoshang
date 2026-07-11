@@ -58,7 +58,7 @@
             <scroll-view scroll-x="true" class="images-scroll">
               <view class="images-track flex">
                 <image class="image-item" wx:for="{{item.attachments}}" wx:for-item="img" wx:key="id" wx:for-index="imgIdx"
-                       src="{{img.url}}" mode="aspectFill" bindtap="onPreviewImage" data-url="{{img.url}}" data-itemindex="{{index}}" />
+                       src="{{img.displayUrl}}" mode="aspectFill" bindtap="onPreviewImage" data-url="{{img.displayUrl}}" data-itemindex="{{index}}" />
               </view>
             </scroll-view>
           </view>
