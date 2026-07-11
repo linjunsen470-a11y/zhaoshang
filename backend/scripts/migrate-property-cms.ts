@@ -58,9 +58,36 @@ async function main() {
       await client.query(`UPDATE leads SET equipment_publication_status = CASE WHEN equipment_publication_publish_status = 'approved'${publicCheck} THEN 'online' WHEN equipment_publication_publish_status = 'offline' THEN 'offline' ELSE 'draft' END`)
     }
 
+    await client.query(`ALTER TABLE projects
+      DROP COLUMN IF EXISTS audit_status,
+      DROP COLUMN IF EXISTS content_completeness,
+      DROP COLUMN IF EXISTS owner_id,
+      DROP COLUMN IF EXISTS advisor_tips,
+      ADD COLUMN IF NOT EXISTS source_lead_id integer,
+      ADD COLUMN IF NOT EXISTS source_lead_key varchar`)
+    await client.query(`ALTER TABLE leads
+      DROP COLUMN IF EXISTS next_follow_at,
+      DROP COLUMN IF EXISTS closed_amount,
+      DROP COLUMN IF EXISTS lost_reason,
+      DROP COLUMN IF EXISTS merchant_profile_id,
+      DROP COLUMN IF EXISTS owner_id,
+      DROP COLUMN IF EXISTS priority,
+      DROP COLUMN IF EXISTS claimed_at,
+      DROP COLUMN IF EXISTS last_follow_at,
+      DROP COLUMN IF EXISTS last_follow_summary,
+      DROP COLUMN IF EXISTS follow_count,
+      DROP COLUMN IF EXISTS equipment_publication_publish_status,
+      DROP COLUMN IF EXISTS equipment_publication_is_public,
+      DROP COLUMN IF EXISTS equipment_publication_reviewed_at,
+      DROP COLUMN IF EXISTS equipment_publication_reviewed_by_id,
+      ADD COLUMN IF NOT EXISTS internal_note varchar,
+      ADD COLUMN IF NOT EXISTS generated_project_id integer`)
+    await client.query('DROP TABLE IF EXISTS follow_records CASCADE')
+    await client.query('DROP TABLE IF EXISTS merchant_profiles CASCADE')
+
     await client.query('COMMIT')
     payload.logger.info(`CMS data migration completed. Backup suffix: ${suffix}`)
-    payload.logger.info('Next: run the Payload schema push to remove retired CRM columns and tables.')
+    payload.logger.info('Retired CRM schema removed and new CMS fields added.')
   } catch (error) {
     await client.query('ROLLBACK')
     throw error
