@@ -8,19 +8,19 @@ const links = [
   {
     label: '房源管理',
     href: '/admin',
-    // Exact /admin only — workspace routes must not light this item up.
-    match: (pathname: string) => pathname === '/admin' || pathname.startsWith('/admin/collections/projects'),
+    match: (pathname: string) =>
+      pathname === '/admin' || pathname.startsWith('/admin/collections/projects'),
   },
   {
     label: '咨询收件箱',
     href: '/admin/workspace/inquiries',
-    // Include native lead document routes used by 「完整详情」.
+    // Document routes for 完整详情 stay under this entry.
     match: (pathname: string) =>
       pathname.startsWith('/admin/workspace/inquiries')
       || pathname.startsWith('/admin/collections/leads'),
   },
   {
-    label: '设备供需',
+    label: '设备上架',
     href: '/admin/workspace/equipment',
     match: (pathname: string) => pathname.startsWith('/admin/workspace/equipment'),
   },
@@ -60,6 +60,9 @@ export function PrimaryNav() {
           </Link>
         )
       })}
+      <p className="cms-nav__hint">
+        收件箱：房源 / 设备 / 装修咨询；设备上架：控制小程序公开列表。
+      </p>
     </nav>
   )
 }

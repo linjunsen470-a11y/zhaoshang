@@ -1,6 +1,7 @@
 import type { Where } from 'payload'
 import { getAuthenticatedStaff } from '../../_shared/auth'
 import { getPayloadInstance, json } from '../../_shared/payloadApi'
+import { leadTypesForCategory } from '../../../../collections/shared/fieldOptions'
 
 const VALID_STATUSES = new Set(['new', 'contacted', 'closed'])
 
@@ -22,11 +23,21 @@ export async function GET(request: Request) {
   const q = searchParams.get('q')?.trim().slice(0, 80)
   const status = searchParams.get('status')
   const leadType = searchParams.get('leadType')
+  const category = searchParams.get('category')
   const page = Math.max(Number.parseInt(searchParams.get('page') || '1', 10) || 1, 1)
 
   if (q) conditions.push({ or: [{ name: { contains: q } }, { phone: { contains: q } }, { businessType: { contains: q } }] })
   if (status && VALID_STATUSES.has(status)) conditions.push({ status: { equals: status } })
-  if (leadType) conditions.push({ leadType: { equals: leadType } })
+
+  const categoryTypes = leadTypesForCategory(category)
+  if (leadType) {
+    if (categoryTypes && !categoryTypes.includes(leadType)) {
+      return json({ error: '咨询类型与业务线不匹配' }, 400)
+    }
+    conditions.push({ leadType: { equals: leadType } })
+  } else if (categoryTypes) {
+    conditions.push({ leadType: { in: categoryTypes } })
+  }
 
   const result = await payload.find({
     collection: 'leads',

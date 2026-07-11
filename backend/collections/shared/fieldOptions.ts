@@ -72,3 +72,42 @@ export const LEAD_TYPE_LABELS: Record<string, string> = {
   brand_cooperation: '品牌合作',
   renovation_consult: '装修咨询',
 }
+
+/** Inbox category buckets used by PrimaryNav + inquiry workspace. */
+export const LEAD_CATEGORY_OPTIONS = [
+  {
+    value: 'property',
+    label: '房源咨询',
+    description: '找铺、转让、品牌合作',
+    types: ['leasing', 'transfer', 'brand_cooperation'] as const,
+    live: true,
+  },
+  {
+    value: 'equipment',
+    label: '设备咨询',
+    description: '出售 / 求购 / 回收',
+    types: ['equipment_sell', 'equipment_buy', 'equipment_recycle'] as const,
+    live: true,
+  },
+  {
+    value: 'renovation',
+    label: '装修咨询',
+    description: '小程序已可提交，后台按收件处理',
+    types: ['renovation_consult'] as const,
+    live: true,
+  },
+] as const
+
+export type LeadCategory = (typeof LEAD_CATEGORY_OPTIONS)[number]['value']
+
+export function leadTypesForCategory(category: string | null | undefined): string[] | null {
+  if (!category || category === 'all') return null
+  const found = LEAD_CATEGORY_OPTIONS.find(item => item.value === category)
+  return found ? [...found.types] : null
+}
+
+export function categoryForLeadType(leadType: string | null | undefined): LeadCategory | '' {
+  if (!leadType) return ''
+  const found = LEAD_CATEGORY_OPTIONS.find(item => (item.types as readonly string[]).includes(leadType))
+  return found?.value || ''
+}
