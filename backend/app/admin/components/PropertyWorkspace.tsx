@@ -66,7 +66,13 @@ export function PropertyWorkspace() {
     setError('')
     try {
       const result = await readJson<ResponseData>(await fetch(`/api/admin/properties?${queryString}`, { signal }))
-      setData(result)
+      const quality = new URLSearchParams(queryString).get('quality')
+      const docs = !quality
+        ? result.docs
+        : result.docs.filter(item => quality === 'blocked'
+          ? Boolean(item.missingFields?.length)
+          : !item.missingFields?.length)
+      setData({ ...result, docs })
       setSelected(new Set())
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return
@@ -80,7 +86,17 @@ export function PropertyWorkspace() {
     const controller = new AbortController()
     fetch(`/api/admin/properties?${queryString}`, { signal: controller.signal })
       .then(response => readJson<ResponseData>(response))
-      .then(result => { setData(result); setSelected(new Set()); setError('') })
+      .then(result => {
+        const quality = new URLSearchParams(queryString).get('quality')
+        const docs = !quality
+          ? result.docs
+          : result.docs.filter(item => quality === 'blocked'
+            ? Boolean(item.missingFields?.length)
+            : !item.missingFields?.length)
+        setData({ ...result, docs })
+        setSelected(new Set())
+        setError('')
+      })
       .catch(err => { if (!(err instanceof DOMException && err.name === 'AbortError')) setError(err instanceof Error ? err.message : '房源加载失败，请重试') })
       .finally(() => { if (!controller.signal.aborted) setLoading(false) })
     return () => controller.abort()
@@ -153,6 +169,7 @@ export function PropertyWorkspace() {
           <input id="property-search" name="q" value={search} onChange={event => setSearch(event.target.value)} placeholder="搜索标题、学校或地址…" autoComplete="off" />
           <button className="cms-button" type="submit">搜索</button>
         </form>
+        <label><span>门禁</span><select value={searchParams.get('quality') || ''} onChange={event => updateParams({ quality: event.target.value || undefined })}><option value="">全部</option><option value="blocked">未过门禁</option><option value="ready">门禁通过</option></select></label>
         <label><span>业务</span><select value={searchParams.get('opportunityType') || ''} onChange={event => updateParams({ opportunityType: event.target.value || undefined })}><option value="">全部</option><option value="leasing">招商铺位</option><option value="transfer">店铺转让</option></select></label>
         <label><span>区域</span><select value={searchParams.get('district') || ''} onChange={event => updateParams({ district: event.target.value || undefined })}><option value="">全部</option>{DISTRICT_OPTIONS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
         <label><span>类型</span><select value={searchParams.get('projectType') || ''} onChange={event => updateParams({ projectType: event.target.value || undefined })}><option value="">全部</option>{PROJECT_TYPE_OPTIONS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
@@ -180,7 +197,21 @@ export function PropertyWorkspace() {
                   <td>{item.opportunityType === 'transfer' ? '店铺转让' : '招商铺位'}<small>{item.projectType || '类型待补'}</small></td>
                   <td>{item.district || '待补'}</td>
                   <td>{item.areaText || '面积待补'}<small>{item.feeText || '费用待补'}</small></td>
-                  <td><span className={`cms-status cms-status--${item.status}`}>{PROPERTY_STATUS_OPTIONS.find(option => option.value === item.status)?.label || item.status}</span>{item.missingFields?.length ? <small className="cms-warning">缺 {item.missingFields.length} 项</small> : null}</td>
+                  <td>
+                    <span className={`cms-status cms-status--${item.status}`}>{PROPERTY_STATUS_OPTIONS.find(option => option.value === item.status)?.label || item.status}</span>
+                    {item.missingFields?.length ? (
+                      <div className="cms-gate-tags" style={{ marginTop: 6 }}>
+                        {item.missingFields.slice(0, 4).map(field => (
+                          <span className="cms-gate-tag cms-gate-tag--miss" key={field}>{field}</span>
+                        ))}
+                        {item.missingFields.length > 4 ? <span className="cms-gate-tag">+{item.missingFields.length - 4}</span> : null}
+                      </div>
+                    ) : (
+                      <div className="cms-gate-tags" style={{ marginTop: 6 }}>
+                        <span className="cms-gate-tag cms-gate-tag--ok">门禁通过</span>
+                      </div>
+                    )}
+                  </td>
                   <td>{item.updatedAt ? dateFormatter.format(new Date(item.updatedAt)) : '—'}</td>
                   <td><div className="cms-row-actions"><button type="button" onClick={() => setEditing(item)}>快速修改</button><Link href={`/admin/collections/projects/${item.id}`}>完整编辑</Link></div></td>
                 </tr>

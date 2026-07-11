@@ -32,7 +32,8 @@ export default buildConfig({
       beforeNavLinks: ['@/app/admin/components/PrimaryNav'],
       views: {
         dashboard: {
-          Component: '@/app/admin/components/PropertyWorkspace',
+          // Team ops landing: todos, funnel, quality gates, share kit
+          Component: '@/app/admin/components/OpsWorkbenchRoute',
         },
         inquiryInbox: {
           // Server route wrappers supply DefaultTemplate (nav / account chrome).

@@ -5,20 +5,22 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 /**
- * Staff IA (lean):
- * - 房源管理: property list / publish
- * - 咨询收件箱: all leads (property / equipment / renovation filters in page)
- * - 系统设置: admin-only accounts & media
- *
- * Equipment public listing is edited on the lead detail form
- * (处理编辑 → 设备公开设置), not a separate nav item.
+ * Staff IA:
+ * - 运营工作台: team todos / funnel / quality / share (dashboard)
+ * - 房源管理: property list & publish
+ * - 咨询收件箱: lead inbox by business line
+ * - 系统设置: admin-only
  */
 const links = [
   {
-    label: '房源管理',
+    label: '运营工作台',
     href: '/admin',
-    match: (pathname: string) =>
-      pathname === '/admin' || pathname.startsWith('/admin/collections/projects'),
+    match: (pathname: string) => pathname === '/admin',
+  },
+  {
+    label: '房源管理',
+    href: '/admin/collections/projects',
+    match: (pathname: string) => pathname.startsWith('/admin/collections/projects'),
   },
   {
     label: '咨询收件箱',
