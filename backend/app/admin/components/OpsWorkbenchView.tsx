@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 type LeadTodo = {
   id: string
@@ -11,7 +11,6 @@ type LeadTodo = {
   status: string
   createdAt?: string
   businessType?: string
-  internalNote?: string
 }
 
 type WorkbenchData = {
@@ -76,6 +75,7 @@ export function OpsWorkbenchView() {
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [busyId, setBusyId] = useState('')
+  const [revealedPhoneId, setRevealedPhoneId] = useState('')
 
   const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true)
@@ -97,6 +97,11 @@ export function OpsWorkbenchView() {
     return () => controller.abort()
   }, [load])
 
+  const staleIds = useMemo(
+    () => new Set((data?.team.staleLeads || []).map(item => item.id)),
+    [data?.team.staleLeads],
+  )
+
   const markLead = async (id: string, status: 'contacted' | 'closed') => {
     setBusyId(id)
     setError('')
@@ -116,36 +121,12 @@ export function OpsWorkbenchView() {
     }
   }
 
-  const renderLeadActions = (item: LeadTodo) => (
-    <div className="cms-row-actions">
-      {item.phone ? <a className="cms-button" href={`tel:${item.phone}`}>拨打</a> : null}
-      <button
-        className="cms-button cms-button--primary"
-        type="button"
-        disabled={busyId === item.id}
-        onClick={() => void markLead(item.id, 'contacted')}
-      >
-        {busyId === item.id ? '…' : '已联系'}
-      </button>
-      <button
-        className="cms-button"
-        type="button"
-        disabled={busyId === item.id}
-        onClick={() => void markLead(item.id, 'closed')}
-      >
-        已结束
-      </button>
-      <Link className="cms-button" href={`/admin/collections/leads/${item.id}`}>详情</Link>
-    </div>
-  )
-
   return (
     <main className="cms-page" id="main-content">
       <header className="cms-page-header">
         <div>
           <p className="cms-eyebrow">团队运营</p>
           <h1>运营工作台</h1>
-          <p>团队待办与咨询漏斗。质量门禁、分享素材请用侧栏独立入口。</p>
         </div>
         <button className="cms-button" type="button" disabled={loading} onClick={() => void load()}>
           {loading ? '刷新中…' : '刷新数据'}
@@ -157,115 +138,132 @@ export function OpsWorkbenchView() {
       {loading && !data ? <div className="cms-empty">工作台加载中…</div> : null}
 
       {data ? (
-        <>
-          <section className="cms-ops-section" aria-labelledby="ops-todo-title">
-            <div className="cms-ops-section__head">
-              <div>
-                <h2 id="ops-todo-title">团队待办 + 漏斗</h2>
-                <p>全员视图 · 超 {data.staleHours} 小时未联系视为超时 · 可直接改处理状态</p>
-              </div>
-              <div className="cms-ops-kpis">
-                <div className="cms-ops-kpi"><span>待联系</span><strong>{data.team.summary.newLeads}</strong></div>
-                <div className="cms-ops-kpi cms-ops-kpi--warn"><span>超时未联</span><strong>{data.team.summary.staleLeads}</strong></div>
-                <div className="cms-ops-kpi"><span>漏斗总量</span><strong>{data.funnel.submitted}</strong></div>
-                <div className="cms-ops-kpi cms-ops-kpi--ok"><span>已联系</span><strong>{data.funnel.contacted}</strong></div>
-              </div>
+        <section className="cms-ops-section" aria-labelledby="ops-todo-title">
+          <div className="cms-ops-section__head">
+            <div>
+              <h2 id="ops-todo-title">待办与漏斗</h2>
             </div>
-
-            <div className="cms-ops-grid">
-              <article className="cms-panel cms-ops-card">
-                <header>
-                  <h3>待联系咨询</h3>
-                  <Link href="/admin/workspace/inquiries?status=new">收件箱</Link>
-                </header>
-                {data.team.newLeads.length ? (
-                  <ul className="cms-ops-list">
-                    {data.team.newLeads.map(item => (
-                      <li key={item.id}>
-                        <div>
-                          <strong>{item.name}</strong>
-                          <small>{item.leadTypeLabel}{item.businessType ? ` · ${item.businessType}` : ''}</small>
-                        </div>
-                        {renderLeadActions(item)}
-                      </li>
-                    ))}
-                  </ul>
-                ) : <div className="cms-empty" style={{ padding: 24 }}>暂无待联系</div>}
-              </article>
-
-              <article className="cms-panel cms-ops-card">
-                <header>
-                  <h3>超时未联系</h3>
-                  <Link href="/admin/workspace/inquiries?status=new">去收件箱</Link>
-                </header>
-                {data.team.staleLeads.length ? (
-                  <ul className="cms-ops-list">
-                    {data.team.staleLeads.map(item => (
-                      <li key={item.id}>
-                        <div>
-                          <strong>{item.name}</strong>
-                          <small className="cms-warning">
-                            {item.createdAt ? dateFmt.format(new Date(item.createdAt)) : '—'} 提交 · 仍待联系
-                          </small>
-                        </div>
-                        {renderLeadActions(item)}
-                      </li>
-                    ))}
-                  </ul>
-                ) : <div className="cms-empty" style={{ padding: 24 }}>没有超时单</div>}
-              </article>
+            <div className="cms-ops-kpis">
+              <div className="cms-ops-kpi"><span>待联系</span><strong>{data.team.summary.newLeads}</strong></div>
+              <div className="cms-ops-kpi cms-ops-kpi--warn"><span>超时未联</span><strong>{data.team.summary.staleLeads}</strong></div>
+              <div className="cms-ops-kpi"><span>漏斗总量</span><strong>{data.funnel.submitted}</strong></div>
+              <div className="cms-ops-kpi cms-ops-kpi--ok"><span>已联系</span><strong>{data.funnel.contacted}</strong></div>
             </div>
+          </div>
 
-            <div className="cms-ops-grid cms-ops-grid--funnel" style={{ marginTop: 14 }}>
-              <article className="cms-panel cms-ops-card">
-                <h3>咨询漏斗</h3>
-                <div className="cms-funnel">
-                  <FunnelBar label="全部提交" value={data.funnel.submitted} total={data.funnel.submitted} tone="#1d4ed8" />
-                  <FunnelBar label="待联系" value={data.funnel.new} total={data.funnel.submitted} tone="#2563eb" />
-                  <FunnelBar label="已联系" value={data.funnel.contacted} total={data.funnel.submitted} tone="#047857" />
-                  <FunnelBar label="已结束" value={data.funnel.closed} total={data.funnel.submitted} tone="#64748b" />
-                  <FunnelBar label="已生成房源" value={data.funnel.converted} total={data.funnel.submitted} tone="#b45309" />
-                </div>
-                <p className="cms-help" style={{ marginTop: 12 }}>
-                  联系推进率 {pct(data.funnel.contacted + data.funnel.closed, data.funnel.submitted)}%
-                  · 结束率 {pct(data.funnel.closed, data.funnel.submitted)}%
-                </p>
-              </article>
-              <article className="cms-panel cms-ops-card">
-                <h3>按业务线</h3>
-                <div className="cms-table-wrap">
-                  <table className="cms-table" style={{ minWidth: 440 }}>
-                    <thead>
-                      <tr>
-                        <th>业务线</th>
-                        <th>合计</th>
-                        <th>待联系</th>
-                        <th>已联系</th>
-                        <th>已结束</th>
+          <article className="cms-panel cms-ops-card" style={{ marginBottom: 14 }}>
+            <header>
+              <h3>待联系咨询</h3>
+              <Link href="/admin/workspace/inquiries?status=new">收件箱</Link>
+            </header>
+            {data.team.newLeads.length ? (
+              <ul className="cms-ops-list">
+                {data.team.newLeads.map(item => {
+                  const isStale = staleIds.has(item.id)
+                  const showPhone = revealedPhoneId === item.id
+                  return (
+                    <li key={item.id}>
+                      <div className="cms-ops-lead">
+                        <div className="cms-ops-lead__title">
+                          <strong>{item.name}</strong>
+                          {isStale ? (
+                            <span
+                              className="cms-ops-stale"
+                              title={item.createdAt
+                                ? `${dateFmt.format(new Date(item.createdAt))} 提交，已超过 ${data.staleHours} 小时未联系`
+                                : `已超过 ${data.staleHours} 小时未联系`}
+                            >
+                              超时
+                            </span>
+                          ) : null}
+                        </div>
+                        <small>
+                          {item.leadTypeLabel}
+                          {item.businessType ? ` · ${item.businessType}` : ''}
+                          {showPhone && item.phone ? ` · ${item.phone}` : ''}
+                        </small>
+                      </div>
+                      <div className="cms-row-actions">
+                        {item.phone ? (
+                          <button
+                            className="cms-button"
+                            type="button"
+                            onClick={() => setRevealedPhoneId(showPhone ? '' : item.id)}
+                          >
+                            {showPhone ? '收起电话' : '查看电话'}
+                          </button>
+                        ) : null}
+                        <Link className="cms-button" href={`/admin/collections/leads/${item.id}`}>详情</Link>
+                        <button
+                          className="cms-button cms-button--primary"
+                          type="button"
+                          disabled={busyId === item.id}
+                          onClick={() => void markLead(item.id, 'contacted')}
+                        >
+                          {busyId === item.id ? '…' : '已联系'}
+                        </button>
+                        <button
+                          className="cms-button"
+                          type="button"
+                          disabled={busyId === item.id}
+                          onClick={() => void markLead(item.id, 'closed')}
+                        >
+                          已结束
+                        </button>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : (
+              <div className="cms-empty" style={{ padding: 24 }}>暂无待联系</div>
+            )}
+          </article>
+
+          <div className="cms-ops-grid cms-ops-grid--funnel">
+            <article className="cms-panel cms-ops-card">
+              <h3>咨询漏斗</h3>
+              <div className="cms-funnel">
+                <FunnelBar label="全部提交" value={data.funnel.submitted} total={data.funnel.submitted} tone="#1d4ed8" />
+                <FunnelBar label="待联系" value={data.funnel.new} total={data.funnel.submitted} tone="#2563eb" />
+                <FunnelBar label="已联系" value={data.funnel.contacted} total={data.funnel.submitted} tone="#047857" />
+                <FunnelBar label="已结束" value={data.funnel.closed} total={data.funnel.submitted} tone="#64748b" />
+                <FunnelBar label="已生成房源" value={data.funnel.converted} total={data.funnel.submitted} tone="#b45309" />
+              </div>
+              <p className="cms-help" style={{ marginTop: 12 }}>
+                联系推进率 {pct(data.funnel.contacted + data.funnel.closed, data.funnel.submitted)}%
+                · 结束率 {pct(data.funnel.closed, data.funnel.submitted)}%
+              </p>
+            </article>
+            <article className="cms-panel cms-ops-card">
+              <h3>按业务线</h3>
+              <div className="cms-table-wrap">
+                <table className="cms-table" style={{ minWidth: 440 }}>
+                  <thead>
+                    <tr>
+                      <th>业务线</th>
+                      <th>合计</th>
+                      <th>待联系</th>
+                      <th>已联系</th>
+                      <th>已结束</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.funnel.byCategory.map(row => (
+                      <tr key={row.category}>
+                        <td><strong>{row.label}</strong></td>
+                        <td>{row.total}</td>
+                        <td>{row.new}</td>
+                        <td>{row.contacted}</td>
+                        <td>{row.closed}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {data.funnel.byCategory.map(row => (
-                        <tr key={row.category}>
-                          <td><strong>{row.label}</strong></td>
-                          <td>{row.total}</td>
-                          <td>{row.new}</td>
-                          <td>{row.contacted}</td>
-                          <td>{row.closed}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </article>
-            </div>
-          </section>
-
-          <p className="cms-help">
-            数据于 {dateFmt.format(new Date(data.generatedAt))} 生成。
-            房源门禁见「质量门禁」；海报与文案见「分享素材」。
-          </p>
-        </>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </article>
+          </div>
+        </section>
       ) : null}
     </main>
   )

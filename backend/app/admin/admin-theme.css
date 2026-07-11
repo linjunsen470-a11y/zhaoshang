@@ -64,8 +64,27 @@
 .cms-button:active, .cms-row-actions button:active, .cms-row-actions a:active { transform: translateY(1px); }
 .cms-button:focus-visible, .cms-row-actions button:focus-visible, .cms-row-actions a:focus-visible, .cms-bulk button:focus-visible, .cms-pagination button:focus-visible, .cms-segments button:focus-visible, .cms-page input:focus-visible, .cms-page select:focus-visible, .cms-page textarea:focus-visible, .cms-nav__link:focus-visible, .cms-icon-button:focus-visible { outline: 3px solid color-mix(in srgb, var(--cms-primary) 30%, transparent); outline-offset: 2px; }
 .cms-button:disabled, .cms-row-actions button:disabled, .cms-pagination button:disabled { cursor: not-allowed; opacity: 0.5; }
-.cms-button--primary, .cms-button--primary:visited { border-color: var(--cms-primary); background: var(--cms-primary); color: #fff !important; }
-.cms-button--primary:hover { border-color: var(--cms-primary-hover); background: var(--cms-primary-hover); color: #fff !important; }
+.cms-button--primary,
+.cms-button--primary:visited,
+.cms-row-actions .cms-button--primary,
+.cms-row-actions button.cms-button--primary {
+  border-color: var(--cms-primary) !important;
+  background: var(--cms-primary) !important;
+  color: #fff !important;
+}
+.cms-button--primary:hover,
+.cms-row-actions .cms-button--primary:hover,
+.cms-row-actions button.cms-button--primary:hover {
+  border-color: var(--cms-primary-hover) !important;
+  background: var(--cms-primary-hover) !important;
+  color: #fff !important;
+}
+/* Prevent Payload theme link/button rules from wiping primary label color until hover. */
+.cms-page .cms-button--primary,
+.cms-page .cms-row-actions .cms-button--primary {
+  color: #fff !important;
+  -webkit-text-fill-color: #fff;
+}
 
 /* Payload 原生主操作按钮也始终保持深蓝底白字。 */
 .btn--style-primary,
@@ -344,6 +363,20 @@ button[type='submit'].btn--style-primary:hover { border-color: var(--cms-primary
 .cms-ops-list li.is-active { background: color-mix(in srgb, var(--cms-primary) 6%, transparent); margin: 0 -8px; padding-left: 8px; padding-right: 8px; border-radius: 8px; }
 .cms-ops-list strong { display: block; font-size: 13px; }
 .cms-ops-list small { display: block; margin-top: 3px; color: var(--cms-muted); font-size: 11px; }
+.cms-ops-lead { min-width: 0; }
+.cms-ops-lead__title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cms-ops-stale {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cms-warning) 16%, var(--cms-surface));
+  color: var(--cms-warning);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
 .cms-ops-select {
   display: grid;
   width: 100%;
