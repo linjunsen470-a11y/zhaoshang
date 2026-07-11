@@ -3,9 +3,9 @@ import { existsSync, readFileSync } from 'fs'
 import { dirname, resolve } from 'path'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
-import { demoFollows, demoLeads, demoMedia, demoProjects } from './demo-data'
+import { demoLeads, demoMedia, demoProjects } from './demo-data'
 
-type Collection = 'media' | 'projects' | 'leads' | 'follow-records'
+type Collection = 'media' | 'projects' | 'leads'
 
 function loadLocalEnv() {
   const currentDir = dirname(fileURLToPath(import.meta.url))
@@ -116,7 +116,6 @@ async function main() {
   const payload = await getPayload({ config })
   const mediaIds = await upsertMedia(payload)
   const projectIds = new Map<string, string | number>()
-  const leadIds = new Map<string, string | number>()
 
   for (const project of demoProjects) {
     const projectImages = project.mediaSeedKeys.map(seedKey => mediaIds.get(seedKey)).filter(Boolean)
@@ -136,9 +135,6 @@ async function main() {
       suitableBusiness: project.suitableBusiness,
       unsuitableBusiness: project.unsuitableBusiness,
       highlights: project.highlights,
-      trafficTags: project.trafficTags,
-      facilityTags: project.facilityTags,
-      advisorTips: project.advisorTips,
       customerInfo: project.customerInfo,
       cooperationMode: project.cooperationMode,
       viewingTimeText: project.viewingTimeText,
@@ -146,7 +142,6 @@ async function main() {
       images: projectImages,
       transferInfo: 'transferInfo' in project ? project.transferInfo : undefined,
       status: project.status,
-      auditStatus: project.auditStatus,
       isRecommended: project.isRecommended,
       sort: project.sort,
       remark: project.remark,
@@ -155,7 +150,7 @@ async function main() {
   }
 
   for (const lead of demoLeads) {
-    const saved = await upsert(payload, 'leads', lead.seedKey, {
+    await upsert(payload, 'leads', lead.seedKey, {
       submitterOpenId: lead.submitterOpenId,
       leadType: lead.leadType,
       sourceChannel: lead.sourceChannel,
@@ -167,27 +162,14 @@ async function main() {
       hasCampusExperience: lead.hasCampusExperience,
       transferDetails: 'transferDetails' in lead ? lead.transferDetails : undefined,
       equipmentDetails: 'equipmentDetails' in lead ? lead.equipmentDetails : undefined,
+      equipmentPublication: 'equipmentPublication' in lead ? lead.equipmentPublication : undefined,
       remark: lead.remark,
       status: lead.status,
-      owner: lead.owner,
       project: 'projectSeedKey' in lead ? projectIds.get(lead.projectSeedKey) : undefined,
     })
-    leadIds.set(lead.seedKey, saved.id)
   }
 
-  for (const follow of demoFollows) {
-    const nextFollowAt = new Date()
-    nextFollowAt.setDate(nextFollowAt.getDate() + follow.nextFollowAtOffsetDays)
-
-    await upsert(payload, 'follow-records', follow.seedKey, {
-      lead: leadIds.get(follow.leadSeedKey),
-      content: follow.content,
-      operatorName: follow.operatorName,
-      nextFollowAt: nextFollowAt.toISOString(),
-    })
-  }
-
-  payload.logger.info(`Seeded ${demoProjects.length} projects, ${demoLeads.length} leads, ${demoFollows.length} follow records.`)
+  payload.logger.info(`Seeded ${demoProjects.length} projects and ${demoLeads.length} inquiries.`)
 }
 
 main().then(() => {

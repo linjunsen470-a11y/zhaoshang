@@ -1,5 +1,6 @@
 const api = require('../services/api.js');
 const upload = require('../services/upload.js');
+const { normalizeAttachments, previewUrls } = require('./attachment.js');
 const {
   clip,
   validatePhone,
@@ -41,7 +42,7 @@ module.exports = Behavior({
             name: lead.name,
             phone: lead.phone,
             remark: lead.remark || '',
-            attachments: lead.attachments || []
+            attachments: normalizeAttachments(lead.attachments)
           });
           if (onLeadLoaded) onLeadLoaded(lead);
         });
@@ -73,7 +74,7 @@ module.exports = Behavior({
       this.setData({ uploadingImages: true });
       try {
         const files = await upload.pickCompressAndUpload(this.data.attachments);
-        this.setData({ attachments: this.data.attachments.concat(files) });
+        this.setData({ attachments: normalizeAttachments(this.data.attachments.concat(files)) });
       } catch (err) {
         console.error(err);
         wx.showToast({ title: '图片上传失败', icon: 'none' });
@@ -89,12 +90,12 @@ module.exports = Behavior({
 
     onPreviewAttachment(e) {
       const current = e.currentTarget.dataset.url;
-      const urls = this.data.attachments.map(item => item.url || item.localPath).filter(Boolean);
-      if (urls.length) wx.previewImage({ urls, current });
+      const urls = previewUrls(this.data.attachments);
+      if (urls.length) wx.previewImage({ urls, current: urls.includes(current) ? current : urls[0] });
     },
 
     validateCommonForm() {
-      const { name, phone, uploadingImages } = this.data;
+      const { name, phone, uploadingImages, isEditMode } = this.data;
       if (uploadingImages) {
         wx.showToast({ title: '图片仍在上传', icon: 'none' });
         return false;
@@ -108,10 +109,12 @@ module.exports = Behavior({
         wx.showToast({ title: '手机号格式不正确', icon: 'none' });
         return false;
       }
-      const privacyError = validatePrivacyConsent(this.data.privacyAccepted);
-      if (privacyError) {
-        wx.showToast({ title: privacyError, icon: 'none' });
-        return false;
+      if (!isEditMode) {
+        const privacyError = validatePrivacyConsent(this.data.privacyAccepted);
+        if (privacyError) {
+          wx.showToast({ title: privacyError, icon: 'none' });
+          return false;
+        }
       }
       return true;
     },

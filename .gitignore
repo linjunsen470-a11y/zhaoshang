@@ -1,44 +1,37 @@
-# dependencies
+# Dependencies
 node_modules/
-backend/node_modules/
 .pnpm-store/
+.pnp
+.pnp.*
 
-# environment files
+# Local environment
 .env
 .env.*
-backend/.env
-backend/.env.*
 !.env.example
-!backend/.env.example
 
-# logs
+# Generated output and caches
+.next/
+out/
+dist/
+build/
+coverage/
+.turbo/
+.cache/
+.eslintcache
+*.tsbuildinfo
+next-env.d.ts
+payload-types.ts
+media/
+uploads/
+
+# Logs
 *.log
 npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# build and cache output
-dist/
-build/
-coverage/
-.next/
-backend/.next/
-backend/out/
-backend/build/
-backend/next-env.d.ts
-*.tsbuildinfo
-.turbo/
-.cache/
-.eslintcache
-
-# Payload generated types and runtime uploads
-backend/payload-types.ts
-backend/media/
-backend/uploads/
-uploads/
-
-# local IDE, agent tooling, and OS files
+# Editor, agent, and OS state
 .DS_Store
 Thumbs.db
 .idea/
@@ -46,13 +39,10 @@ Thumbs.db
 .cursor/
 mcps/
 
-# WeChat DevTools local files
+# WeChat DevTools local output
 project.private.config.json
-mp/project.private.config.json
-mp/miniprogram_npm/
+miniprogram_npm/
 
-# deployment tool state
+# Deployment state and private keys
 .vercel/
-
-# TLS material (never commit private keys)
 *.pem

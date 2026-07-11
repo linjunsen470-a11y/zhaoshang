@@ -5,7 +5,8 @@
   "packageManager": "pnpm@11.5.0",
   "type": "module",
   "scripts": {
-    "dev": "node server.js",
+    "dev": "pnpm --dir backend dev",
+    "mock:api": "node server.js",
     "backend:dev": "pnpm --dir backend dev",
     "backend:build": "pnpm --dir backend build",
     "backend:start": "pnpm --dir backend start",

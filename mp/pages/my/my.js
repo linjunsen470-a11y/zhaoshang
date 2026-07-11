@@ -1,4 +1,5 @@
 const app = getApp();
+const { clip, validatePhone, config } = require('../../utils/form.js');
 
 Page({
   data: {
@@ -36,11 +37,11 @@ Page({
   },
 
   onNicknameInput(e) {
-    this.setData({ editNickname: e.detail.value.trim() });
+    this.setData({ editNickname: clip(e.detail.value, config.MAX_NAME_LENGTH) });
   },
 
   onPhoneInput(e) {
-    this.setData({ editPhone: e.detail.value.trim() });
+    this.setData({ editPhone: clip(e.detail.value, config.MAX_PHONE_LENGTH) });
   },
 
   onCancelEdit() {
@@ -54,7 +55,7 @@ Page({
       wx.showToast({ title: '昵称不能为空', icon: 'none' });
       return;
     }
-    if (!editPhone || !/^1[3-9]\d{9}$/.test(editPhone)) {
+    if (!validatePhone(editPhone)) {
       wx.showToast({ title: '手机号格式不正确', icon: 'none' });
       return;
     }

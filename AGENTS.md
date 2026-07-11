@@ -38,11 +38,15 @@ For lead-related backend changes:
 For Payload admin UX changes:
 
 - Register custom admin components in `backend/app/admin/components/` and wire them through `backend/app/admin/[[...segments]]/importMap.js`.
-- Custom collection views (e.g. kanban) belong under `admin.components.views`, not top-level `admin.views`.
+- Custom workspace views belong under `admin.components.views` with a `path` (e.g. `/workspace/inquiries`). Primary nav routes:
+  - 房源: `/admin`
+  - 咨询收件箱: `/admin/workspace/inquiries`（业务线：房源 / 设备 / 装修；设备公开在详情「处理编辑」中设置）
+  - 系统: `/admin/workspace/system`
+- Workspace custom views (`/workspace/*`) must use `*Route` server components that wrap content with `AdminWorkspaceShell` (`DefaultTemplate`), otherwise the Payload nav/account chrome is missing.
+- Lead detail has two layers: `customerSnapshot` (immutable original) and editable working fields under the「处理编辑」tab. Populate snapshot on create via `buildLeadSnapshot`; never overwrite on update.
+- Keep `leads`, `projects`, `users`, and `media` visible so native document routes work (e.g. 「完整详情」→ `/admin/collections/leads/:id`). Hide default Payload nav groups via `admin-theme.css`; PrimaryNav is the IA.
 - Keep dropdown labels/options aligned with the mini-program via `backend/collections/shared/fieldOptions.ts`.
-- Follow-up records are added in the lead detail timeline UI; keep the `follow-records` collection hidden from the sidebar.
-- Staff roles are `admin`, `advisor`, and `editor`; enforce permissions through `backend/collections/shared/access.ts`.
-- Admin-only lead actions use `POST /api/leads/:id/convert` and `POST /api/leads/:id/sync-merchant`; do not expose these through the mini-program client.
+- Staff roles are `admin` and `editor`; enforce permissions through `backend/collections/shared/access.ts`.
 
 Schema changes against Postgres may require `PAYLOAD_DB_PUSH=true` during build or via `backend/scripts/push-schema.ts`.
 
@@ -66,7 +70,7 @@ Additional security expectations:
 - Mini-program lead updates must not accept CRM fields from the client.
 - Uploaded media IDs must be ownership-checked before being attached to leads. `lead_attachment` media must belong to the current user; `seed_demo` and `admin` media must be rejected.
 - `GET /api/projects/:id` must not expose draft or rejected projects to non-staff callers.
-- Staff-only routes (`POST/PUT/DELETE /api/projects`, `/api/stats`, `/api/leads/:id/follow`, `/api/leads/:id/convert`, `/api/leads/:id/sync-merchant`) must use `getAuthenticatedStaff()`, not the mini-program bearer token.
+- Staff-only routes (`POST/PUT/DELETE /api/projects`, `/api/stats`, `/api/admin/*`) must use `getAuthenticatedStaff()`, not the mini-program bearer token.
 - Production must use `WECHAT_AUTH_MODE=wechat`; do not rely on `X-Dev-OpenId` outside local mock mode.
 - `PAYLOAD_SECRET` is required in production.
 - The mock admin uses `X-Admin-Access` to list all leads from `server.js`; do not treat that as a production pattern.

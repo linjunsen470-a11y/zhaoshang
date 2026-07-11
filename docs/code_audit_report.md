@@ -182,3 +182,37 @@ pie title 功能实现进度
 8. **[已完成]** Loading/Empty/Error CSS 移至 app.wxss（或提取至公共 Behavior 中复用）。
 9. **[已完成]** mock 数据白名单限制与 server.js 接口数据一致性加固。
 10. **[已完成]** 对公共设备列表/咨询 ID 注入 OFFSET 以防业务线索量暴露。
+
+---
+
+## 八、小程序端专项安全与健壮性加固（2026-07-08）
+
+在 2026-07-08 的代码审计中，针对小程序客户端进行了深度安全加固与代码逻辑清理，已全部修复以下问题：
+
+### 1. 动态环境 API 地址切换
+- **文件**：[config.js](file:///d:/work/zhaoshang/mp/config.js)
+- **修复情况**：**[已修复]** 引入 `wx.getAccountInfoSync()` 动态获取环境类型，自动在开发版（`127.0.0.1:3000`）、体验版（`trial-api.zhaoshang.com`）和正式版（`api.zhaoshang.com`）之间切换，杜绝了生产环境误用 HTTP 或开发地址的风险。
+
+### 2. 编辑模式免除隐私勾选拦截
+- **文件**：[formBehavior.js](file:///d:/work/zhaoshang/mp/utils/formBehavior.js)
+- **修复情况**：**[已修复]** `validateCommonForm` 校验逻辑中增加 `!isEditMode` 条件。在编辑模式（勾选框隐藏）下跳过隐私政策同意校验，防止换设备或清除缓存的用户无法保存编辑。
+
+### 3. 上传接口支持 Token 过期刷新与 401 重试
+- **文件**：[upload.js](file:///d:/work/zhaoshang/mp/services/upload.js)
+- **修复情况**：**[已修复]** 为 `wx.uploadFile` 增加 401 响应处理，在 Token 过期时能够清除本地无效 Token、自动刷新登录并重新发起上传请求，保证图片上传链条的稳定性。
+
+### 4. 详情页草稿与下线项目越权展示拦截
+- **文件**：[detail.js](file:///d:/work/zhaoshang/mp/pages/detail/detail.js)
+- **修复情况**：**[已修复]** 在详情页拉取数据后增加二次状态验证，若项目属于 `draft`、`offline` 或 `rejected` 状态，弹窗警告并安全退回，与后端项目权限加固形成完整闭环。
+
+### 5. URL 参数解码异常保护
+- **文件**：[list.js](file:///d:/work/zhaoshang/mp/pages/list/list.js)
+- **修复情况**：**[已修复]** 封装 `safeDecode` 工具函数包裹 `decodeURIComponent`，利用 `try-catch` 降级，避免含有不合规特殊字符的分享链接/小程序二维码导致页面初始化抛错崩溃。
+
+### 6. 统一顾问联系交互，去除冗余代码
+- **文件**：[app.js](file:///d:/work/zhaoshang/mp/app.js) / [detail.js](file:///d:/work/zhaoshang/mp/pages/detail/detail.js)
+- **修复情况**：**[已修复]** 将更加优良的 ActionSheet 拨打/复制顾问手机号逻辑统一合并到全局 `app.js` 的 `callAdvisor` 中，详情页直接通过 `getApp().callAdvisor()` 调用，删除了约 35 行冗余代码。
+
+### 7. 统一个人资料修改与全局规范对齐
+- **文件**：[my.js](file:///d:/work/zhaoshang/mp/pages/my/my.js)
+- **修复情况**：**[已修复]** 个人中心编辑弹窗引入 `form.js`，移除了硬编码的正则和长度限制。修改昵称和手机号输入时动态应用全局配置中的 `clip` 长度裁剪，并统一使用全局 `validatePhone`，提升了逻辑可维护性。

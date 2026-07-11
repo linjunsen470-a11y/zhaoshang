@@ -1,4 +1,5 @@
 const api = require('../../services/api.js');
+const { isPublicProject } = require('../../utils/project.js');
 
 Page({
   data: {
@@ -63,12 +64,12 @@ Page({
       .then(projects => {
         const list = Array.isArray(projects) ? projects : [];
         const favs = wx.getStorageSync('favorites') || [];
-        const activeProjects = list.filter(p => p.status !== 'offline' && p.status !== 'draft');
+        const activeProjects = list.filter(isPublicProject);
         activeProjects.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
 
         this.setData({
-          recommendedList: list
-            .filter(p => p.isRecommended && p.status !== 'offline')
+          recommendedList: activeProjects
+            .filter(p => p.isRecommended)
             .map(p => ({ ...p, isFav: favs.includes(p.id) })),
           latestList: activeProjects.slice(0, 4).map(p => ({ ...p, isFav: favs.includes(p.id) })),
           loading: false,

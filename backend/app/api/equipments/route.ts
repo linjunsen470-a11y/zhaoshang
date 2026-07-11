@@ -1,4 +1,12 @@
-import { getPayloadInstance, json, maskPublicRegion, truncatePublicText, absoluteUrl, LEAD_ID_OFFSET } from '../_shared/payloadApi'
+import {
+  PUBLIC_EQUIPMENT_LEAD_TYPES,
+  getPayloadInstance,
+  json,
+  maskPublicRegion,
+  truncatePublicText,
+  absoluteUrl,
+  LEAD_ID_OFFSET,
+} from '../_shared/payloadApi'
 
 
 export async function GET(request: Request) {
@@ -10,17 +18,20 @@ export async function GET(request: Request) {
   const andConditions: Record<string, unknown>[] = [
     {
       leadType: {
-        in: ['equipment_sell', 'equipment_buy', 'equipment_recycle']
+        in: PUBLIC_EQUIPMENT_LEAD_TYPES
       }
     },
     {
-      status: {
-        not_in: ['closed', 'invalid', 'paused']
+      'equipmentPublication.status': {
+        equals: 'online'
       }
     }
   ]
 
   if (leadType && leadType !== 'all' && leadType !== '全部') {
+    if (!PUBLIC_EQUIPMENT_LEAD_TYPES.includes(leadType)) {
+      return json({ error: '设备类型无效' }, 400)
+    }
     andConditions.push({ leadType: { equals: leadType } })
   }
 
@@ -39,6 +50,7 @@ export async function GET(request: Request) {
     const raw = doc as unknown as Record<string, unknown> & {
       equipmentDetails?: Record<string, unknown>
       attachments?: (Record<string, unknown> | string | number)[]
+      equipmentPublication?: Record<string, unknown>
     }
     const details = raw.equipmentDetails || {}
     return {
@@ -53,14 +65,16 @@ export async function GET(request: Request) {
       businessType: raw.businessType || '',
       budgetRange: raw.budgetRange || '',
       regionPreference: maskPublicRegion(raw.regionPreference),
-      remark: truncatePublicText(raw.remark),
+      remark: truncatePublicText(raw.equipmentPublication?.publicRemark),
       equipmentDetails: raw.equipmentDetails ? {
         equipmentName: details.equipmentName || '',
         specText: details.specText || '',
         equipmentCondition: details.equipmentCondition || '',
         expectedPrice: details.expectedPrice || '',
       } : undefined,
-      attachments: Array.isArray(raw.attachments) ? raw.attachments.map((item) => {
+      attachments: Array.isArray(raw.attachments) ? raw.attachments.filter(item => (
+        item && typeof item === 'object' && (item as Record<string, unknown>).source === 'lead_attachment'
+      )).map((item) => {
         if (item && typeof item === 'object') {
           const media = item as Record<string, unknown>
           return {

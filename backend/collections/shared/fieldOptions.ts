@@ -38,26 +38,30 @@ export const BUSINESS_TYPE_OPTIONS = [
 ]
 
 export const ADMIN_GROUPS = {
-  operations: '业务运营',
-  customers: '客户资产',
+  properties: '房源管理',
+  inquiries: '咨询与供需',
   system: '系统设置',
 } as const
 
 export const LEAD_STATUS_OPTIONS = [
-  { label: '新线索', value: 'new', tone: '#3b82f6' },
-  { label: '已联系', value: 'contacted', tone: '#10b981' },
-  { label: '意向明确', value: 'interested', tone: '#8b5cf6' },
-  { label: '已约看铺', value: 'viewing_scheduled', tone: '#f59e0b' },
-  { label: '已看铺/已核实', value: 'viewed', tone: '#f97316' },
-  { label: '谈判中', value: 'negotiating', tone: '#ec4899' },
-  { label: '已成交', value: 'closed', tone: '#059669' },
-  { label: '无效', value: 'invalid', tone: '#64748b' },
-  { label: '暂缓', value: 'paused', tone: '#94a3b8' },
+  { label: '待联系', value: 'new', tone: '#1d4ed8' },
+  { label: '已联系', value: 'contacted', tone: '#047857' },
+  { label: '已结束', value: 'closed', tone: '#64748b' },
 ] as const
 
-export const LEAD_KANBAN_COLUMNS = LEAD_STATUS_OPTIONS.filter(
-  item => !['invalid', 'paused'].includes(item.value),
-)
+export const PROPERTY_STATUS_OPTIONS = [
+  { label: '草稿', value: 'draft' },
+  { label: '开放中', value: 'online' },
+  { label: '即将开放', value: 'coming' },
+  { label: '已满/已转', value: 'full' },
+  { label: '已下架', value: 'offline' },
+] as const
+
+export const EQUIPMENT_PUBLICATION_OPTIONS = [
+  { label: '待整理', value: 'draft' },
+  { label: '已发布', value: 'online' },
+  { label: '已下架', value: 'offline' },
+] as const
 
 export const LEAD_TYPE_LABELS: Record<string, string> = {
   leasing: '找铺咨询',
@@ -67,4 +71,43 @@ export const LEAD_TYPE_LABELS: Record<string, string> = {
   equipment_recycle: '设备回收',
   brand_cooperation: '品牌合作',
   renovation_consult: '装修咨询',
+}
+
+/** Inbox category buckets used by PrimaryNav + inquiry workspace. */
+export const LEAD_CATEGORY_OPTIONS = [
+  {
+    value: 'property',
+    label: '房源咨询',
+    description: '找铺、转让、品牌合作',
+    types: ['leasing', 'transfer', 'brand_cooperation'] as const,
+    live: true,
+  },
+  {
+    value: 'equipment',
+    label: '设备咨询',
+    description: '出售 / 求购 / 回收',
+    types: ['equipment_sell', 'equipment_buy', 'equipment_recycle'] as const,
+    live: true,
+  },
+  {
+    value: 'renovation',
+    label: '装修咨询',
+    description: '小程序已可提交，后台按收件处理',
+    types: ['renovation_consult'] as const,
+    live: true,
+  },
+] as const
+
+export type LeadCategory = (typeof LEAD_CATEGORY_OPTIONS)[number]['value']
+
+export function leadTypesForCategory(category: string | null | undefined): string[] | null {
+  if (!category || category === 'all') return null
+  const found = LEAD_CATEGORY_OPTIONS.find(item => item.value === category)
+  return found ? [...found.types] : null
+}
+
+export function categoryForLeadType(leadType: string | null | undefined): LeadCategory | '' {
+  if (!leadType) return ''
+  const found = LEAD_CATEGORY_OPTIONS.find(item => (item.types as readonly string[]).includes(leadType))
+  return found?.value || ''
 }

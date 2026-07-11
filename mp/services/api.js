@@ -1,5 +1,7 @@
 const auth = require('./auth.js');
 const config = require('../config.js');
+const { normalizeAttachments } = require('../utils/attachment.js');
+const { isPublicProject } = require('../utils/project.js');
 
 const now = Date.now();
 
@@ -30,7 +32,6 @@ const SEED_PROJECTS = [
       'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=900&q=80'
     ],
     status: 'online',
-    auditStatus: 'approved',
     isRecommended: true,
     sort: 100,
     createdAt: now - 86400000 * 6,
@@ -68,7 +69,6 @@ const SEED_PROJECTS = [
       'https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=900&q=80'
     ],
     status: 'online',
-    auditStatus: 'approved',
     isRecommended: true,
     sort: 90,
     createdAt: now - 86400000 * 5,
@@ -79,7 +79,6 @@ const SEED_PROJECTS = [
 function initLocalStorage() {
   if (!wx.getStorageSync('local_projects')) wx.setStorageSync('local_projects', SEED_PROJECTS);
   if (!wx.getStorageSync('local_leads')) wx.setStorageSync('local_leads', []);
-  if (!wx.getStorageSync('local_follows')) wx.setStorageSync('local_follows', []);
 }
 
 function ensureProjectList(data) {
@@ -96,10 +95,6 @@ function createApiError(statusCode, payload) {
   return error;
 }
 
-function needsAuth(urlPath) {
-  return urlPath.startsWith('/leads') || urlPath.startsWith('/uploads');
-}
-
 function wxRequest(options) {
   return new Promise((resolve, reject) => {
     wx.request({
@@ -111,22 +106,47 @@ function wxRequest(options) {
   });
 }
 
-async function request(urlPath, method = 'GET', data = {}, options = {}) {
-  const retried = Boolean(options.retried);
+function normalizeResponse(urlPath, payload) {
+  if (urlPath === '/projects') return ensureProjectList(payload);
+  if (urlPath.startsWith('/projects/')) return payload;
+  if (urlPath === '/leads' || urlPath === '/equipments') {
+    return (Array.isArray(payload) ? payload : []).map(item => ({
+      ...item,
+      attachments: normalizeAttachments(item.attachments)
+    }));
+  }
+  if (urlPath.startsWith('/leads/') && payload) {
+    return { ...payload, attachments: normalizeAttachments(payload.attachments) };
+  }
+  return payload;
+}
+
+async function request(options) {
+  const {
+    url: urlPath,
+    method = 'GET',
+    data = {},
+    auth: requiresAuth = false,
+    retried = false
+  } = options;
   const appInstance = getApp() || {
     globalData: {
       apiUrl: config.API_URL,
-      useLocalMock: false
+      useLocalMock: config.USE_LOCAL_MOCK,
+      configError: config.CONFIG_ERROR
     }
   };
   initLocalStorage();
 
   if (appInstance.globalData.useLocalMock) {
-    return localFallback(urlPath, method, data);
+    return normalizeResponse(urlPath, localFallback(urlPath, method, data));
+  }
+  if (appInstance.globalData.configError || !appInstance.globalData.apiUrl) {
+    throw new Error(appInstance.globalData.configError || '服务地址未配置');
   }
 
   const header = {};
-  if (needsAuth(urlPath)) {
+  if (requiresAuth) {
     const token = await auth.getAuthToken(retried);
     header.Authorization = `Bearer ${token}`;
   }
@@ -144,17 +164,12 @@ async function request(urlPath, method = 'GET', data = {}, options = {}) {
   }
 
   if (res.statusCode >= 200 && res.statusCode < 300) {
-    const payload = res.data;
-    if (urlPath === '/projects' || urlPath.startsWith('/projects/')) {
-      if (urlPath === '/projects') return ensureProjectList(payload);
-      return payload;
-    }
-    return payload;
+    return normalizeResponse(urlPath, res.data);
   }
 
-  if (res.statusCode === 401 && needsAuth(urlPath) && !retried) {
-    wx.removeStorageSync('authToken');
-    return request(urlPath, method, data, { retried: true });
+  if (res.statusCode === 401 && requiresAuth && !retried) {
+    auth.clearAuth();
+    return request({ ...options, retried: true });
   }
 
   throw createApiError(res.statusCode, res.data);
@@ -179,11 +194,19 @@ function getCurrentOpenId() {
   return wx.getStorageSync('authOpenId') || (app && app.globalData && app.globalData.devOpenId) || 'dev-openid-local';
 }
 
+function hydrateLocalAttachments(value) {
+  const media = wx.getStorageSync('local_media') || [];
+  return (Array.isArray(value) ? value : []).map(item => {
+    const id = item && typeof item === 'object' ? item.id : item;
+    return (item && typeof item === 'object') ? item : (media.find(file => file.id === id) || { id });
+  });
+}
+
 function localFallback(urlPath, method, requestData = {}) {
   if (urlPath === '/projects' && method === 'GET') {
     let list = wx.getStorageSync('local_projects') || [];
     if (requestData.public) {
-      list = list.filter(p => ['online', 'coming', 'full'].includes(p.status) && p.auditStatus !== 'rejected');
+      list = list.filter(isPublicProject);
     }
     if (requestData.opportunityType && requestData.opportunityType !== '全部') list = list.filter(p => (p.opportunityType || 'leasing') === requestData.opportunityType);
     if (requestData.q) {
@@ -205,15 +228,18 @@ function localFallback(urlPath, method, requestData = {}) {
 
   if (urlPath.startsWith('/projects/') && method === 'GET') {
     const id = urlPath.substring('/projects/'.length);
-    return (wx.getStorageSync('local_projects') || []).find(item => item.id === id) || null;
+    const project = (wx.getStorageSync('local_projects') || []).find(item => item.id === id) || null;
+    return isPublicProject(project) ? project : null;
   }
 
   if (urlPath === '/leads' && method === 'GET') {
     const openid = getCurrentOpenId();
-    const follows = wx.getStorageSync('local_follows') || [];
     return (wx.getStorageSync('local_leads') || [])
       .filter(lead => !lead.submitterOpenId || lead.submitterOpenId === openid)
-      .map(lead => ({ ...lead, follows: follows.filter(f => f.leadId === lead.id).sort((a, b) => b.createdAt - a.createdAt) }))
+      .map(lead => ({
+        ...lead,
+        attachments: hydrateLocalAttachments(lead.attachments)
+      }))
       .sort((a, b) => b.createdAt - a.createdAt);
   }
 
@@ -253,7 +279,7 @@ function localFallback(urlPath, method, requestData = {}) {
     let list = wx.getStorageSync('local_leads') || [];
     list = list.filter(l => 
       ['equipment_sell', 'equipment_buy', 'equipment_recycle'].includes(l.leadType) &&
-      !['closed', 'invalid', 'paused'].includes(l.status)
+      l.equipmentPublication && l.equipmentPublication.status === 'online'
     );
     if (requestData.leadType && requestData.leadType !== '全部') {
       list = list.filter(l => l.leadType === requestData.leadType);
@@ -274,9 +300,9 @@ function localFallback(urlPath, method, requestData = {}) {
       businessType: l.businessType,
       budgetRange: l.budgetRange,
       regionPreference: maskRegion(l.regionPreference),
-      remark: truncate(l.remark),
+      remark: truncate(l.equipmentPublication && l.equipmentPublication.publicRemark),
       equipmentDetails: l.equipmentDetails,
-      attachments: l.attachments || [],
+      attachments: hydrateLocalAttachments(l.attachments),
       createdAt: l.createdAt
     })).sort((a, b) => b.createdAt - a.createdAt);
   }
@@ -284,7 +310,6 @@ function localFallback(urlPath, method, requestData = {}) {
   if (urlPath.startsWith('/leads/') && method === 'GET') {
     const id = urlPath.substring('/leads/'.length);
     const openid = getCurrentOpenId();
-    const follows = wx.getStorageSync('local_follows') || [];
     const lead = (wx.getStorageSync('local_leads') || []).find(item => item.id === id);
     if (!lead) return null;
     if (lead.submitterOpenId && lead.submitterOpenId !== openid) {
@@ -292,7 +317,7 @@ function localFallback(urlPath, method, requestData = {}) {
     }
     return {
       ...lead,
-      follows: follows.filter(f => f.leadId === lead.id).sort((a, b) => b.createdAt - a.createdAt)
+      attachments: hydrateLocalAttachments(lead.attachments)
     };
   }
 
@@ -307,7 +332,7 @@ function localFallback(urlPath, method, requestData = {}) {
       throw createApiError(403, { error: '无权修改此线索' });
     }
 
-    const allowed = ['name', 'phone', 'businessType', 'budgetRange', 'regionPreference', 'hasCampusExperience', 'transferDetails', 'equipmentDetails', 'attachments', 'remark', 'leadType', 'sourceChannel', 'projectId'];
+    const allowed = ['name', 'phone', 'businessType', 'budgetRange', 'regionPreference', 'hasCampusExperience', 'transferDetails', 'equipmentDetails', 'renovationDetails', 'attachments', 'remark', 'projectId'];
     const patch = {};
     allowed.forEach(key => {
       if (requestData[key] !== undefined) patch[key] = requestData[key];
@@ -343,15 +368,14 @@ function localFallback(urlPath, method, requestData = {}) {
 }
 
 module.exports = {
-  getProjects: params => request('/projects', 'GET', params),
-  getProjectDetail: id => request(`/projects/${id}`, 'GET'),
-  getLeads: () => request('/leads', 'GET'),
-  getLead: id => request(`/leads/${id}`, 'GET'),
-  submitLead: leadData => request('/leads', 'POST', leadData),
-  submitTransfer: leadData => request('/leads', 'POST', { ...leadData, leadType: 'transfer' }),
-  submitEquipment: leadData => request('/leads', 'POST', leadData),
-  getEquipments: params => request('/equipments', 'GET', params),
-  updateLead: (id, leadData) => request(`/leads/${id}`, 'PUT', leadData),
-  deleteLead: id => request(`/leads/${id}`, 'DELETE')
+  getProjects: params => request({ url: '/projects', data: params }),
+  getProjectDetail: id => request({ url: `/projects/${id}` }),
+  getLeads: () => request({ url: '/leads', auth: true }),
+  getLead: id => request({ url: `/leads/${id}`, auth: true }),
+  submitLead: leadData => request({ url: '/leads', method: 'POST', data: leadData, auth: true }),
+  submitTransfer: leadData => request({ url: '/leads', method: 'POST', data: { ...leadData, leadType: 'transfer' }, auth: true }),
+  submitEquipment: leadData => request({ url: '/leads', method: 'POST', data: leadData, auth: true }),
+  getEquipments: params => request({ url: '/equipments', data: params }),
+  updateLead: (id, leadData) => request({ url: `/leads/${id}`, method: 'PUT', data: leadData, auth: true }),
+  deleteLead: id => request({ url: `/leads/${id}`, method: 'DELETE', auth: true })
 };
-

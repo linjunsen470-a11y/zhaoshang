@@ -1,4 +1,7 @@
 const api = require('../../services/api.js');
+const config = require('../../config.js');
+const { allowedValue, safeDecode } = require('../../utils/navigation.js');
+const { isPublicProject } = require('../../utils/project.js');
 
 Page({
   data: {
@@ -77,12 +80,12 @@ Page({
 
   applyFilterParams(params = {}) {
     const newState = {};
-    if (params.q) newState.keyword = typeof params.q === 'string' ? decodeURIComponent(params.q) : params.q;
-    if (params.projectType) newState.selectedType = typeof params.projectType === 'string' ? decodeURIComponent(params.projectType) : params.projectType;
-    if (params.opportunityType) newState.selectedOpportunityType = typeof params.opportunityType === 'string' ? decodeURIComponent(params.opportunityType) : params.opportunityType;
-    if (params.business) newState.selectedBusiness = typeof params.business === 'string' ? decodeURIComponent(params.business) : params.business;
-    if (params.budget) newState.selectedBudget = typeof params.budget === 'string' ? decodeURIComponent(params.budget) : params.budget;
-    if (params.status) newState.selectedStatus = typeof params.status === 'string' ? decodeURIComponent(params.status) : params.status;
+    if (params.q) newState.keyword = safeDecode(params.q, config.MAX_SEARCH_QUERY_LENGTH);
+    if (params.projectType) newState.selectedType = allowedValue(params.projectType, this.data.types, '全部');
+    if (params.opportunityType) newState.selectedOpportunityType = allowedValue(params.opportunityType, this.data.opportunityTypes.map(item => item.val), '全部');
+    if (params.business) newState.selectedBusiness = allowedValue(params.business, this.data.businesses, '全部');
+    if (params.budget) newState.selectedBudget = allowedValue(params.budget, this.data.budgets, '全部');
+    if (params.status) newState.selectedStatus = allowedValue(params.status, this.data.statuses.map(item => item.val), '全部');
     if (params.recommended) newState.isRecommendedOnly = true;
     if (params.favs) newState.isFavoritesOnly = true;
     return newState;
@@ -109,7 +112,7 @@ Page({
 
     api.getProjects(params)
       .then(res => {
-        let list = (Array.isArray(res) ? res : []).filter(p => p.status !== 'draft' && p.status !== 'offline');
+        let list = (Array.isArray(res) ? res : []).filter(isPublicProject);
         if (this.data.isRecommendedOnly) list = list.filter(p => p.isRecommended);
 
         const favs = wx.getStorageSync('favorites') || [];
@@ -146,7 +149,7 @@ Page({
   },
 
   onSearchInput(e) {
-    this.setData({ keyword: e.detail.value });
+    this.setData({ keyword: safeDecode(e.detail.value, config.MAX_SEARCH_QUERY_LENGTH) });
   },
 
   onSearch() {

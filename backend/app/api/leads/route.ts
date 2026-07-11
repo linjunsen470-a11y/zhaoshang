@@ -1,6 +1,7 @@
 import type { Where } from 'payload'
 import {
   ALL,
+  MINI_PROGRAM_LEAD_TYPES,
   getPayloadInstance,
   json,
   mapLeads,
@@ -29,6 +30,9 @@ export async function GET(request: Request) {
 
   const leadType = searchParams.get('leadType')
   if (leadType && leadType !== ALL) {
+    if (!MINI_PROGRAM_LEAD_TYPES.includes(leadType)) {
+      return json({ error: '线索类型无效' }, 400)
+    }
     andConditions.push({ leadType: { equals: leadType } })
   }
 
@@ -72,6 +76,9 @@ export async function POST(request: Request) {
   }
   if (!/^1[3-9]\d{9}$/.test(String(input.phone))) {
     return json({ error: '手机号格式不正确' }, 400)
+  }
+  if (!MINI_PROGRAM_LEAD_TYPES.includes(String(input.leadType || 'leasing'))) {
+    return json({ error: '线索类型无效' }, 400)
   }
 
   const attachmentError = await validateAttachmentOwnership(input.attachments, auth.openid)

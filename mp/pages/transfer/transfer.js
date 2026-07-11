@@ -1,6 +1,8 @@
 const api = require('../../services/api.js');
 const formBehavior = require('../../utils/formBehavior.js');
 const { clip, config } = require('../../utils/form.js');
+const { attachmentIds } = require('../../utils/attachment.js');
+const { safeIdentifier } = require('../../utils/navigation.js');
 
 Page({
   behaviors: [formBehavior],
@@ -14,7 +16,7 @@ Page({
   },
 
   onLoad(options) {
-    this.initCommonData(options, lead => {
+    this.initCommonData({ ...options, leadId: safeIdentifier(options.leadId) }, lead => {
       const details = lead.transferDetails || {};
       this.setData({
         locationText: details.locationText || lead.regionPreference || '',
@@ -65,7 +67,7 @@ Page({
         remainingTerm,
         includesEquipment
       },
-      attachments: attachments.map(item => item.id)
+      attachments: attachmentIds(attachments)
     };
 
     if (this.data.isEditMode) {

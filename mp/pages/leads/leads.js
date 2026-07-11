@@ -1,5 +1,7 @@
 const api = require('../../services/api.js');
 const { getLeadTypeLabel } = require('../../utils/form.js');
+const { normalizeAttachments, previewUrls } = require('../../utils/attachment.js');
+const { allowedValue, encodeRouteValue } = require('../../utils/navigation.js');
 
 function formatDateTime(value) {
   const date = new Date(value || Date.now());
@@ -22,20 +24,12 @@ function formatLeadId(id) {
 Page({
   data: {
     phone: '',
-    openId: '',
     leadsList: [],
-    expandedMap: {},
     loading: true,
     statusMap: {
       new: { name: '已提交', color: '#3b82f6', bg: '#eff6ff' },
       contacted: { name: '已联系', color: '#10b981', bg: '#ecfdf5' },
-      interested: { name: '意向明确', color: '#8b5cf6', bg: '#f5f3ff' },
-      viewing_scheduled: { name: '已约看铺', color: '#f59e0b', bg: '#fef3c7' },
-      viewed: { name: '已看铺', color: '#f97316', bg: '#fff7ed' },
-      negotiating: { name: '合同谈判中', color: '#ec4899', bg: '#fdf2f8' },
-      closed: { name: '已签约成交', color: '#059669', bg: '#d1fae5' },
-      invalid: { name: '无效咨询', color: '#64748b', bg: '#f1f5f9' },
-      paused: { name: '已暂缓', color: '#94a3b8', bg: '#f8fafc' }
+      closed: { name: '已结束', color: '#64748b', bg: '#f1f5f9' }
     }
   },
 
@@ -60,22 +54,17 @@ Page({
     this.setData({ loading: true });
     const userInfo = wx.getStorageSync('userInfo') || getApp().globalData.userInfo || {};
     const phone = userInfo.phone || '';
-    const openId = wx.getStorageSync('authOpenId') || getApp().globalData.devOpenId || '';
-    this.setData({ phone, openId });
+    this.setData({ phone });
 
     api.getLeads()
       .then(res => {
         const formatted = (res || []).map(lead => ({
           ...lead,
+          attachments: normalizeAttachments(lead.attachments),
           displayId: formatLeadId(lead.id),
           leadTypeLabel: getLeadTypeLabel(lead.leadType),
           statusInfo: this.data.statusMap[lead.status] || this.data.statusMap.new,
-          formattedTime: formatDateTime(lead.createdAt),
-          follows: (lead.follows || []).map(f => ({
-            ...f,
-            formattedTime: formatDateTime(f.createdAt),
-            nextFollowText: f.nextFollowAt ? formatDateTime(f.nextFollowAt).slice(0, 10) : ''
-          }))
+          formattedTime: formatDateTime(lead.createdAt)
         }));
 
         this.setData({
@@ -92,13 +81,6 @@ Page({
       });
   },
 
-  onToggleExpand(e) {
-    const id = e.currentTarget.dataset.id;
-    const map = { ...this.data.expandedMap };
-    map[id] = !map[id];
-    this.setData({ expandedMap: map });
-  },
-
   onGoToProject(e) {
     const id = e.currentTarget.dataset.id;
     if (id) {
@@ -110,22 +92,22 @@ Page({
     const leadId = e.currentTarget.dataset.leadId;
     const current = e.currentTarget.dataset.url;
     const lead = this.data.leadsList.find(item => item.id === leadId);
-    const urls = ((lead && lead.attachments) || []).map(item => item.url).filter(Boolean);
-    if (urls.length) wx.previewImage({ urls, current });
+    const urls = previewUrls((lead && lead.attachments) || []);
+    if (urls.length) wx.previewImage({ urls, current: urls.includes(current) ? current : urls[0] });
   },
 
   onEditLead(e) {
     const id = e.currentTarget.dataset.id;
-    const type = e.currentTarget.dataset.type || 'leasing';
+    const type = allowedValue(e.currentTarget.dataset.type, ['leasing', 'transfer', 'equipment_sell', 'equipment_buy', 'equipment_recycle', 'renovation_consult'], 'leasing');
     let url = '';
     if (type === 'transfer') {
-      url = `/pages/transfer/transfer?leadId=${id}`;
+      url = `/pages/transfer/transfer?leadId=${encodeRouteValue(id)}`;
     } else if (type.startsWith('equipment')) {
-      url = `/pages/equipment/equipment?leadId=${id}`;
+      url = `/pages/equipment/equipment?leadId=${encodeRouteValue(id)}`;
     } else if (type === 'renovation_consult') {
-      url = `/pages/renovation/renovation?leadId=${id}`;
+      url = `/pages/renovation/renovation?leadId=${encodeRouteValue(id)}`;
     } else {
-      url = `/pages/apply/apply?leadId=${id}`;
+      url = `/pages/apply/apply?leadId=${encodeRouteValue(id)}`;
     }
     wx.navigateTo({ url });
   },

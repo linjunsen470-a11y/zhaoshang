@@ -1,4 +1,6 @@
 const api = require('../../services/api.js');
+const { isPublicProject } = require('../../utils/project.js');
+const { encodeRouteValue, safeIdentifier } = require('../../utils/navigation.js');
 
 Page({
   data: {
@@ -12,7 +14,11 @@ Page({
   },
 
   onLoad(options) {
-    const id = options.id;
+    const id = safeIdentifier(options.id);
+    if (!id) {
+      wx.showToast({ title: '项目参数无效', icon: 'none' });
+      return;
+    }
     this.setData({ projectId: id });
     this.loadDetail(id);
     this.checkFavoriteStatus(id);
@@ -28,7 +34,7 @@ Page({
     this.setData({ loading: true, loadError: false });
     api.getProjectDetail(id)
       .then(project => {
-        if (!project) {
+        if (!isPublicProject(project)) {
           wx.showModal({
             title: '提示',
             content: '项目已下架或不存在',
@@ -98,45 +104,12 @@ Page({
   },
 
   onCallAdvisor() {
-    const phone = getApp().globalData.advisorPhone;
-    wx.showActionSheet({
-      itemList: [`呼叫顾问：${phone}`, '复制电话 (微信同号)'],
-      success: (res) => {
-        if (res.tapIndex === 0) {
-          wx.makePhoneCall({
-            phoneNumber: phone,
-            fail: () => {
-              wx.setClipboardData({
-                data: phone,
-                success: () => {
-                  wx.showToast({
-                    title: '拨打失败，号码已复制',
-                    icon: 'none',
-                    duration: 2500
-                  });
-                }
-              });
-            }
-          });
-        } else if (res.tapIndex === 1) {
-          wx.setClipboardData({
-            data: phone,
-            success: () => {
-              wx.showToast({
-                title: '已复制，可去微信添加好友',
-                icon: 'none',
-                duration: 2000
-              });
-            }
-          });
-        }
-      }
-    });
+    getApp().callAdvisor();
   },
 
   onGoToConsult() {
     if (this.data.project) {
-      wx.navigateTo({ url: `/pages/apply/apply?projectId=${this.data.projectId}` });
+      wx.navigateTo({ url: `/pages/apply/apply?projectId=${encodeRouteValue(this.data.projectId)}` });
     }
   },
 
@@ -156,7 +129,7 @@ Page({
   onShareAppMessage() {
     return {
       title: this.data.project ? `校园商铺招商：${this.data.project.title}` : '学校商铺招商',
-      path: `/pages/detail/detail?id=${this.data.projectId}`
+      path: `/pages/detail/detail?id=${encodeRouteValue(this.data.projectId)}`
     };
   }
 });

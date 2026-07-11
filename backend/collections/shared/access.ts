@@ -2,31 +2,27 @@ import type { PayloadRequest } from 'payload'
 
 type StaffUser = {
   id?: string | number
-  role?: 'admin' | 'advisor' | 'editor' | string
+  role?: 'admin' | 'editor' | string
 }
 
-function getRole(user: PayloadRequest['user']): string {
+export function getStaffRole(user: PayloadRequest['user']): string {
   if (!user || typeof user !== 'object') return ''
-  return String((user as StaffUser).role || 'advisor')
+  return String((user as StaffUser).role || 'editor')
 }
 
 
 export function isAdminUser(user: PayloadRequest['user']): boolean {
-  return getRole(user) === 'admin'
+  return getStaffRole(user) === 'admin'
 }
 
 export function canManageProjects(user: PayloadRequest['user']): boolean {
-  const role = getRole(user)
-  return role === 'admin' || role === 'editor' || role === 'advisor'
+  const role = getStaffRole(user)
+  return role === 'admin' || role === 'editor'
 }
 
 export function canManageLeads(user: PayloadRequest['user']): boolean {
-  const role = getRole(user)
-  return role === 'admin' || role === 'advisor'
-}
-
-export function canManageMerchants(user: PayloadRequest['user']): boolean {
-  return canManageLeads(user)
+  const role = getStaffRole(user)
+  return role === 'admin' || role === 'editor'
 }
 
 export function isStaffUser(user: PayloadRequest['user']): boolean {

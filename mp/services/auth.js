@@ -1,10 +1,13 @@
 const config = require('../config.js');
+let loginPromise = null;
 
 function getAppConfig() {
-  return (getApp && getApp()) ? getApp().globalData : {
+  const app = typeof getApp === 'function' ? getApp() : null;
+  return app ? app.globalData : {
     apiUrl: config.API_URL,
-    devOpenId: 'dev-openid-local',
-    useLocalMock: false
+    devOpenId: config.DEV_OPEN_ID,
+    useLocalMock: config.USE_LOCAL_MOCK,
+    configError: config.CONFIG_ERROR
   };
 }
 
@@ -24,8 +27,11 @@ function wxLogin() {
 }
 
 function postLogin(code, config) {
-  const useDevHeaders = Boolean(config.useLocalMock);
-  const devOpenId = config.devOpenId || 'dev-openid-local';
+  if (config.configError || !config.apiUrl) {
+    return Promise.reject(new Error(config.configError || '服务地址未配置'));
+  }
+  const useDevHeaders = config.envVersion === 'develop' && Boolean(config.devOpenId);
+  const devOpenId = useDevHeaders ? config.devOpenId : '';
   const headers = {};
   const payload = { code };
 
@@ -57,8 +63,11 @@ function postLogin(code, config) {
 }
 
 async function getAuthToken(forceRefresh = false) {
-  const config = getAppConfig();
-  if (config.useLocalMock) return '';
+  const appConfig = getAppConfig();
+  if (appConfig.useLocalMock) return '';
+  if (appConfig.configError || !appConfig.apiUrl) {
+    throw new Error(appConfig.configError || '服务地址未配置');
+  }
 
   const cached = wx.getStorageSync('authToken');
   const expiresAt = wx.getStorageSync('authTokenExpiresAt');
@@ -68,11 +77,24 @@ async function getAuthToken(forceRefresh = false) {
 
   if (cached && !isExpired && !forceRefresh) return cached;
 
-  const code = await wxLogin();
-  return postLogin(code, config);
+  if (!loginPromise) {
+    loginPromise = wxLogin()
+      .then(code => postLogin(code, appConfig))
+      .finally(() => {
+        loginPromise = null;
+      });
+  }
+  return loginPromise;
+}
+
+function clearAuth() {
+  wx.removeStorageSync('authToken');
+  wx.removeStorageSync('authOpenId');
+  wx.removeStorageSync('authTokenExpiresAt');
 }
 
 
 module.exports = {
+  clearAuth,
   getAuthToken
 };

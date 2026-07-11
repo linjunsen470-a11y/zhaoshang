@@ -11,7 +11,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed:demo": "tsx scripts/seed-demo.ts"
+    "test:cms": "node --test --test-isolation=none tests/cms.test.mjs",
+    "seed:demo": "tsx scripts/seed-demo.ts",
+    "migrate:property-cms": "tsx scripts/migrate-property-cms.ts",
+    "schema:ensure-leads": "node scripts/ensure-leads-schema.mjs",
+    "schema:push": "tsx scripts/push-schema.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.85.1",

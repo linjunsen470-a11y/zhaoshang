@@ -7,7 +7,7 @@
   </view>
 
   <view class="top-notice-bar" style="background: #fffbeb; border-bottom: 1rpx solid #fef3c7; padding: 12rpx 30rpx; font-size: 22rpx; color: #d97706; text-align: center;" wx:if="{{phone && leadsList.length > 0}}">
-    招商人员正在接入，请保持电话畅通。
+    后续沟通以微信或电话为准，请保持联系方式畅通。
   </view>
 
   <view class="leads-body">
@@ -73,7 +73,7 @@
             </view>
 
             <view class="lead-attachments" wx:if="{{item.attachments && item.attachments.length}}">
-              <image class="lead-attachment-img" wx:for="{{item.attachments}}" wx:for-item="img" wx:key="id" src="{{img.url}}" mode="aspectFill" bindtap="onPreviewAttachment" data-lead-id="{{item.id}}" data-url="{{img.url}}" />
+              <image class="lead-attachment-img" wx:for="{{item.attachments}}" wx:for-item="img" wx:key="id" src="{{img.displayUrl}}" mode="aspectFill" bindtap="onPreviewAttachment" data-lead-id="{{item.id}}" data-url="{{img.displayUrl}}" />
             </view>
           </view>
 
@@ -87,31 +87,6 @@
             <button class="btn btn-outline" style="flex:1; font-size:24rpx; padding:12rpx 0; height:auto; color: #ef4444; border-color: #ef4444;" bindtap="onDeleteLead" data-id="{{item.id}}">删除</button>
           </view>
 
-          <view class="follow-timeline-section" wx:if="{{item.follows && item.follows.length > 0}}">
-            <view class="timeline-toggle-bar flex align-center justify-between" bindtap="onToggleExpand" data-id="{{item.id}}">
-              <view class="flex align-center">
-                <text class="timeline-icon">●</text>
-                <text class="timeline-summary-lbl">招商顾问跟进进度（{{item.follows.length}}条记录）</text>
-              </view>
-              <text class="toggle-arrow">{{expandedMap[item.id] ? '收起' : '展开'}}</text>
-            </view>
-
-            <view class="timeline-content" wx:if="{{expandedMap[item.id]}}">
-              <view class="timeline-node" wx:for="{{item.follows}}" wx:for-item="node" wx:key="id">
-                <view class="node-dot"></view>
-                <view class="node-body">
-                  <view class="node-time-header flex justify-between">
-                    <text class="node-operator">{{node.operatorName || '招商专员'}}</text>
-                    <text class="node-time">{{node.formattedTime}}</text>
-                  </view>
-                  <view class="node-message">{{node.content}}</view>
-                  <view class="node-next-follow" wx:if="{{node.nextFollowText}}">
-                    预约下次沟通：{{node.nextFollowText}}
-                  </view>
-                </view>
-              </view>
-            </view>
-          </view>
         </view>
       </view>
 

@@ -9,16 +9,22 @@ App({
     },
     advisorPhone: config.ADVISOR_PHONE,
     apiUrl: config.API_URL,
-    devOpenId: 'dev-openid-local',
-    // Plan A (default): Payload backend at apiUrl.
-    // Start Postgres, then run `pnpm backend:seed` once and `pnpm backend:dev`.
-    // Set true only for offline demo without a running backend.
-    useLocalMock: false
+    envVersion: config.ENV_VERSION,
+    devOpenId: config.DEV_OPEN_ID,
+    configError: config.CONFIG_ERROR,
+    useLocalMock: config.USE_LOCAL_MOCK
   },
 
   onLaunch() {
     const favs = wx.getStorageSync('favorites');
     if (!favs) wx.setStorageSync('favorites', []);
+    if (config.CONFIG_ERROR) {
+      wx.showModal({
+        title: '运行环境未配置',
+        content: config.CONFIG_ERROR,
+        showCancel: false
+      });
+    }
   },
 
   onError(message) {
@@ -27,36 +33,38 @@ App({
 
   callAdvisor(phoneNumber) {
     const phone = phoneNumber || this.globalData.advisorPhone || config.ADVISOR_PHONE;
-    wx.showModal({
-      title: '联系招商顾问',
-      content: `确认拨打 ${phone} 吗？`,
-      confirmText: '立即拨打',
-      cancelText: '取消',
-      success: res => {
-        if (!res.confirm) return;
-        wx.makePhoneCall({
-          phoneNumber: phone,
-          success: () => wx.showToast({ title: '正在拨打...', icon: 'none', duration: 1500 }),
-          fail: () => {
-            wx.setClipboardData({
-              data: phone,
-              success: () => {
-                wx.showToast({
-                  title: '拨打失败，号码已复制',
-                  icon: 'none',
-                  duration: 2500
-                });
-              },
-              fail: () => {
-                wx.showToast({
-                  title: `请手动拨打 ${phone}`,
-                  icon: 'none',
-                  duration: 2800
-                });
-              }
-            });
-          }
-        });
+    wx.showActionSheet({
+      itemList: [`呼叫顾问：${phone}`, '复制电话 (微信同号)'],
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          wx.makePhoneCall({
+            phoneNumber: phone,
+            success: () => wx.showToast({ title: '正在拨打...', icon: 'none', duration: 1500 }),
+            fail: () => {
+              wx.setClipboardData({
+                data: phone,
+                success: () => {
+                  wx.showToast({
+                    title: '拨打失败，号码已复制',
+                    icon: 'none',
+                    duration: 2500
+                  });
+                }
+              });
+            }
+          });
+        } else if (res.tapIndex === 1) {
+          wx.setClipboardData({
+            data: phone,
+            success: () => {
+              wx.showToast({
+                title: '已复制，可去微信添加好友',
+                icon: 'none',
+                duration: 2000
+              });
+            }
+          });
+        }
       }
     });
   }

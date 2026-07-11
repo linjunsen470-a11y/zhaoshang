@@ -19,16 +19,12 @@
       "customerInfo": "覆盖约 1.2 万名在校师生，就餐高峰集中，适合高出餐效率品类。",
       "cooperationMode": "纯租金模式，按年缴纳，押二付一。",
       "viewingTimeText": "工作日 14:00-17:00，需提前一天预约。",
-      "advisorTips": "适合有校园出餐经验的轻餐饮团队，不建议做重油烟品类。",
-      "trafficTags": ["食堂二楼", "午晚餐高峰", "宿舍动线"],
-      "facilityTags": ["给排水", "排烟", "独立电表"],
       "coverImage": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80",
       "images": [
         "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
         "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80"
       ],
       "status": "online",
-      "auditStatus": "approved",
       "isRecommended": true,
       "sort": 100,
       "remark": "黄金位置，优先推荐。",
@@ -54,16 +50,12 @@
       "customerInfo": "石牌校区周边商业成熟，学生消费意愿较高。",
       "cooperationMode": "固定租金，三年起签，无历史转让费。",
       "viewingTimeText": "周一至周日均可预约看铺。",
-      "advisorTips": "适合品牌化茶饮、咖啡、轻烘焙，不适合明火重餐。",
-      "trafficTags": ["商业街", "宿舍区入口", "高频复购"],
-      "facilityTags": ["上下水", "基础排烟", "门头展示"],
       "coverImage": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=400&q=80",
       "images": [
         "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80",
         "https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=800&q=80"
       ],
       "status": "online",
-      "auditStatus": "approved",
       "isRecommended": true,
       "sort": 90,
       "remark": "学校核心街铺，人流量大。",
@@ -89,15 +81,11 @@
       "customerInfo": "大学城校区学生基数大，零售、文具、打印、零食需求稳定。",
       "cooperationMode": "固定租金，押三付一，两年一签。",
       "viewingTimeText": "提前半天预约，由招商经理带入校。",
-      "advisorTips": "适合低油烟、高复购服务型业态。",
-      "trafficTags": ["宿舍动线", "生活区", "超市旁"],
-      "facilityTags": ["独立电表", "门头位", "无燃气"],
       "coverImage": "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=400&q=80",
       "images": [
         "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=800&q=80"
       ],
       "status": "online",
-      "auditStatus": "approved",
       "isRecommended": false,
       "sort": 80,
       "remark": "适合校园服务类项目。",
@@ -123,9 +111,6 @@
       "customerInfo": "原店有稳定学生社群客流，适合接手轻餐饮或烘焙类。",
       "cooperationMode": "店主委托转让，平台协助约看与资料核验。",
       "viewingTimeText": "需提前预约，避免影响原店经营。",
-      "advisorTips": "转让前必须确认原合同是否允许变更经营主体。",
-      "trafficTags": ["商业街中段", "社团活动区", "晚间客流"],
-      "facilityTags": ["含设备", "精装", "上下水"],
       "coverImage": "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=400&q=80",
       "images": [
         "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80"
@@ -139,7 +124,6 @@
         "contractTransferAllowed": "需校方确认"
       },
       "status": "online",
-      "auditStatus": "approved",
       "isRecommended": true,
       "sort": 75,
       "remark": "委托转让示例。",
@@ -162,7 +146,7 @@
       "hasCampusExperience": true,
       "remark": "想尽快进场，希望确认 380V 动力电和排烟条件。",
       "status": "new",
-      "owner": "招商顾问小王",
+      "internalNote": "",
       "createdAt": 1781851600000,
       "updatedAt": 1781851600000
     },
@@ -180,20 +164,9 @@
       "hasCampusExperience": false,
       "remark": "想接手带装修设备的店铺，先了解合同限制。",
       "status": "contacted",
-      "owner": "招商顾问小王",
+      "internalNote": "",
       "createdAt": 1781852600000,
       "updatedAt": 1781853600000
-    }
-  ],
-  "followRecords": [
-    {
-      "id": "f1",
-      "leadId": "l2",
-      "content": "已电话沟通，客户接受转让费区间，下一步约店主提供合同摘要和设备清单。",
-      "nextFollowAt": 1782284400000,
-      "operatorId": "admin",
-      "operatorName": "招商顾问小王",
-      "createdAt": 1781853600000
     }
   ]
 }

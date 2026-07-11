@@ -7,10 +7,8 @@ import sharp from 'sharp'
 
 import { Projects } from './collections/Projects'
 import { Leads } from './collections/Leads'
-import { FollowRecords } from './collections/FollowRecords'
 import { Media } from './collections/Media'
 import { Users } from './collections/Users'
-import { MerchantProfiles } from './collections/MerchantProfiles'
 
 // For Docker / VPS deployment we will use Postgres
 // Local dev can use env var or fallback
@@ -27,11 +25,29 @@ export default buildConfig({
   admin: {
     user: 'users',
     meta: {
-      title: '校园商铺招商管理台',
-      description: '管理招商项目、咨询线索与商户档案',
+      title: '校园商铺房源管理',
+      description: '快速整理、修改和上架校园商铺房源',
     },
     components: {
-      beforeDashboard: ['@/app/admin/components/OperationsDashboard'],
+      beforeNavLinks: ['@/app/admin/components/PrimaryNav'],
+      views: {
+        dashboard: {
+          Component: '@/app/admin/components/PropertyWorkspace',
+        },
+        inquiryInbox: {
+          // Server route wrappers supply DefaultTemplate (nav / account chrome).
+          Component: '@/app/admin/components/InquiryInboxRoute',
+          path: '/workspace/inquiries',
+        },
+        equipmentWorkspace: {
+          Component: '@/app/admin/components/EquipmentWorkspaceRoute',
+          path: '/workspace/equipment',
+        },
+        systemSettings: {
+          Component: '@/app/admin/components/SystemSettingsRoute',
+          path: '/workspace/system',
+        },
+      },
     },
     importMap: {
       baseDir: dirname,
@@ -44,10 +60,8 @@ export default buildConfig({
   collections: [
     Projects,
     Leads,
-    MerchantProfiles,
     Media,
     Users,
-    FollowRecords,
   ],
   editor: lexicalEditor({}),
   secret: secret || 'your-fallback-dev-secret-for-local-demo',
