@@ -1,12 +1,5 @@
-import type { AdminViewServerProps } from 'payload'
-import { AdminWorkspaceShell } from './AdminWorkspaceShell'
-import OpsWorkbenchView from './OpsWorkbenchView'
-
-/** Dashboard / ops landing — team todos, funnel, quality gates, share kit. */
-export default function OpsWorkbenchRoute(props: AdminViewServerProps) {
-  return (
-    <AdminWorkspaceShell {...props}>
-      <OpsWorkbenchView />
-    </AdminWorkspaceShell>
-  )
-}
+/**
+ * Dashboard component: Payload already wraps the dashboard with DefaultTemplate.
+ * Do NOT use AdminWorkspaceShell here — that causes double nav/chrome.
+ */
+export { default } from './OpsWorkbenchView'

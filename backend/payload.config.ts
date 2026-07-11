@@ -32,11 +32,19 @@ export default buildConfig({
       beforeNavLinks: ['@/app/admin/components/PrimaryNav'],
       views: {
         dashboard: {
-          // Team ops landing: todos, funnel, quality gates, share kit
+          // No AdminWorkspaceShell — dashboard already has DefaultTemplate.
           Component: '@/app/admin/components/OpsWorkbenchRoute',
         },
+        qualityWorkspace: {
+          Component: '@/app/admin/components/QualityWorkspaceRoute',
+          path: '/workspace/quality',
+        },
+        shareWorkspace: {
+          Component: '@/app/admin/components/ShareWorkspaceRoute',
+          path: '/workspace/share',
+        },
         inquiryInbox: {
-          // Server route wrappers supply DefaultTemplate (nav / account chrome).
+          // Custom multi-segment paths need AdminWorkspaceShell for chrome.
           Component: '@/app/admin/components/InquiryInboxRoute',
           path: '/workspace/inquiries',
         },

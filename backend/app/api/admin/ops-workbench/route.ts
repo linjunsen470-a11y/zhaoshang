@@ -1,6 +1,6 @@
 import type { Where } from 'payload'
 import { getAuthenticatedStaff } from '../../_shared/auth'
-import { getPayloadInstance, json } from '../../_shared/payloadApi'
+import { absoluteUrl, getPayloadInstance, json } from '../../_shared/payloadApi'
 import { getProjectMissingFields } from '../../../../collections/Projects'
 import {
   LEAD_CATEGORY_OPTIONS,
@@ -85,8 +85,8 @@ export async function GET() {
       payload.find({
         collection: 'projects',
         where: { status: { in: ['online', 'coming'] } },
-        limit: 12,
-        depth: 0,
+        limit: 20,
+        depth: 1,
         overrideAccess: true,
         sort: '-updatedAt',
       }),
@@ -196,6 +196,12 @@ export async function GET() {
       share: {
         projects: shareCandidates.docs.map(doc => {
           const row = asRecord(doc)
+          const cover = row.coverImage
+          let coverImage = ''
+          if (typeof cover === 'string' && /^https?:\/\//i.test(cover)) coverImage = cover
+          else if (cover && typeof cover === 'object' && 'url' in cover && typeof (cover as { url?: unknown }).url === 'string') {
+            coverImage = absoluteUrl(String((cover as { url: string }).url))
+          }
           const material = buildShareMaterial({
             id: row.id,
             title: String(row.title || ''),
@@ -207,6 +213,7 @@ export async function GET() {
             projectType: String(row.projectType || ''),
             opportunityType: String(row.opportunityType || ''),
             status: String(row.status || ''),
+            coverImage,
           })
           return {
             id: String(row.id),
@@ -214,7 +221,11 @@ export async function GET() {
             status: String(row.status || ''),
             schoolName: String(row.schoolName || ''),
             district: String(row.district || ''),
+            areaText: String(row.areaText || ''),
+            feeText: String(row.feeText || ''),
+            opportunityType: String(row.opportunityType || ''),
             ...material,
+            coverImage: material.coverImage || coverImage,
           }
         }),
       },

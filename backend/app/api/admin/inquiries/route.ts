@@ -117,13 +117,16 @@ export async function PATCH(request: Request) {
     }
 
     const payload = await getPayloadInstance()
+    const data: { status: string; internalNote?: string } = { status }
+    // Only overwrite note when the client explicitly sends the field
+    if (body.internalNote !== undefined) {
+      data.internalNote = String(body.internalNote || '').slice(0, 2000)
+    }
+
     const doc = await payload.update({
       collection: 'leads',
       id,
-      data: {
-        status,
-        internalNote: String(body.internalNote || '').slice(0, 2000),
-      },
+      data,
       overrideAccess: true,
     })
 

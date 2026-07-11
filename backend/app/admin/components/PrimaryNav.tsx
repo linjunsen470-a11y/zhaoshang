@@ -5,17 +5,26 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 /**
- * Staff IA:
- * - 运营工作台: team todos / funnel / quality / share (dashboard)
- * - 房源管理: property list & publish
- * - 咨询收件箱: lead inbox by business line
- * - 系统设置: admin-only
+ * Three ops modules are first-class nav items (not nested under one page):
+ * - 运营工作台: team todos + funnel
+ * - 质量门禁: publish gates
+ * - 分享素材: copy + poster
  */
 const links = [
   {
     label: '运营工作台',
     href: '/admin',
     match: (pathname: string) => pathname === '/admin',
+  },
+  {
+    label: '质量门禁',
+    href: '/admin/workspace/quality',
+    match: (pathname: string) => pathname.startsWith('/admin/workspace/quality'),
+  },
+  {
+    label: '分享素材',
+    href: '/admin/workspace/share',
+    match: (pathname: string) => pathname.startsWith('/admin/workspace/share'),
   },
   {
     label: '房源管理',
