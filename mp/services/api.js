@@ -106,14 +106,17 @@ function wxRequest(options) {
   });
 }
 
-function normalizeResponse(urlPath, payload) {
+function normalizeResponse(urlPath, payload, method = 'GET') {
   if (urlPath === '/projects') return ensureProjectList(payload);
   if (urlPath.startsWith('/projects/')) return payload;
-  if (urlPath === '/leads' || urlPath === '/equipments') {
+  if ((urlPath === '/leads' || urlPath === '/equipments') && method === 'GET') {
     return (Array.isArray(payload) ? payload : []).map(item => ({
       ...item,
       attachments: normalizeAttachments(item.attachments)
     }));
+  }
+  if (urlPath === '/leads' && payload) {
+    return { ...payload, attachments: normalizeAttachments(payload.attachments) };
   }
   if (urlPath.startsWith('/leads/') && payload) {
     return { ...payload, attachments: normalizeAttachments(payload.attachments) };
@@ -139,7 +142,7 @@ async function request(options) {
   initLocalStorage();
 
   if (appInstance.globalData.useLocalMock) {
-    return normalizeResponse(urlPath, localFallback(urlPath, method, data));
+    return normalizeResponse(urlPath, localFallback(urlPath, method, data), method);
   }
   if (appInstance.globalData.configError || !appInstance.globalData.apiUrl) {
     throw new Error(appInstance.globalData.configError || '服务地址未配置');
@@ -164,7 +167,7 @@ async function request(options) {
   }
 
   if (res.statusCode >= 200 && res.statusCode < 300) {
-    return normalizeResponse(urlPath, res.data);
+    return normalizeResponse(urlPath, res.data, method);
   }
 
   if (res.statusCode === 401 && requiresAuth && !retried) {

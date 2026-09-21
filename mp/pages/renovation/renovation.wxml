@@ -1,4 +1,4 @@
-<view class="container form-page">
+<view class="container form-page e2e-renovation-form" data-test="renovation-form">
   <view class="form-header card">
     <view class="form-title">{{isEditMode ? '修改装修需求' : '商铺装修咨询'}}</view>
     <view class="form-desc">提交您的店铺面积、预算及风格要求，我们的装修顾问会为您推荐专业高效的校园施工团队。</view>

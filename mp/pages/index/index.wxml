@@ -3,14 +3,14 @@
     <view class="welcome-text">校园开店资源撮合平台</view>
     <view class="search-bar">
       <icon type="search" size="16" color="#94a3b8" class="search-icon"></icon>
-      <input type="text" placeholder="搜索学校、区域、业态，如：奶茶 / 快餐"
+      <input class="e2e-search-input" data-test="home-search-input" type="text" placeholder="搜索学校、区域、业态，如：奶茶 / 快餐"
              confirm-type="search" bindconfirm="onSearch" bindinput="onSearchInput" value="{{searchKeyword}}" />
-      <button class="search-btn" bindtap="onSearch">搜索</button>
+      <button class="search-btn e2e-search-button" data-test="home-search-submit" bindtap="onSearch">搜索</button>
     </view>
   </view>
 
   <view class="service-grid card">
-    <view class="service-item service-item-primary"
+    <view class="service-item service-item-primary e2e-service-entry" data-test="service-entry"
           bindtap="onServiceTap" data-action="{{primaryService.action}}">
       <text class="service-icon">{{primaryService.icon}}</text>
       <view class="service-copy">
@@ -19,7 +19,7 @@
       </view>
     </view>
     <view class="service-row-secondary">
-      <view class="service-item" wx:for="{{secondaryServices}}" wx:key="id"
+      <view class="service-item e2e-service-entry" data-test="service-entry" wx:for="{{secondaryServices}}" wx:key="id"
             bindtap="onServiceTap" data-action="{{item.action}}">
         <text class="service-icon">{{item.icon}}</text>
         <view class="service-title">{{item.name}}</view>
@@ -64,7 +64,7 @@
 
       <scroll-view class="recommended-scroll" scroll-x="true">
         <view class="recommended-track flex">
-          <view class="recommended-item" wx:for="{{recommendedList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" style="position:relative;">
+          <view class="recommended-item e2e-recommended-card" data-test="recommended-card" wx:for="{{recommendedList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" style="position:relative;">
             <image src="{{item.coverImage}}" mode="aspectFill" class="rec-cover" />
             <view class="fav-mini" catchtap="onToggleFav" data-id="{{item.id}}"
                   style="position:absolute; top:12rpx; right:12rpx; font-size:28rpx; padding:4rpx 8rpx; background:rgba(255,255,255,0.85); border-radius:50%; z-index:2;">
@@ -90,10 +90,10 @@
       </view>
 
       <view class="latest-list" wx:if="{{latestList.length > 0}}">
-        <view class="latest-card card flex" wx:for="{{latestList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" style="position:relative;">
+        <view class="latest-card card flex e2e-latest-card" data-test="latest-project-card" wx:for="{{latestList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" data-status="{{item.status}}" style="position:relative;">
           <view style="position:relative; flex-shrink:0;">
             <image src="{{item.coverImage}}" mode="aspectFill" class="latest-cover" />
-            <view class="fav-mini" catchtap="onToggleFav" data-id="{{item.id}}"
+            <view class="fav-mini e2e-latest-favorite" data-test="latest-project-favorite" catchtap="onToggleFav" data-id="{{item.id}}"
                   style="position:absolute; top:8rpx; right:8rpx; font-size:26rpx; padding:2rpx 6rpx; background:rgba(255,255,255,0.9); border-radius:50%; z-index:2;">
               {{item.isFav ? '★' : '☆'}}
             </view>

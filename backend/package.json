@@ -12,6 +12,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:cms": "node --test --test-isolation=none tests/cms.test.mjs",
+    "test:api": "tsx --test --test-isolation=none tests/lead-policy.test.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
     "migrate:property-cms": "tsx scripts/migrate-property-cms.ts",
     "schema:ensure-leads": "node scripts/ensure-leads-schema.mjs",

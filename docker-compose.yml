@@ -10,57 +10,15 @@ services:
       - PAYLOAD_SECRET=${PAYLOAD_SECRET}
       - MINIPROGRAM_TOKEN_SECRET=${MINIPROGRAM_TOKEN_SECRET}
       - PAYLOAD_DB_PUSH=${PAYLOAD_DB_PUSH:-false}
-      - DATABASE_URI=postgres://${POSTGRES_USER:-payload}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the root .env file}@db:5432/${POSTGRES_DB:-payload}
+      - DATABASE_URI=${DATABASE_URI:?Set DATABASE_URI in the root .env file}
       - PAYLOAD_PUBLIC_SERVER_URL=${PAYLOAD_PUBLIC_SERVER_URL:-http://localhost:3000}
       - WECHAT_AUTH_MODE=${WECHAT_AUTH_MODE:-wechat}
       - WECHAT_APPID=${WECHAT_APPID}
       - WECHAT_APP_SECRET=${WECHAT_APP_SECRET}
       - WECHAT_CODE_ENV_VERSION=${WECHAT_CODE_ENV_VERSION:-release}
-    depends_on:
-      db:
-        condition: service_healthy
     restart: unless-stopped
     volumes:
       - payload-media:/app/media
 
-  migrate:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-      target: builder
-    working_dir: /app
-    command: ["npx", "tsx", "scripts/push-schema.ts"]
-    profiles: ["schema"]
-    environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - PAYLOAD_SECRET=${PAYLOAD_SECRET}
-      - MINIPROGRAM_TOKEN_SECRET=${MINIPROGRAM_TOKEN_SECRET}
-      - PAYLOAD_DB_PUSH=${PAYLOAD_DB_PUSH:-false}
-      - DATABASE_URI=postgres://${POSTGRES_USER:-payload}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the root .env file}@db:5432/${POSTGRES_DB:-payload}
-      - PAYLOAD_PUBLIC_SERVER_URL=${PAYLOAD_PUBLIC_SERVER_URL:-http://localhost:3000}
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: "no"
-
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-payload}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the root .env file}
-      POSTGRES_DB: ${POSTGRES_DB:-payload}
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-payload} -d ${POSTGRES_DB:-payload}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-    volumes:
-      - payload-data:/var/lib/postgresql/data
-    ports:
-      - "127.0.0.1:5432:5432"  # restrict to localhost for security, local debug only
-
-
 volumes:
-  payload-data:
   payload-media:

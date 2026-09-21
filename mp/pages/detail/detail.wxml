@@ -23,7 +23,7 @@
     <view class="detail-content">
       <view class="title-card card">
         <view class="flex align-center justify-between m-b-20">
-          <view class="status-badge-container flex align-center">
+          <view class="status-badge-container flex align-center e2e-project-status" data-test="project-status">
             <view class="badge badge-online" wx:if="{{project.status === 'online'}}">招商中</view>
             <view class="badge badge-coming" wx:elif="{{project.status === 'coming'}}">即将开放</view>
             <view class="badge badge-full" wx:elif="{{project.status === 'full'}}">已满/已转</view>
@@ -32,7 +32,7 @@
           </view>
           <text class="update-lbl">更新：{{formattedUpdateTime}}</text>
         </view>
-        <view class="project-title-large">{{project.title}}</view>
+        <view class="project-title-large e2e-project-title" data-test="project-title">{{project.title}}</view>
       </view>
 
       <view class="params-card card">
@@ -150,9 +150,12 @@
 
       <button class="btn btn-outline flex-1 action-btn" hover-class="btn-outline-active" bindtap="onCallAdvisor">联系顾问</button>
 
-      <button class="btn btn-primary flex-1 action-btn" hover-class="btn-primary-active" bindtap="onGoToConsult" disabled="{{project.status === 'full' || project.status === 'offline'}}" style="margin-left: 20rpx;">
-        {{project.status === 'full' ? '已满/已转' : (project.status === 'offline' ? '已下架' : '我要咨询')}}
+      <button class="btn btn-primary flex-1 action-btn" wx:if="{{project.status === 'full' || project.status === 'offline'}}" disabled style="margin-left: 20rpx;">
+        {{project.status === 'full' ? '已满/已转' : '已下架'}}
       </button>
+      <view class="btn btn-primary flex-1 action-btn e2e-consult-button" data-test="consult-project" wx:else hover-class="btn-primary-active" bindtap="onGoToConsult" style="margin-left: 20rpx; text-align: center;">
+        我要咨询
+      </view>
     </view>
   </block>
 </view>

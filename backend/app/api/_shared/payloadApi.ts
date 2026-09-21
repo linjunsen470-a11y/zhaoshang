@@ -1,10 +1,17 @@
 import config from '@/payload.config'
 import { getPayload } from 'payload'
 import type { Where } from 'payload'
+import { sanitizeLeadCreateInput } from './leadPolicy'
+
+export {
+  MINI_PROGRAM_LEAD_TYPES,
+  sanitizeLeadCreateInput,
+  sanitizeLeadUpdateInput,
+  validateLeadUserInput,
+} from './leadPolicy'
 
 export const ALL = '全部'
 export const PUBLIC_STATUSES = ['online', 'coming', 'full']
-export const MINI_PROGRAM_LEAD_TYPES = ['leasing', 'transfer', 'equipment_sell', 'equipment_buy', 'equipment_recycle', 'renovation_consult']
 export const PUBLIC_EQUIPMENT_LEAD_TYPES = ['equipment_sell', 'equipment_buy', 'equipment_recycle']
 export const LEAD_ID_OFFSET = 26000000
 
@@ -306,104 +313,6 @@ export function sanitizeProjectInput(input: Record<string, unknown>) {
     sort: Number.parseInt(String(input.sort || 0), 10) || 0,
     remark: input.remark,
   }
-}
-
-function sanitizeLeadUserFields(
-  input: Record<string, unknown>,
-  submitterOpenId: string,
-  stable?: { leadType?: unknown; sourceChannel?: unknown },
-) {
-  return {
-    submitterOpenId,
-    leadType: stable?.leadType || input.leadType || 'leasing',
-    sourceChannel: stable?.sourceChannel || input.sourceChannel || 'mini_program',
-    name: input.name,
-    phone: input.phone,
-    businessType: input.businessType,
-    budgetRange: input.budgetRange,
-    regionPreference: input.regionPreference,
-    hasCampusExperience: booleanValue(input.hasCampusExperience),
-    transferDetails: input.transferDetails,
-    equipmentDetails: input.equipmentDetails,
-    renovationDetails: input.renovationDetails,
-    attachments: ids(input.attachments),
-    remark: input.remark,
-    project: toDatabaseId(input.project || input.projectId),
-  }
-}
-
-/** Mini-program create: always starts as new, no CRM fields. */
-export function sanitizeLeadCreateInput(input: Record<string, unknown>, submitterOpenId: string) {
-  return {
-    ...sanitizeLeadUserFields(input, submitterOpenId),
-    status: 'new',
-  }
-}
-
-/** Mini-program update: user-editable fields only. */
-export function sanitizeLeadUpdateInput(
-  input: Record<string, unknown>,
-  submitterOpenId: string,
-  stable: { leadType?: unknown; sourceChannel?: unknown },
-) {
-  return sanitizeLeadUserFields(input, submitterOpenId, stable)
-}
-
-const LEAD_TEXT_LIMITS: Record<string, number> = {
-  name: 20,
-  phone: 11,
-  businessType: 100,
-  budgetRange: 100,
-  regionPreference: 50,
-  remark: 500,
-}
-
-const LEAD_GROUP_LIMITS: Record<string, number> = {
-  locationText: 100,
-  feeText: 100,
-  transferFee: 100,
-  remainingTerm: 100,
-  equipmentName: 100,
-  specText: 100,
-  equipmentCondition: 100,
-  expectedPrice: 100,
-  shopArea: 100,
-  renovationType: 100,
-  designStyle: 100,
-  budgetText: 100,
-  expectedStartDate: 100,
-}
-
-/** Server-side boundary checks shared by mini-program lead create/update. */
-export function validateLeadUserInput(input: Record<string, unknown>): string | null {
-  for (const [key, limit] of Object.entries(LEAD_TEXT_LIMITS)) {
-    const value = input[key]
-    if (value !== undefined && typeof value !== 'string') return `${key} 格式无效`
-    if (typeof value === 'string' && value.trim().length > limit) return `${key} 内容过长`
-  }
-
-  if (input.phone !== undefined && !/^1[3-9]\d{9}$/.test(String(input.phone))) {
-    return '手机号格式不正确'
-  }
-  if (input.attachments !== undefined) {
-    if (!Array.isArray(input.attachments)) return '附件格式无效'
-    if (input.attachments.length > 6) return '最多上传 6 张图片'
-  }
-
-  for (const groupName of ['transferDetails', 'equipmentDetails', 'renovationDetails']) {
-    const group = input[groupName]
-    if (group === undefined) continue
-    if (!group || typeof group !== 'object' || Array.isArray(group)) return `${groupName} 格式无效`
-    for (const [key, limit] of Object.entries(LEAD_GROUP_LIMITS)) {
-      const value = (group as Record<string, unknown>)[key]
-      if (value !== undefined && typeof value !== 'string' && typeof value !== 'boolean') {
-        return `${groupName}.${key} 格式无效`
-      }
-      if (typeof value === 'string' && value.trim().length > limit) return `${groupName}.${key} 内容过长`
-    }
-  }
-
-  return null
 }
 
 /** @deprecated Use sanitizeLeadCreateInput or sanitizeLeadUpdateInput */

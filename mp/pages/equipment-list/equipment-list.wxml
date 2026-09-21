@@ -1,4 +1,4 @@
-<view class="container">
+<view class="container e2e-equipment-list" data-test="equipment-list">
   <!-- 头部筛选 Tabs -->
   <view class="tabs-bar">
     <view class="tab-item {{activeTab === item.val ? 'active' : ''}}" 

@@ -8,7 +8,7 @@
   </view>
 
   <view class="btn-group">
-    <button class="btn btn-primary action-btn" hover-class="btn-primary-active" bindtap="onViewLeads">
+    <button class="btn btn-primary action-btn e2e-view-leads" data-test="view-created-lead" hover-class="btn-primary-active" bindtap="onViewLeads">
       查看我的咨询记录
     </button>
     <button class="btn btn-secondary action-btn" hover-class="btn-secondary-active" bindtap="onGoHome">

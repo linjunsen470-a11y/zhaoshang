@@ -18,9 +18,9 @@
 
     <block wx:else>
       <view class="leads-list" wx:if="{{leadsList.length > 0}}">
-        <view class="lead-card card" wx:for="{{leadsList}}" wx:key="id">
+        <view class="lead-card card e2e-lead-card" data-test="lead-card" wx:for="{{leadsList}}" wx:key="id">
           <view class="lead-card-header flex justify-between align-start">
-            <view class="lead-project-title ellipsis-2 {{item.projectId ? 'link-text' : ''}}" bindtap="onGoToProject" data-id="{{item.projectId}}">
+            <view class="lead-project-title ellipsis-2 e2e-lead-title {{item.projectId ? 'link-text' : ''}}" data-test="lead-title" bindtap="onGoToProject" data-id="{{item.projectId}}">
               {{item.projectTitle ? item.projectTitle : '自主提交需求'}}
             </view>
             <view class="badge status-tag" style="color: {{item.statusInfo.color}}; background-color: {{item.statusInfo.bg}}; border: 1rpx solid {{item.statusInfo.color}}20">
@@ -69,7 +69,7 @@
 
             <view class="spec-desc-row" wx:if="{{item.remark}}">
               <text class="spec-lbl">留言备注：</text>
-              <text class="spec-val-desc">{{item.remark}}</text>
+              <text class="spec-val-desc e2e-lead-remark" data-test="lead-remark">{{item.remark}}</text>
             </view>
 
             <view class="lead-attachments" wx:if="{{item.attachments && item.attachments.length}}">
@@ -83,8 +83,8 @@
           </view>
 
           <view class="lead-actions flex" style="margin-top:16rpx; gap:20rpx;">
-            <button class="btn btn-primary" style="flex:1; font-size:24rpx; padding:12rpx 0; height:auto; background: #3b82f6; border-color: #3b82f6;" bindtap="onEditLead" data-id="{{item.id}}" data-type="{{item.leadType}}">编辑</button>
-            <button class="btn btn-outline" style="flex:1; font-size:24rpx; padding:12rpx 0; height:auto; color: #ef4444; border-color: #ef4444;" bindtap="onDeleteLead" data-id="{{item.id}}">删除</button>
+            <button class="btn btn-primary e2e-edit-lead" data-test="edit-lead" style="flex:1; font-size:24rpx; padding:12rpx 0; height:auto; background: #3b82f6; border-color: #3b82f6;" bindtap="onEditLead" data-id="{{item.id}}" data-type="{{item.leadType}}">编辑</button>
+            <button class="btn btn-outline e2e-delete-lead" data-test="delete-lead" style="flex:1; font-size:24rpx; padding:12rpx 0; height:auto; color: #ef4444; border-color: #ef4444;" bindtap="onDeleteLead" data-id="{{item.id}}">删除</button>
           </view>
 
         </view>
