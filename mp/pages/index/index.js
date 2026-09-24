@@ -147,6 +147,13 @@ Page({
     wx.switchTab({ url: '/pages/list/list' });
   },
 
+  onCoverError(e) {
+    const listName = e.currentTarget.dataset.list;
+    if (listName !== 'recommendedList' && listName !== 'latestList') return;
+    const index = this.data[listName].findIndex(project => String(project.id) === String(e.currentTarget.dataset.id));
+    if (index < 0 || this.data[listName][index].coverImageError) return;
+    this.setData({ [`${listName}[${index}].coverImageError`]: true });
+  },
   onToggleFav(e) {
     const id = e.currentTarget.dataset.id;
     let favs = wx.getStorageSync('favorites') || [];

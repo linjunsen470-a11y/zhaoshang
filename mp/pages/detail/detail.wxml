@@ -13,12 +13,14 @@
   <block wx:else>
     <view class="swiper-wrap" wx:if="{{project.images && project.images.length}}">
       <swiper class="detail-swiper" indicator-dots="{{project.images.length > 1}}" circular="{{project.images.length > 1}}" autoplay="false" duration="300" bindchange="onSwiperChange" indicator-color="rgba(255, 255, 255, 0.45)" indicator-active-color="#ffffff">
-        <swiper-item wx:for="{{project.images}}" wx:key="*this">
-          <image src="{{item}}" mode="aspectFill" class="swiper-image" bindtap="onPreviewImage" data-src="{{item}}" />
+        <swiper-item wx:for="{{project.images}}" wx:for-index="imageIndex" wx:key="*this">
+          <image wx:if="{{!imageErrors[imageIndex]}}" src="{{item}}" mode="aspectFill" class="swiper-image" bindtap="onPreviewImage" binderror="onImageError" data-index="{{imageIndex}}" data-src="{{item}}" />
+          <view wx:else class="swiper-image detail-image-fallback">图片暂不可用</view>
         </swiper-item>
       </swiper>
       <view class="swiper-count" wx:if="{{project.images.length > 1}}">{{currentImageIndex + 1}} / {{project.images.length}}</view>
     </view>
+    <view wx:else class="swiper-wrap detail-image-fallback">暂无项目图片</view>
 
     <view class="detail-content">
       <view class="title-card card">

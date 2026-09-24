@@ -11,6 +11,7 @@ Page({
     projectId: '',
     projectTitle: '',
     projectCover: '',
+    projectCoverError: false,
     projectFeeText: '',
     businessType: '',
     budgetRange: '',
@@ -55,6 +56,7 @@ Page({
           this.setData({
             projectTitle: project.title,
             projectCover: project.coverImage || '',
+            projectCoverError: false,
             projectFeeText: project.feeText || '',
             regionPreference: project.district
           });
@@ -63,6 +65,9 @@ Page({
       .catch(err => console.error('获取项目标题失败', err));
   },
 
+  onProjectCoverError() {
+    this.setData({ projectCoverError: true });
+  },
   onInputRegion(e) { this.setData({ regionPreference: clip(e.detail.value, config.MAX_REGION_LENGTH) }); },
   onBusinessChange(e) {
     const val = e.detail.value;

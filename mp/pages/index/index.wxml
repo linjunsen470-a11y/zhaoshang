@@ -65,7 +65,8 @@
       <scroll-view class="recommended-scroll" scroll-x="true">
         <view class="recommended-track flex">
           <view class="recommended-item e2e-recommended-card" data-test="recommended-card" wx:for="{{recommendedList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" style="position:relative;">
-            <image src="{{item.coverImage}}" mode="aspectFill" class="rec-cover" />
+            <image wx:if="{{item.coverImage && !item.coverImageError}}" src="{{item.coverImage}}" mode="aspectFill" class="rec-cover" binderror="onCoverError" data-list="recommendedList" data-id="{{item.id}}" />
+            <view wx:else class="rec-cover project-image-fallback">图片暂不可用</view>
             <view class="fav-mini" catchtap="onToggleFav" data-id="{{item.id}}"
                   style="position:absolute; top:12rpx; right:12rpx; font-size:28rpx; padding:4rpx 8rpx; background:rgba(255,255,255,0.85); border-radius:50%; z-index:2;">
               {{item.isFav ? '★' : '☆'}}
@@ -92,7 +93,8 @@
       <view class="latest-list" wx:if="{{latestList.length > 0}}">
         <view class="latest-card card flex e2e-latest-card" data-test="latest-project-card" wx:for="{{latestList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" data-status="{{item.status}}" style="position:relative;">
           <view style="position:relative; flex-shrink:0;">
-            <image src="{{item.coverImage}}" mode="aspectFill" class="latest-cover" />
+            <image wx:if="{{item.coverImage && !item.coverImageError}}" src="{{item.coverImage}}" mode="aspectFill" class="latest-cover" binderror="onCoverError" data-list="latestList" data-id="{{item.id}}" />
+            <view wx:else class="latest-cover project-image-fallback">图片暂不可用</view>
             <view class="fav-mini e2e-latest-favorite" data-test="latest-project-favorite" catchtap="onToggleFav" data-id="{{item.id}}"
                   style="position:absolute; top:8rpx; right:8rpx; font-size:26rpx; padding:2rpx 6rpx; background:rgba(255,255,255,0.9); border-radius:50%; z-index:2;">
               {{item.isFav ? '★' : '☆'}}

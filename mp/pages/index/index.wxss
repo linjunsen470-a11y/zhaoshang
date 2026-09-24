@@ -199,9 +199,18 @@
 }
 
 .rec-cover {
+  display: block;
   width: 100%;
   height: 260rpx;
   background-color: #e2e8f0;
+}
+
+.project-image-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 24rpx;
 }
 
 .rec-info {
@@ -235,6 +244,13 @@
 .rec-price {
   color: #ef4444;
   font-weight: 700;
+  max-width: 100%;
+  word-break: break-all;
+}
+
+.rec-sub {
+  flex-wrap: wrap;
+  gap: 8rpx;
 }
 
 /* 需求引导条 */
@@ -278,6 +294,7 @@
 }
 
 .latest-cover {
+  display: block;
   width: 180rpx;
   height: 180rpx;
   border-radius: 12rpx;
@@ -287,8 +304,8 @@
 }
 
 .latest-info {
-  height: 180rpx;
-  overflow: hidden;
+  min-width: 0;
+  min-height: 180rpx;
 }
 
 .latest-title {
@@ -314,6 +331,8 @@
 
 .latest-bottom {
   margin-top: auto;
+  flex-wrap: wrap;
+  gap: 6rpx 12rpx;
 }
 
 .latest-loc {
@@ -325,6 +344,8 @@
   font-size: 26rpx;
   color: #ef4444;
   font-weight: 700;
+  max-width: 100%;
+  word-break: break-all;
 }
 
 .empty-tip {

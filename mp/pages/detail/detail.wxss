@@ -74,6 +74,14 @@
   object-fit: cover;
 }
 
+.detail-image-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 26rpx;
+}
+
 .swiper-count {
   position: absolute;
   right: 24rpx;

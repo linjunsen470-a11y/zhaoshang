@@ -25,12 +25,8 @@ const SEED_PROJECTS = [
     customerInfo: '覆盖约 1.2 万名在校师生，就餐高峰集中，适合高出餐效率品类。',
     cooperationMode: '纯租金模式，按年缴纳，押二付一。',
     viewingTimeText: '工作日 14:00-17:00，需提前一天预约。',
-    coverImage: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=900&q=80'
-    ],
+    coverImage: '/images/shop-demo-food.png',
+    images: ['/images/shop-demo-food.png'],
     status: 'online',
     isRecommended: true,
     sort: 100,
@@ -62,12 +58,8 @@ const SEED_PROJECTS = [
       remainingTerm: '18个月',
       expectedTransferFee: '12万元，可谈'
     },
-    coverImage: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=400&q=80',
-    images: [
-      'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=80',
-      'https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=900&q=80'
-    ],
+    coverImage: '/images/shop-demo-drink.png',
+    images: ['/images/shop-demo-drink.png'],
     status: 'online',
     isRecommended: true,
     sort: 90,
@@ -78,6 +70,24 @@ const SEED_PROJECTS = [
 
 function initLocalStorage() {
   if (!wx.getStorageSync('local_projects')) wx.setStorageSync('local_projects', SEED_PROJECTS);
+  const projects = wx.getStorageSync('local_projects');
+  if (Array.isArray(projects)) {
+    let changed = false;
+    const migrated = projects.map(project => {
+      const demoImage = project.opportunityType === 'transfer' ? '/images/shop-demo-drink.png' : '/images/shop-demo-food.png';
+      const replaceLegacyImage = url => {
+        if (typeof url === 'string' && /^https:\/\/images\.unsplash\.com\//i.test(url)) {
+          changed = true;
+          return demoImage;
+        }
+        return url;
+      };
+      const coverImage = replaceLegacyImage(project.coverImage);
+      const images = Array.isArray(project.images) ? [...new Set(project.images.map(replaceLegacyImage))] : project.images;
+      return { ...project, coverImage, images };
+    });
+    if (changed) wx.setStorageSync('local_projects', migrated);
+  }
   if (!wx.getStorageSync('local_leads')) wx.setStorageSync('local_leads', []);
 }
 

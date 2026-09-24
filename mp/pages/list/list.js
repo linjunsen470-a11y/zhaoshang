@@ -190,6 +190,11 @@ Page({
     this.setData(this.getBaseFilters(), () => this.loadProjects());
   },
 
+  onCoverError(e) {
+    const index = this.data.projectList.findIndex(project => String(project.id) === String(e.currentTarget.dataset.id));
+    if (index < 0 || this.data.projectList[index].coverImageError) return;
+    this.setData({ [`projectList[${index}].coverImageError`]: true });
+  },
   onToggleFavInList(e) {
     const id = e.currentTarget.dataset.id;
     let favs = wx.getStorageSync('favorites') || [];

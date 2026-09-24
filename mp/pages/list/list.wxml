@@ -118,7 +118,8 @@
         <view class="project-card card" wx:for="{{projectList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}">
           <view class="card-top flex" style="position:relative;">
             <view style="position:relative; flex-shrink:0;">
-              <image src="{{item.coverImage}}" mode="aspectFill" class="project-img" />
+              <image wx:if="{{item.coverImage && !item.coverImageError}}" src="{{item.coverImage}}" mode="aspectFill" class="project-img" binderror="onCoverError" data-id="{{item.id}}" />
+              <view wx:else class="project-img project-image-fallback">图片暂不可用</view>
               <view class="fav-mini" catchtap="onToggleFavInList" data-id="{{item.id}}"
                     style="position:absolute; top:8rpx; right:8rpx; font-size:28rpx; line-height:1; z-index:5; padding:4rpx 6rpx; background:rgba(255,255,255,0.9); border-radius:50%;">
                 {{item.isFav ? '★' : '☆'}}

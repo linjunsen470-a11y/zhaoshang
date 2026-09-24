@@ -148,6 +148,14 @@
   background: #e2e8f0;
 }
 
+.project-context-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #64748b;
+  font-size: 20rpx;
+}
+
 .project-context-label {
   font-size: 22rpx;
   color: #64748b;

@@ -7,8 +7,8 @@ import { createStorage, loadMiniProgramModule } from '../helpers/load-cjs.mjs';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const apiPath = path.join(root, 'mp/services/api.js');
 
-function makeLocalApi() {
-  const storage = createStorage({ local_projects: [], local_leads: [] });
+function makeLocalApi(initialStorage = { local_projects: [], local_leads: [] }) {
+  const storage = createStorage(initialStorage);
   const app = {
     globalData: {
       apiUrl: 'http://unused.test/api',
@@ -26,6 +26,20 @@ function makeLocalApi() {
   });
   return { api, storage };
 }
+
+test('local mock replaces old remote demo photos without changing project data', async () => {
+  const original = {
+    id: 'legacy', title: '旧演示铺位', status: 'online', opportunityType: 'leasing',
+    coverImage: 'https://images.unsplash.com/photo-demo?w=400',
+    images: ['https://images.unsplash.com/photo-demo?w=900', 'https://images.unsplash.com/photo-other?w=900'],
+  };
+  const { api, storage } = makeLocalApi({ local_projects: [original], local_leads: [] });
+  const [project] = await api.getProjects({ public: true });
+  assert.equal(project.coverImage, '/images/shop-demo-food.png');
+  assert.deepEqual(Array.from(project.images), ['/images/shop-demo-food.png']);
+  assert.equal(project.title, original.title);
+  assert.equal(storage.getStorageSync('local_projects')[0].coverImage, '/images/shop-demo-food.png');
+});
 
 test('local mock lead CRUD is isolated by current openid', async () => {
   const { api, storage } = makeLocalApi();

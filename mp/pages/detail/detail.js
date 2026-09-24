@@ -10,7 +10,8 @@ Page({
     loading: true,
     loadError: false,
     formattedUpdateTime: '',
-    currentImageIndex: 0
+    currentImageIndex: 0,
+    imageErrors: []
   },
 
   onLoad(options) {
@@ -58,6 +59,7 @@ Page({
           project: { ...project, images },
           formattedUpdateTime: formattedDate,
           currentImageIndex: 0,
+          imageErrors: [],
           loading: false,
           loadError: false
         });
@@ -82,10 +84,17 @@ Page({
     this.setData({ currentImageIndex: e.detail.current || 0 });
   },
 
+  onImageError(e) {
+    const index = Number(e.currentTarget.dataset.index);
+    if (!this.data.project || !Number.isInteger(index) || index < 0 || index >= this.data.project.images.length) return;
+    const imageErrors = [...this.data.imageErrors];
+    imageErrors[index] = true;
+    this.setData({ imageErrors });
+  },
   onPreviewImage(e) {
-    const urls = (this.data.project && this.data.project.images) || [];
+    const urls = ((this.data.project && this.data.project.images) || []).filter((url, index) => url && !this.data.imageErrors[index]);
     const current = e.currentTarget.dataset.src || urls[this.data.currentImageIndex];
-    if (!urls.length) return;
+    if (!urls.includes(current)) return;
     wx.previewImage({ urls, current });
   },
 

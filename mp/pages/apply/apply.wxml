@@ -5,7 +5,8 @@
   </view>
 
   <view class="project-context card" wx:if="{{projectTitle && !isEditMode}}">
-    <image class="project-context-cover" src="{{projectCover}}" mode="aspectFill" wx:if="{{projectCover}}" />
+    <image class="project-context-cover" src="{{projectCover}}" mode="aspectFill" wx:if="{{projectCover && !projectCoverError}}" binderror="onProjectCoverError" />
+    <view wx:else class="project-context-cover project-context-fallback">暂无图片</view>
     <view class="project-context-info">
       <view class="project-context-label">正在咨询</view>
       <view class="project-context-title">{{projectTitle}}</view>
