@@ -8,6 +8,8 @@ import { FormEvent, useCallback, useEffect, useState } from 'react'
 import {
   LEAD_CATEGORY_OPTIONS,
   LEAD_STATUS_OPTIONS,
+  LEAD_STATUS_HELP,
+  EQUIPMENT_PUBLICATION_OPTIONS,
   LEAD_TYPE_LABELS,
   categoryForLeadType,
 } from '@/collections/shared/fieldOptions'
@@ -18,6 +20,7 @@ type Inquiry = {
   phone: string
   leadType: string
   status: string
+  equipmentPublicationStatus?: string
   businessType: string
   businessScene?: string
   budgetRange: string
@@ -60,7 +63,6 @@ export function InquiryInboxView() {
   const query = searchParams.toString()
 
   const [data, setData] = useState<ResponseData | null>(null)
-  const [search, setSearch] = useState(searchParams.get('q') || '')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
@@ -70,13 +72,14 @@ export function InquiryInboxView() {
   const activeCategory = searchParams.get('category') || ''
 
   const updateParams = useCallback((changes: Record<string, string | undefined>) => {
-    setLoading(true)
     const params = new URLSearchParams(query)
     Object.entries(changes).forEach(([key, value]) => {
       if (value) params.set(key, value)
       else params.delete(key)
     })
     if (!('page' in changes)) params.delete('page')
+    if (params.toString() === query) return
+    setLoading(true)
     router.push(`${pathname}${params.size ? `?${params}` : ''}`)
   }, [pathname, query, router])
 
@@ -149,7 +152,7 @@ export function InquiryInboxView() {
         <div>
           <p className="cms-eyebrow">客户咨询</p>
           <h1>咨询收件箱</h1>
-          <p>处理小程序提交的咨询。先按业务线筛选，再快速改状态或进入完整详情。</p>
+          <p>查看客户需求，联系后改处理状态、写内部备注。普通跟进用“快速处理”，修正资料用“查看详情”。</p>
         </div>
       </header>
 
@@ -175,7 +178,7 @@ export function InquiryInboxView() {
       {categoryMeta ? (
         <p className="cms-help" style={{ marginBottom: 14 }}>
           {categoryMeta.label}：{categoryMeta.description}
-          {activeCategory === 'equipment' ? ' · 要在小程序展示时，打开完整详情 →「处理编辑」里改设备公开状态。' : null}
+          {activeCategory === 'equipment' ? ' · 改处理状态不会发布设备。需要公开时，查看详情 →「处理编辑」→ 设备公开设置。' : null}
         </p>
       ) : null}
 
@@ -184,21 +187,22 @@ export function InquiryInboxView() {
           className="cms-search"
           onSubmit={event => {
             event.preventDefault()
-            updateParams({ q: search.trim() || undefined })
+            updateParams({ q: String(new FormData(event.currentTarget).get('q') || '').trim() || undefined })
           }}
         >
           <label className="cms-sr-only" htmlFor="inquiry-search">搜索咨询</label>
           <input
             id="inquiry-search"
-            value={search}
-            onChange={event => setSearch(event.target.value)}
+            name="q"
+            key={searchParams.get('q') || ''}
+            defaultValue={searchParams.get('q') || ''}
             placeholder="搜索称呼、电话或需求…"
             autoComplete="off"
           />
           <button className="cms-button" type="submit">搜索</button>
         </form>
         <label>
-          <span>状态</span>
+          <span>咨询处理状态</span>
           <select
             value={searchParams.get('status') || ''}
             onChange={event => updateParams({ status: event.target.value || undefined })}
@@ -235,10 +239,10 @@ export function InquiryInboxView() {
               <thead>
                 <tr>
                   <th>客户</th>
-                  <th>业务线 / 类型</th>
+                  <th>咨询类型</th>
                   <th>需求摘要</th>
                   <th>关联房源</th>
-                  <th>状态</th>
+                  <th>咨询处理状态</th>
                   <th>提交时间</th>
                   <th>操作</th>
                 </tr>
@@ -246,7 +250,6 @@ export function InquiryInboxView() {
               <tbody>
                 {data.docs.map(item => {
                   const category = categoryForLeadType(item.leadType)
-                  const categoryLabel = category === 'property' ? '房源' : category === 'equipment' ? '设备' : category === 'renovation' ? '装修' : '其他'
                   return (
                     <tr key={item.id}>
                       <td>
@@ -254,7 +257,7 @@ export function InquiryInboxView() {
                         <small><a href={`tel:${item.phone}`}>{item.phone}</a></small>
                       </td>
                       <td>
-                        {categoryLabel} · {LEAD_TYPE_LABELS[item.leadType] || item.leadType}
+                        {LEAD_TYPE_LABELS[item.leadType] || item.leadType}
                       </td>
                       <td>
                         <small>
@@ -278,6 +281,7 @@ export function InquiryInboxView() {
                         <span className={`cms-status cms-status--${item.status}`}>
                           {LEAD_STATUS_OPTIONS.find(s => s.value === item.status)?.label || item.status}
                         </span>
+                        {category === 'equipment' ? <small>小程序设备：{EQUIPMENT_PUBLICATION_OPTIONS.find(option => option.value === item.equipmentPublicationStatus)?.label || '未发布'}</small> : null}
                       </td>
                       <td>
                         <small>{item.createdAt ? formatter.format(new Date(item.createdAt)) : '—'}</small>
@@ -285,7 +289,7 @@ export function InquiryInboxView() {
                       <td>
                         <div className="cms-row-actions">
                           <button type="button" onClick={() => setEditing(item)}>快速处理</button>
-                          <Link href={`/admin/collections/leads/${item.id}`}>完整详情</Link>
+                          <Link href={`/admin/collections/leads/${item.id}`}>查看详情</Link>
                         </div>
                       </td>
                     </tr>
@@ -333,12 +337,14 @@ export function InquiryInboxView() {
                   ))}
                 </select>
               </label>
+              <p className="cms-help">{LEAD_STATUS_HELP}</p>
+              {categoryForLeadType(editing.leadType) === 'equipment' ? <p className="cms-help">此处只记录沟通进度，不改变设备在小程序中的发布状态。</p> : null}
               <label>
                 <span>内部备注</span>
                 <textarea name="internalNote" rows={4} defaultValue={editing.internalNote || ''} placeholder="仅后台可见…" />
               </label>
               <div className="cms-drawer__actions">
-                <Link className="cms-button" href={`/admin/collections/leads/${editing.id}`}>打开完整详情</Link>
+                <Link className="cms-button" href={`/admin/collections/leads/${editing.id}`}>查看详情</Link>
                 <button className="cms-button" type="button" onClick={() => setEditing(null)}>取消</button>
                 <button className="cms-button cms-button--primary" type="submit" disabled={saving}>
                   {saving ? '保存中…' : '保存'}

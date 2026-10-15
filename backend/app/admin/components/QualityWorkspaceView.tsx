@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
+import { PROPERTY_STATUS_OPTIONS } from '@/collections/shared/fieldOptions'
 
 type ProjectTodo = {
   id: string
@@ -79,9 +80,10 @@ export function QualityWorkspaceView() {
         <div>
           <p className="cms-eyebrow">上架前核对</p>
           <h1>上架检查</h1>
-          <p>检查房源资料是否齐全，补齐缺项后再上架。</p>
+          <p>核对公开前的基本资料。必填已齐仍需确认图片可公开、面积和月租范围正确。</p>
         </div>
         <div className="cms-row-actions">
+          <Link className="cms-button" href="/admin/collections/projects">返回项目与铺位</Link>
           <Link className="cms-button" href="/admin/collections/projects?quality=blocked">查看资料不全的房源</Link>
           <button className="cms-button" type="button" disabled={loading} onClick={refresh}>
             {loading ? '刷新中…' : '刷新'}
@@ -131,7 +133,7 @@ export function QualityWorkspaceView() {
                           <strong>{item.title}</strong>
                           <small>{item.schoolName || item.district || '—'}</small>
                         </td>
-                        <td><span className={`cms-status cms-status--${item.status}`}>{item.status}</span></td>
+                        <td><span className={`cms-status cms-status--${item.status}`}>{PROPERTY_STATUS_OPTIONS.find(option => option.value === item.status)?.label || '未知状态'}</span></td>
                         <td>
                           <div className="cms-gate-tags">
                             {item.missingFields.map(field => (
@@ -150,7 +152,7 @@ export function QualityWorkspaceView() {
 
           <section className="cms-panel cms-ops-card">
             <header>
-              <h3>资料齐全，可以上架</h3>
+              <h3>必填已齐，待确认上架</h3>
               <Link href="/admin/collections/projects?quality=ready">在列表筛选</Link>
             </header>
             {data.team.readyToPublish.length ? (

@@ -25,8 +25,8 @@ const SEED_PROJECTS = [
     customerInfo: '覆盖约 1.2 万名在校师生，就餐高峰集中，适合高出餐效率品类。',
     cooperationMode: '纯租金模式，按年缴纳，押二付一。',
     viewingTimeText: '工作日 14:00-17:00，需提前一天预约。',
-    coverImage: '/images/shop-demo-food.png',
-    images: ['/images/shop-demo-food.png'],
+    coverImage: '/images/demo/campus.jpg',
+    images: ['/images/demo/campus.jpg'],
     status: 'online',
     isRecommended: true,
     sort: 100,
@@ -58,8 +58,8 @@ const SEED_PROJECTS = [
       remainingTerm: '18个月',
       expectedTransferFee: '12万元，可谈'
     },
-    coverImage: '/images/shop-demo-drink.png',
-    images: ['/images/shop-demo-drink.png'],
+    coverImage: '/images/demo/campus.jpg',
+    images: ['/images/demo/campus.jpg'],
     status: 'online',
     isRecommended: true,
     sort: 90,
@@ -75,7 +75,7 @@ const commercialSeeds = [
   { id: 'demo-tourism', listingKind: 'project', businessScene: 'tourism', venueName: '演示文旅街区', title: '【演示】文旅街区常驻招商', areaMin: 20, areaMax: 80, tourismInfo: '节假日与淡季存在差异，常驻经营；所有数据为演示。' },
   { id: 'demo-mall', listingKind: 'project', businessScene: 'mall', venueName: '演示购物中心', title: '【演示】购物中心项目招商', mallInfo: '可洽谈个体与非连锁品牌；准入条件待核实。' },
   { id: 'demo-independent', businessScene: 'community', venueName: '演示临街铺位', title: '【演示】独立社区铺位', areaMin: 200, areaMax: 200, monthlyRentMin: 20000, monthlyRentMax: 20000 },
-].map((item, index) => ({ ...SEED_PROJECTS[0], listingKind: 'unit', schoolName: '', schoolAlias: '', projectType: '其他', city: '广州', district: '天河', customerInfo: '演示客群资料，需运营核实后录入真实项目', introduction: '仅用于功能验收，不代表真实招商', operatingRequirements: '条件待核实', feeText: '演示报价，附加费用需核实', areaText: '以实测为准', isRecommended: index === 0, sort: 50 - index, ...item }));
+].map((item, index) => ({ ...SEED_PROJECTS[0], listingKind: 'unit', schoolName: '', schoolAlias: '', projectType: '其他', city: '广州', district: '天河', customerInfo: '演示客群资料，需运营核实后录入真实项目', introduction: '仅用于功能验收，不代表真实招商', operatingRequirements: '条件待核实', feeText: '演示报价，附加费用需核实', areaText: '以实测为准', isRecommended: index === 0, sort: 50 - index, coverImage: '/images/demo/' + item.businessScene + '.jpg', images: ['/images/demo/' + item.businessScene + '.jpg'], ...item }));
 
 function initLocalStorage() {
   if (!wx.getStorageSync('local_projects')) wx.setStorageSync('local_projects', [...SEED_PROJECTS, ...commercialSeeds]);

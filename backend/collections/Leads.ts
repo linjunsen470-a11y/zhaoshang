@@ -5,6 +5,7 @@ import {
   BUSINESS_SCENE_OPTIONS,
   EQUIPMENT_PUBLICATION_OPTIONS,
   LEAD_STATUS_OPTIONS,
+  LEAD_STATUS_HELP,
 } from './shared/fieldOptions'
 import { buildLeadSnapshot, isLeadSnapshot } from '../lib/leadSnapshot'
 
@@ -92,7 +93,7 @@ const workingFields: CollectionConfig['fields'] = [
     label: '设备公开设置',
     admin: {
       condition: (_, siblingData) => EQUIPMENT_TYPES.includes(siblingData?.leadType),
-      description: '状态为“已发布”时才会出现在小程序设备列表。',
+      description: '仅控制小程序设备列表是否展示，与咨询的“处理状态”无关。选择“已发布”并保存后才会公开；请先核实图片和说明。',
     },
     fields: [
       {
@@ -158,7 +159,7 @@ export const Leads: CollectionConfig = {
     group: ADMIN_GROUPS.inquiries,
     useAsTitle: 'name',
     defaultColumns: ['status', 'name', 'phone', 'leadType', 'projectTitle', 'createdAt'],
-    description: '客户提交的咨询。顶部可快速联系；「客户原文」锁定首次提交，「处理编辑」为后台工作副本。',
+    description: '先看客户原文，联系后在右侧更新处理状态并保存。需要修正资料时再打开「处理编辑」。',
     listSearchableFields: ['name', 'phone', 'businessType', 'regionPreference', 'projectTitle'],
   },
   access: {
@@ -185,11 +186,20 @@ export const Leads: CollectionConfig = {
       },
     },
     {
+      name: 'status', type: 'select', label: '咨询处理状态',
+      options: [...LEAD_STATUS_OPTIONS], defaultValue: 'new', required: true,
+      admin: { position: 'sidebar', description: LEAD_STATUS_HELP },
+    },
+    {
+      name: 'internalNote', type: 'textarea', label: '内部跟进备注',
+      admin: { position: 'sidebar', description: '记下沟通结果或下次跟进事项。仅后台可见；修改后点击保存。' },
+    },
+    {
       type: 'tabs',
       tabs: [
         {
           label: '客户原文',
-          description: '小程序/客户首次提交内容，系统锁定，后台不可覆盖。',
+          description: '首次提交的原始记录，只读。处理状态和内部备注在右侧修改。',
           fields: [
             {
               name: 'customerSnapshot',
@@ -206,26 +216,8 @@ export const Leads: CollectionConfig = {
         },
         {
           label: '处理编辑',
-          description: '后台工作副本：可修正信息、改状态、写内部备注；不会改写客户原文。',
-          fields: [
-            ...workingFields,
-            {
-              name: 'internalNote',
-              type: 'textarea',
-              label: '内部备注',
-              admin: {
-                description: '仅后台可见，不会展示给用户。',
-              },
-            },
-            {
-              name: 'status',
-              type: 'select',
-              label: '处理状态',
-              options: [...LEAD_STATUS_OPTIONS],
-              defaultValue: 'new',
-              required: true,
-            },
-          ],
+          description: '需要修正联系方式、需求或设置设备公开时使用。这里的修改会更新咨询记录，但不会覆盖首次客户原文。',
+          fields: workingFields,
         },
       ],
     },

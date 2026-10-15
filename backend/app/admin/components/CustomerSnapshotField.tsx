@@ -70,8 +70,8 @@ export function CustomerSnapshotField() {
       <header className="cms-snapshot__header">
         <div>
           <p className="cms-snapshot__badge">客户原文 · 不可修改</p>
-          <h3>首次提交快照</h3>
-          <p>以下为客户最初提交内容，仅供对照。后台请在「处理编辑」页签修改工作副本。</p>
+          <h3>客户首次提交的内容</h3>
+          <p>以下原文只读。日常跟进在右侧改处理状态、写备注；需要修正资料时再打开「处理编辑」。</p>
         </div>
         <time dateTime={snapshot.capturedAt}>锁定于 {formatCapturedAt(snapshot.capturedAt)}</time>
       </header>

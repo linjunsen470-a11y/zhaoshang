@@ -10,17 +10,17 @@ Payload is the only admin interface. Workspace entry points:
 
 | 模块 | URL |
 |------|-----|
-| 运营工作台 | `/admin`（团队待办 + 咨询漏斗） |
+| 运营工作台 | `/admin`（日常入口 + 待联系咨询） |
 | 项目与铺位 | `/admin/collections/projects` |
 | 咨询收件箱 | `/admin/workspace/inquiries` |
-| 分享素材 | `/admin/workspace/share`（文案 / 真实小程序码 / 海报） |
-| 上架检查 | `/admin/workspace/quality`（资料是否齐全） |
 | 系统设置 | `/admin/workspace/system` |
 
 设备是否进入小程序公开列表：在咨询详情「处理编辑 → 设备公开设置」中配置。
 
+分享素材 `/admin/workspace/share`、上架检查 `/admin/workspace/quality` 从项目列表工具区进入；项目相关页面的导航会显示这两个次级入口。操作说明见 [CMS 上手指南](../docs/payload-cms-quickstart.md)。
+
 - Property workspace: URL-backed filters, table, quick-edit drawer, bulk publish controls.
-- Inquiry inbox: three handling states and one internal note; no CRM timeline or assignment workflow.
+- Inquiry inbox: three handling states and one internal note; both are always visible in the detail sidebar. “已结束” means no further follow-up, not a completed transaction.
 - Equipment workspace: independent public status and public description.
 - Roles: `admin` and `editor`.
 - Primary list for consultations is `/admin/workspace/inquiries`; 「完整详情」opens `/admin/collections/leads/:id`.
@@ -66,6 +66,8 @@ pnpm --dir backend schema:push
 ```
 
 Compose 仅提供后端，没有 `db`、`migrate` 服务或 `schema` profile；数据库由 `DATABASE_URI` 指向外部 PostgreSQL。正常启动及镜像构建保持 `PAYLOAD_DB_PUSH=false`。
+
+Schema 入口统一为 `scripts/push-schema.ts`。`public/.gitkeep` 保留静态资源目录，供新检出和 Docker 构建使用；默认 Next 示例图已清理。临时验证文件与本机配置遵循根目录 `.gitignore`。
 
 商业字段与 Payload 认证字段升级分别见 [商业迁移说明](../docs/商业项目接入-迁移与发布说明.md) 和根目录 [README](../README.md#验证)。
 

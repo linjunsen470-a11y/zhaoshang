@@ -71,6 +71,7 @@ export async function GET(request: Request) {
         phone: String(doc.phone || ''),
         leadType: String(doc.leadType || 'leasing'),
         status: String(doc.status || 'new'),
+        equipmentPublicationStatus: String((doc.equipmentPublication as { status?: string } | undefined)?.status || 'draft'),
         businessType: String(doc.businessType || ''),
         businessScene: String(doc.businessScene || ''),
         budgetRange: String(doc.budgetRange || ''),

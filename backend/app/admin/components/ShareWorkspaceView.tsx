@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
+import { PROPERTY_STATUS_OPTIONS } from '@/collections/shared/fieldOptions'
 import { ShareMaterialPanel } from './ShareMaterialPanel'
 
 type ShareProject = {
@@ -79,9 +81,12 @@ export function ShareWorkspaceView() {
           <h1>分享素材</h1>
           <p>选择已公开的项目或铺位，复制分享文案并生成海报。</p>
         </div>
+        <div className="cms-row-actions">
+        <Link className="cms-button" href="/admin/collections/projects">返回项目与铺位</Link>
         <button className="cms-button" type="button" disabled={loading} onClick={refresh}>
           {loading ? '刷新中…' : '刷新房源'}
         </button>
+        </div>
       </header>
 
       {error ? <div className="cms-alert" role="alert">{error}</div> : null}
@@ -89,7 +94,8 @@ export function ShareWorkspaceView() {
 
       <div className="cms-ops-grid cms-ops-grid--share">
         <article className="cms-panel cms-ops-card">
-          <h3>开放中房源</h3>
+          <h3>已公开的项目与铺位</h3>
+          <p className="cms-help">显示最近更新的 20 条公开记录，包含即将开放和已满/已转。</p>
           {projects.length ? (
             <ul className="cms-ops-list">
               {projects.map(item => (
@@ -97,7 +103,7 @@ export function ShareWorkspaceView() {
                   <button type="button" className="cms-ops-select" onClick={() => setShareId(item.id)}>
                     <strong>{item.title}</strong>
                     <small>
-                      {item.schoolName || item.district || item.status}
+                      {item.schoolName || item.district || PROPERTY_STATUS_OPTIONS.find(option => option.value === item.status)?.label || '已公开'}
                       {item.coverImage ? ' · 有封面' : ' · 无封面'}
                     </small>
                   </button>

@@ -41,15 +41,15 @@ For Payload admin UX changes:
 
 - Register custom admin components in `backend/app/admin/components/` and wire them through `backend/app/admin/[[...segments]]/importMap.js`.
 - Custom workspace views belong under `admin.components.views` with a `path` (e.g. `/workspace/inquiries`). Primary nav routes:
-  - 运营工作台: `/admin`（团队待办 + 漏斗；dashboard 勿再包 AdminWorkspaceShell）
+  - 运营工作台: `/admin`（日常入口 + 待联系咨询；dashboard 勿再包 AdminWorkspaceShell）
   - 项目与铺位: `/admin/collections/projects`
   - 咨询收件箱: `/admin/workspace/inquiries`
-  - 分享素材: `/admin/workspace/share`（文案 + 小程序码 + 海报图）
-  - 上架检查: `/admin/workspace/quality`（原质量门禁，通俗命名）
+  - 项目工具（次级入口）: 分享素材 `/admin/workspace/share`、上架检查 `/admin/workspace/quality`；从项目列表或项目相关页面的次级导航进入
   - 系统: `/admin/workspace/system`
   - 聚合数据: `GET /api/admin/ops-workbench`；咨询快捷改状态: `PATCH /api/admin/inquiries`
 - Workspace custom views (`/workspace/*`) must use `*Route` server components that wrap content with `AdminWorkspaceShell` (`DefaultTemplate`), otherwise the Payload nav/account chrome is missing.
 - Lead detail has two layers: `customerSnapshot` (immutable original) and editable working fields under the「处理编辑」tab. Populate snapshot on create via `buildLeadSnapshot`; never overwrite on update.
+- Keep consultation handling status and internal note in the detail sidebar. “已结束” does not mean “成交”; equipment publication remains an independent state. Project editing uses the native save button plus status selection; do not add another competing publish/save flow.
 - Keep `leads`, `projects`, `users`, and `media` visible so native document routes work (e.g. 「完整详情」→ `/admin/collections/leads/:id`). Hide default Payload nav groups via `admin-theme.css`; PrimaryNav is the IA.
 - Keep dropdown labels/options aligned with the mini-program via `backend/collections/shared/fieldOptions.ts`.
 - Staff roles are `admin` and `editor`; enforce permissions through `backend/collections/shared/access.ts`.

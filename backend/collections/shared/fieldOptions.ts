@@ -32,6 +32,14 @@ export const LEAD_STATUS_OPTIONS = [
   { label: '已结束', value: 'closed', tone: '#64748b' },
 ] as const
 
+export const LEAD_STATUS_HELP = '待联系：尚未联系；已联系：已沟通、继续跟进；已结束：不再跟进，不代表已成交。'
+export const PROPERTY_STATUS_HELP = '草稿、已下架不公开；开放中、即将开放、已满/已转会在小程序展示。选择状态后点击保存才生效。'
+
+export const OPPORTUNITY_TYPE_OPTIONS = [
+  { label: '招商（出租）', value: 'leasing' },
+  { label: '店铺转让', value: 'transfer' },
+] as const
+
 export const PROPERTY_STATUS_OPTIONS = [
   { label: '草稿', value: 'draft' },
   { label: '开放中', value: 'online' },
@@ -41,7 +49,7 @@ export const PROPERTY_STATUS_OPTIONS = [
 ] as const
 
 export const EQUIPMENT_PUBLICATION_OPTIONS = [
-  { label: '待整理', value: 'draft' },
+  { label: '未发布', value: 'draft' },
   { label: '已发布', value: 'online' },
   { label: '已下架', value: 'offline' },
 ] as const
