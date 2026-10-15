@@ -73,7 +73,7 @@ export function ShareMaterialPanel({ project, compact }: Props) {
     if (!posterUrl) return
     const a = document.createElement('a')
     a.href = posterUrl
-    a.download = `校园商铺-${String(project.title || project.id).slice(0, 24)}.png`
+    a.download = `开店找铺-${String(project.title || project.id).slice(0, 24)}.png`
     a.click()
     setMessage('海报已开始下载')
   }

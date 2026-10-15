@@ -48,6 +48,8 @@ Page({
     this.setData({ showEditModal: false });
   },
 
+  noop() {},
+
   onSaveEdit() {
     const { editNickname, editPhone } = this.data;
 
@@ -100,8 +102,8 @@ Page({
 
   onShowAbout() {
     wx.showModal({
-      title: '关于学校招商宝',
-      content: '学校商铺招商宝是一款专注于高校食堂档口、商业街铺位、校内外服务网点的信息展示与意向线索对接平台。版本：v1.0.0',
+      title: '关于商业空间招商服务',
+      content: '为餐饮、零售和校园服务商户提供项目与铺位查询、店铺转让、设备供需及顾问对接服务。版本：v1.0.0',
       showCancel: false,
       confirmText: '我知道了'
     });

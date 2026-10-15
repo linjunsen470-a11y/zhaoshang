@@ -15,15 +15,15 @@
   ],
   "window": {
     "backgroundTextStyle": "light",
-    "navigationBarBackgroundColor": "#0f172a",
-    "navigationBarTitleText": "校园商铺招商平台",
-    "navigationBarTextStyle": "white"
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "navigationBarTitleText": "商业空间",
+    "navigationBarTextStyle": "black"
   },
   "tabBar": {
-    "color": "#94a3b8",
-    "selectedColor": "#3b82f6",
+    "color": "#67746D",
+    "selectedColor": "#204C3C",
     "borderStyle": "white",
-    "backgroundColor": "#ffffff",
+    "backgroundColor": "#FFFFFF",
     "list": [
       {
         "pagePath": "pages/index/index",

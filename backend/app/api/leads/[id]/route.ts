@@ -9,6 +9,7 @@ import {
   LEAD_ID_OFFSET,
 } from '../../_shared/payloadApi'
 import { requireAuth } from '../../_shared/auth'
+import { readJsonObject, jsonInputError } from '../../_shared/requestInput'
 
 type Args = {
   params: Promise<{ id: string }>
@@ -77,9 +78,9 @@ export async function PUT(request: Request, { params }: Args) {
   const id = parseLeadId(rawId)
   let input: Record<string, unknown>
   try {
-    input = await request.json() as Record<string, unknown>
-  } catch {
-    return json({ error: '无效的 JSON 请求体' }, 400)
+    input = await readJsonObject(request)
+  } catch (error) {
+    return jsonInputError(error)
   }
   const validationError = validateLeadUserInput(input)
   if (validationError) return json({ error: validationError }, 400)
@@ -111,6 +112,8 @@ export async function PUT(request: Request, { params }: Args) {
       data: sanitizeLeadUpdateInput(input, auth.openid, {
         leadType: lead.leadType,
         sourceChannel: lead.sourceChannel,
+        project: lead.project,
+        businessScene: lead.businessScene,
       }),
       overrideAccess: true,
     })
@@ -156,7 +159,11 @@ export async function DELETE(request: Request, { params }: Args) {
     }
 
     // 3. 执行删除
-    const leadAttachmentIds = attachmentIds(lead.attachments)
+    const snapshot = lead.customerSnapshot as { attachmentIds?: unknown } | undefined
+    const leadAttachmentIds = [...new Set([
+      ...attachmentIds(lead.attachments),
+      ...attachmentIds(snapshot?.attachmentIds),
+    ])]
 
     await payload.delete({
       collection: 'leads',

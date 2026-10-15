@@ -44,3 +44,20 @@ test('lead validation covers phone, attachments and nested field limits', () => 
   assert.equal(validateLeadUserInput({ equipmentDetails: { specText: 'x'.repeat(101) } }), 'equipmentDetails.specText 内容过长')
   assert.equal(validateLeadUserInput({ phone: '13812345678', attachments: [] }), null)
 })
+
+test('partial updates preserve omitted experience and scene; nested CRM fields are discarded', () => {
+  const result = sanitizeLeadUpdateInput({ remark: '补充', transferDetails: { locationText: '广州', internalNote: '注入' } }, 'openid-a', { leadType: 'transfer' })
+  assert.equal(result.hasCampusExperience, undefined)
+  assert.equal(result.businessScene, undefined)
+  assert.deepEqual(result.transferDetails, { locationText: '广州' })
+  assert.equal(sanitizeLeadCreateInput({ sourceChannel: 'admin' }, 'openid-a').sourceChannel, 'mini_program')
+})
+
+test('lead validation rejects blank names, fake booleans and invalid attachment identifiers', () => {
+  assert.ok(validateLeadUserInput({ name: '   ' }))
+  assert.ok(validateLeadUserInput({ name: ' '.repeat(500) + '客户' }))
+  assert.ok(validateLeadUserInput({ hasCampusExperience: 'false' }))
+  assert.ok(validateLeadUserInput({ equipmentDetails: { equipmentName: true } }))
+  for (const id of [null, {}, '', 'bad', 0, -1, 1.5]) assert.ok(validateLeadUserInput({ attachments: [id] }))
+  assert.equal(validateLeadUserInput({ attachments: [1, '2', { id: 3 }] }), null)
+})

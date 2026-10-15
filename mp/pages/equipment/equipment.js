@@ -9,6 +9,7 @@ const EQUIPMENT_LEAD_TYPES = ['equipment_sell', 'equipment_buy', 'equipment_recy
 Page({
   behaviors: [formBehavior],
   data: {
+    requiredFields: [{ key: 'equipmentName', message: '请填写设备名称' }],
     leadType: 'equipment_sell',
     equipmentName: '',
     specText: '',
@@ -35,11 +36,11 @@ Page({
     if (this.data.isEditMode) return;
     this.setData({ leadType: allowedValue(e.currentTarget.dataset.type, EQUIPMENT_LEAD_TYPES, this.data.leadType) });
   },
-  onInputEquipmentName(e) { this.setData({ equipmentName: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
+  onInputEquipmentName(e) { this.clearFieldError('equipmentName'); this.setData({ equipmentName: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
   onInputSpec(e) { this.setData({ specText: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
   onInputCondition(e) { this.setData({ equipmentCondition: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
   onInputBudget(e) { this.setData({ budgetRange: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
-  onInputRegion(e) { this.setData({ regionPreference: clip(e.detail.value, config.MAX_REGION_LENGTH) }); },
+  onInputRegion(e) { this.clearFieldError('regionPreference'); this.setData({ regionPreference: clip(e.detail.value, config.MAX_REGION_LENGTH) }); },
 
   onSubmitForm() {
     if (!this.validateCommonForm()) return;

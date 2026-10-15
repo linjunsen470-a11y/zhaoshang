@@ -54,7 +54,7 @@ export async function GET(request: Request, { params }: Args) {
     return new Response(new Uint8Array(data), {
       headers: {
         'Content-Type': mimeType,
-        'Cache-Control': 'public, max-age=3600',
+        'Cache-Control': 'no-store',
         'X-Content-Type-Options': 'nosniff',
       },
     })

@@ -1,7 +1,10 @@
+import { commercialScene, commercialIsPublic } from '../../../lib/commercial'
+import { publicCampusLabel, redactPublicProject, scrubSchoolText } from '../../../lib/publicSchool'
 import config from '@/payload.config'
 import { getPayload } from 'payload'
 import type { Where } from 'payload'
-import { sanitizeLeadCreateInput } from './leadPolicy'
+import { relationIds } from './relationIds'
+import { signMediaToken } from './tokens'
 
 export {
   MINI_PROGRAM_LEAD_TYPES,
@@ -116,28 +119,13 @@ function objectValue(value: unknown) {
   return value && typeof value === 'object' ? value as Record<string, unknown> : {}
 }
 
-export function toDatabaseId(value: unknown): string | number | undefined {
-  if (typeof value === 'number') return value
-  if (typeof value === 'string') {
-    const num = Number(value)
-    return Number.isNaN(num) ? value : num
-  }
-  if (value && typeof value === 'object' && 'id' in value) {
-    const idVal = (value as { id: unknown }).id
-    return toDatabaseId(idVal)
-  }
-  return undefined
-}
-
-function ids(value: unknown) {
-  if (!Array.isArray(value)) return undefined
-  return value.map(toDatabaseId).filter(Boolean) as (string | number)[]
-}
-
 export function mapMedia(doc: Doc) {
+  const privateImage = doc.source === 'lead_attachment' && typeof doc.ownerOpenId === 'string' && doc.ownerOpenId
   return {
     id: String(doc.id),
-    url: imageUrl(doc),
+    url: privateImage
+      ? absoluteUrl(`/api/uploads/lead-image/${doc.id}?token=${encodeURIComponent(signMediaToken(String(doc.id), String(doc.ownerOpenId)))}`)
+      : imageUrl(doc),
     alt: stringValue(doc.alt),
     createdAt: toTimestamp(doc.createdAt),
     updatedAt: toTimestamp(doc.updatedAt),
@@ -195,9 +183,32 @@ export function mapProject(doc: Doc, isStaff = false) {
   const coverImage = imageUrl(doc.coverImage)
   const finalImages = images.length ? images : (coverImage ? [coverImage] : [])
 
-  return {
+  const mapped = {
     id: String(doc.id),
     opportunityType,
+    listingKind: doc.listingKind === 'project' ? 'project' : 'unit',
+    businessScene: commercialScene(doc),
+    venueName: stringValue(doc.venueName),
+    unitLocation: stringValue(doc.unitLocation),
+    areaMin: typeof doc.areaMin === 'number' ? doc.areaMin : null,
+    areaMax: typeof doc.areaMax === 'number' ? doc.areaMax : null,
+    monthlyRentMin: typeof doc.monthlyRentMin === 'number' ? doc.monthlyRentMin : null,
+    monthlyRentMax: typeof doc.monthlyRentMax === 'number' ? doc.monthlyRentMax : null,
+    communityInfo: stringValue(doc.communityInfo),
+    tourismInfo: stringValue(doc.tourismInfo),
+    mallInfo: stringValue(doc.mallInfo),
+    premisesConditions: stringValue(doc.premisesConditions),
+    introduction: stringValue(doc.introduction),
+    operatingRequirements: stringValue(doc.operatingRequirements),
+    parentProject: (() => {
+      const parent = objectValue(doc.parentProject)
+      if (!(parent.id && (isStaff || commercialIsPublic(parent)))) return null
+      const title = stringValue(parent.title)
+      return { id: String(parent.id), title: isStaff ? title : scrubSchoolText(title, parent), status: stringValue(parent.status) }
+    })(),
+    placeLabel: commercialScene(doc) === 'campus'
+      ? publicCampusLabel(doc.city, doc.district)
+      : stringValue(doc.venueName) || stringValue(doc.district),
     title: stringValue(doc.title),
     city: stringValue(doc.city),
     district: stringValue(doc.district),
@@ -221,14 +232,14 @@ export function mapProject(doc: Doc, isStaff = false) {
     isRecommended: booleanValue(doc.isRecommended),
     sort: numberValue(doc.sort),
     remark: isStaff ? stringValue(doc.remark) : '',
-    budgetCategory: getProjectBudgetCategory(doc as { feeText?: unknown }),
     createdAt: toTimestamp(doc.createdAt),
     updatedAt: toTimestamp(doc.updatedAt),
   }
+  return isStaff ? mapped : redactPublicProject(mapped, doc)
 }
 
 export function isPublicProject(doc: Record<string, unknown>) {
-  return PUBLIC_STATUSES.includes(stringValue(doc.status))
+  return commercialIsPublic(doc)
 }
 
 
@@ -247,6 +258,7 @@ export async function mapLeads(docs: Doc[]) {
       name: stringValue(doc.name),
       phone: stringValue(doc.phone),
       businessType: stringValue(doc.businessType),
+      businessScene: stringValue(doc.businessScene),
       budgetRange: stringValue(doc.budgetRange),
       regionPreference: stringValue(doc.regionPreference),
       hasCampusExperience: booleanValue(doc.hasCampusExperience),
@@ -260,7 +272,7 @@ export async function mapLeads(docs: Doc[]) {
       remark: stringValue(doc.remark),
       status: stringValue(doc.status) || 'new',
       projectId: relationId(doc.project),
-      projectTitle: stringValue(doc.projectTitle) || relationTitle(doc.project) || '',
+      projectTitle: scrubSchoolText(stringValue(doc.projectTitle) || relationTitle(doc.project) || '', objectValue(doc.project)),
       createdAt: toTimestamp(doc.createdAt),
       updatedAt: toTimestamp(doc.updatedAt),
     }))
@@ -272,24 +284,9 @@ export async function mapLead(doc: Doc) {
 }
 
 
-export function getProjectBudgetCategory(project: { feeText?: unknown }) {
-  const text = typeof project.feeText === 'string' ? project.feeText : ''
-  if (text.includes('面议') || text.includes('扣点') || text.includes('抽成')) return '面议'
-
-  const match = text.match(/([\d.]+)/)
-  if (!match) return '面议'
-
-  const val = Number.parseFloat(match[1])
-  const yearly = text.includes('月') ? val * 12 : val
-  if (yearly < 5) return '5万以内'
-  if (yearly <= 10) return '5-10万'
-  if (yearly <= 20) return '10-20万'
-  if (yearly <= 50) return '20-50万'
-  return '50万以上'
-}
-
 export function sanitizeProjectInput(input: Record<string, unknown>) {
   return {
+    ...Object.fromEntries(['listingKind', 'businessScene', 'parentProject', 'venueName', 'unitLocation', 'areaMin', 'areaMax', 'monthlyRentMin', 'monthlyRentMax', 'communityInfo', 'tourismInfo', 'mallInfo', 'premisesConditions', 'introduction', 'operatingRequirements', 'coverImage', 'images'].filter(key => input[key] !== undefined).map(key => [key, input[key]])),
     opportunityType: input.opportunityType || 'leasing',
     title: input.title,
     city: input.city,
@@ -315,16 +312,11 @@ export function sanitizeProjectInput(input: Record<string, unknown>) {
   }
 }
 
-/** @deprecated Use sanitizeLeadCreateInput or sanitizeLeadUpdateInput */
-export function sanitizeLeadInput(input: Record<string, unknown>, submitterOpenId?: string) {
-  return sanitizeLeadCreateInput(input, submitterOpenId || String(input.submitterOpenId || ''))
-}
-
 export async function validateAttachmentOwnership(
   attachmentIds: unknown,
   ownerOpenId: string,
 ): Promise<Response | null> {
-  const normalized = ids(attachmentIds)
+  const normalized = relationIds(attachmentIds)
   if (!normalized?.length) return null
 
   const payload = await getPayloadInstance()
@@ -337,13 +329,7 @@ export async function validateAttachmentOwnership(
       })
       const owner = typeof media?.ownerOpenId === 'string' ? media.ownerOpenId : ''
       const source = typeof media?.source === 'string' ? media.source : ''
-      if (source === 'lead_attachment') {
-        if (!owner || owner !== ownerOpenId) {
-          return json({ error: '无权使用该附件' }, 403)
-        }
-      } else if (source === 'seed_demo' || source === 'admin') {
-        return json({ error: '无权使用该附件' }, 403)
-      } else if (owner && owner !== ownerOpenId) {
+      if (source !== 'lead_attachment' || !owner || owner !== ownerOpenId) {
         return json({ error: '无权使用该附件' }, 403)
       }
     } catch {
@@ -354,15 +340,35 @@ export async function validateAttachmentOwnership(
   return null
 }
 
-/** Delete lead attachments only after no remaining lead references them. */
+/** Keep files referenced by either a working copy or an immutable original. */
 export async function deleteOwnedOrphanAttachments(
   attachmentIds: (string | number)[],
   ownerOpenId: string,
 ) {
   if (!attachmentIds.length) return
   const payload = await getPayloadInstance()
+  const originalIds = new Set<string>()
+  let page = 1
+  while (true) {
+    const originals = await payload.find({
+      collection: 'leads',
+      where: { submitterOpenId: { equals: ownerOpenId } },
+      select: { customerSnapshot: true },
+      page,
+      limit: 100,
+      depth: 0,
+      overrideAccess: true,
+    })
+    for (const lead of originals.docs) {
+      const snapshot = objectValue(lead.customerSnapshot)
+      if (Array.isArray(snapshot.attachmentIds)) snapshot.attachmentIds.forEach(id => originalIds.add(String(id)))
+    }
+    if (!originals.hasNextPage) break
+    page += 1
+  }
 
   for (const id of attachmentIds) {
+    if (originalIds.has(String(id))) continue
     try {
       const references = await payload.find({
         collection: 'leads',
@@ -372,6 +378,12 @@ export async function deleteOwnedOrphanAttachments(
         overrideAccess: true,
       })
       if (references.totalDocs > 0) continue
+      const projects = await payload.count({
+        collection: 'projects',
+        where: { or: [{ coverImage: { equals: id } }, { images: { contains: id } }] } as Where,
+        overrideAccess: true,
+      })
+      if (projects.totalDocs > 0) continue
 
       const media = await payload.findByID({ collection: 'media', id, overrideAccess: true })
       if (media.source !== 'lead_attachment' || media.ownerOpenId !== ownerOpenId) continue

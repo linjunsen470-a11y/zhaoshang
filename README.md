@@ -1,6 +1,8 @@
 # 校园商铺招商平台
 
-面向校园商铺房源展示、店铺转让、咨询收集和餐饮设备供需的小程序与管理后台。
+面向校园、社区、文旅街区和购物中心的项目/铺位展示、转让、咨询收集和设备供需的小程序与管理后台。
+
+2026-10-16 demo 审计与验证限制见 [预上线审计](docs/demo-prelaunch-audit-2026-10-16.md)。本地演示默认使用小程序 Storage；体验版/正式版仍需补齐发布配置与真机验收。
 
 ## 项目结构
 
@@ -20,12 +22,14 @@ Payload 是唯一管理后台。旧静态 Mock 后台已删除，`server.js` 不
 
 ## 后台结构
 
-登录 `http://localhost:3000/admin` 后直接进入房源管理：
+登录 `http://localhost:3000/admin` 后进入运营工作台：
 
-- `房源管理`：搜索、筛选、快速修改、批量上下架和完整编辑。
+- `运营工作台`：团队待办与咨询漏斗。
+- `项目与铺位`：搜索、筛选、快速修改、批量上下架和完整编辑。
 - `咨询收件箱`：仅维护待联系、已联系、已结束和一条内部备注。
 - 设备供需：普通用户提交后先进入咨询收件箱，后台审核通过并设为“已发布”后才进入小程序公开列表；不再占用独立主导航。
-- `系统设置`：管理员维护账号；媒体库仅管理员可见。
+- `分享素材` / `上架检查`：分享文案、二维码和发布资料检查。
+- `系统设置`：管理员维护账号与媒体；editor 也可在业务编辑中使用媒体。
 
 后台角色只有：
 
@@ -41,12 +45,13 @@ pnpm install
 pnpm --dir backend install
 ```
 
-复制环境变量并启动 PostgreSQL：
+先准备独立的 PostgreSQL 数据库，再复制环境变量：
 
 ```bash
 cp backend/.env.example backend/.env
-docker compose up -d db
 ```
+
+在 `backend/.env` 填写可用的 `DATABASE_URI` 和本地密钥；当前 Compose 只有后端服务，不创建 PostgreSQL。首次建库可显式执行 `pnpm --dir backend schema:push`，已有库升级需先备份并按下文迁移。
 
 启动 Payload：
 
@@ -95,9 +100,9 @@ Schema push 会删除已退出配置的商户档案、跟进记录和高级 CRM 
 
 生产 Compose 不会自动 push schema。需变更结构时，先备份数据库，再显式执行：
 
-```bash
-docker compose --profile schema run --rm migrate
-```
+在维护环境中使用与目标数据库一致的 `DATABASE_URI`，执行 `pnpm --dir backend schema:push`。
+当前 Compose 仅包含后端服务，数据库由 `DATABASE_URI` 指向外部 PostgreSQL。
+不要在镜像构建期间推送业务数据库结构。
 
 ## 主要 API
 
@@ -123,10 +128,26 @@ docker compose --profile schema run --rm migrate
 
 ```bash
 pnpm backend:lint
+pnpm test:ci
 pnpm --dir backend test:cms
-node backend/node_modules/typescript/bin/tsc --noEmit -p backend/tsconfig.json
 pnpm backend:build
+node scripts/mp-check-templates.mjs
+pnpm launch:check
 ```
+
+`backend:build` 包含 TypeScript 检查；模板编译需要微信开发者工具（非默认安装目录可设置 `MP_COMPILER_DIR`）。`test:ci` 默认跳过真实 HTTP 契约；需独立测试后端和两名测试用户，见 [自动化测试说明](docs/miniprogram-automation-test.md)。
+
+历史安全与容器验收见 [2026-10-12 审计](docs/prelaunch-audit-2026-10-12.md)。
+`launch:check` 检查发布配置，不输出密钥；开发环境配置未补齐时会返回非零退出码。
+
+Payload 升级至 3.90.2 时，已有数据库需补充账号重置密码时间字段。先备份目标数据库，再预览和执行非破坏性迁移：
+
+```bash
+pnpm --dir backend migrate:payload-auth
+pnpm --dir backend migrate:payload-auth -- --apply
+```
+
+确保维护环境的 `DATABASE_URI` 指向目标数据库，并在切换新版后端前完成迁移。
 
 微信开发者工具中应验证房源浏览、咨询提交与编辑、图片上传、设备列表、Token 刷新和隐私政策页面。
 
@@ -141,3 +162,7 @@ pnpm backend:build
 - 不提交 `.env`、`.next/`、`node_modules/`、上传目录或日志。
 
 详细上线步骤见 [docs/miniprogram-launch-checklist.md](docs/miniprogram-launch-checklist.md)，后台设计说明见 [docs/payload-admin-ux-audit.md](docs/payload-admin-ux-audit.md)。
+
+## 分支约定
+
+保留 `main`（已验证的 demo 基线）和 `codex/demo-prelaunch`（本轮集成与后续小修）；新功能按需临时开分支，合入后清理。旧 CMS、后台路由和小程序开发分支的提交应先确认已包含在 `main`，再删除分支引用。

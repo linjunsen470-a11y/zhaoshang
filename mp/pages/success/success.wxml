@@ -1,21 +1,13 @@
 <view class="container success-container">
   <view class="success-card card flex flex-col align-center">
-    <icon type="success" size="80" color="#10b981" class="success-icon"></icon>
+    <icon type="success" size="64" color="#204C3C" class="success-icon">
+    </icon>
     <view class="success-title">提交成功</view>
-    <view class="success-desc">
-      招商顾问会根据你的经营品类和预算，为你匹配合适的学校商业项目。工作日将优先与你联系，请保持电话畅通。
-    </view>
+    <view class="success-desc">招商顾问会查看你提交的信息并联系跟进。请保持电话畅通，以便进一步确认需求。</view>
   </view>
-
   <view class="btn-group">
-    <button class="btn btn-primary action-btn e2e-view-leads" data-test="view-created-lead" hover-class="btn-primary-active" bindtap="onViewLeads">
-      查看我的咨询记录
-    </button>
-    <button class="btn btn-secondary action-btn" hover-class="btn-secondary-active" bindtap="onGoHome">
-      返回招商首页
-    </button>
-    <button class="btn btn-outline action-btn" hover-class="btn-outline-active" bindtap="onCallAdvisor">
-      拨打顾问专线
-    </button>
+    <button class="btn btn-primary action-btn e2e-view-leads" data-test="view-created-lead" hover-class="btn-primary-active" bindtap="onViewLeads">查看我的咨询记录</button>
+    <button class="btn btn-secondary action-btn" hover-class="btn-secondary-active" bindtap="onGoHome">返回服务首页</button>
+    <button class="btn btn-outline action-btn" hover-class="btn-outline-active" bindtap="onCallAdvisor">联系招商顾问</button>
   </view>
 </view>

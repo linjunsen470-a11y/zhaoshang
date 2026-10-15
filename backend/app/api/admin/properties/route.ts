@@ -1,10 +1,11 @@
+import { commercialFilters } from '../../../../lib/commercial'
 import type { Where } from 'payload'
 import { getProjectMissingFields, PUBLIC_PROJECT_STATUSES } from '../../../../collections/Projects'
 import { getAuthenticatedStaff } from '../../_shared/auth'
+import { readJsonObject, jsonInputError } from '../../_shared/requestInput'
 import { getPayloadInstance, json, mapProject } from '../../_shared/payloadApi'
 
-const FILTER_KEYS = ['status', 'opportunityType', 'district', 'projectType'] as const
-const QUICK_FIELDS = ['title', 'district', 'areaText', 'feeText', 'status', 'isRecommended', 'sort'] as const
+const QUICK_FIELDS = ['title', 'district', 'areaText', 'feeText', 'status', 'isRecommended', 'sort', 'areaMin', 'areaMax', 'monthlyRentMin', 'monthlyRentMax'] as const
 const SORTS = new Set(['-updatedAt', 'updatedAt', '-sort', 'sort', 'title', '-title'])
 
 function positiveInt(value: string | null, fallback: number, max: number) {
@@ -28,24 +29,8 @@ export async function GET(request: Request) {
 
   const payload = await getPayloadInstance()
   const { searchParams } = new URL(request.url)
-  const where: Where[] = []
-  const q = searchParams.get('q')?.trim().slice(0, 80)
-
-  if (q) {
-    where.push({
-      or: [
-        { title: { contains: q } },
-        { schoolName: { contains: q } },
-        { schoolAlias: { contains: q } },
-        { addressText: { contains: q } },
-      ],
-    })
-  }
-
-  for (const key of FILTER_KEYS) {
-    const value = searchParams.get(key)
-    if (value) where.push({ [key]: { equals: value } } as Where)
-  }
+  let where: Where[]
+  try { where = commercialFilters(searchParams) } catch (error) { return json({ error: error instanceof Error ? error.message : '筛选无效' }, 400) }
 
   const page = positiveInt(searchParams.get('page'), 1, 100000)
   const limit = positiveInt(searchParams.get('limit'), 25, 100)
@@ -79,9 +64,9 @@ export async function PATCH(request: Request) {
 
   let body: { ids?: unknown; data?: unknown }
   try {
-    body = await request.json() as { ids?: unknown; data?: unknown }
-  } catch {
-    return json({ error: '请求内容不是有效的 JSON' }, 400)
+    body = await readJsonObject(request)
+  } catch (error) {
+    return jsonInputError(error)
   }
 
   const ids = Array.isArray(body.ids) ? [...new Set(body.ids.map(String).filter(Boolean))].slice(0, 100) : []

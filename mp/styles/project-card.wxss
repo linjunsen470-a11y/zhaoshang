@@ -1,0 +1,127 @@
+.property-row {
+  position: relative;
+  display: flex;
+  gap: 24rpx;
+  padding: 28rpx 0;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.property-media {
+  position: relative;
+  flex: 0 0 200rpx;
+  width: 200rpx;
+  height: 200rpx;
+}
+
+.property-image {
+  display: block;
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 16rpx;
+  background: var(--wash);
+}
+
+.property-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  color: var(--muted);
+  font-size: 24rpx;
+}
+
+.property-fallback .line-icon {
+  opacity: .45;
+}
+
+.property-content {
+  flex: 1;
+  min-width: 0;
+  padding-right: 56rpx;
+}
+
+.property-kind {
+  color: var(--pine);
+  font-size: 22rpx;
+  margin-bottom: 4rpx;
+}
+
+.property-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.property-location, .property-meta {
+  margin-top: 8rpx;
+  color: var(--muted);
+  font-size: 24rpx;
+}
+
+.property-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx;
+  margin-top: 12rpx;
+}
+
+.property-tag {
+  padding: 2rpx 8rpx;
+  color: var(--muted);
+  background: var(--wash);
+  font-size: 22rpx;
+  border-radius: 4rpx;
+}
+
+.property-price {
+  margin-top: 16rpx;
+  color: var(--pine);
+  font-size: 28rpx;
+  font-weight: 600;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.property-price.quiet {
+  color: var(--muted);
+  font-size: 26rpx;
+  font-weight: 400;
+}
+
+.property-price-label {
+  color: var(--muted);
+  font-size: 22rpx;
+  font-weight: 400;
+  margin-right: 8rpx;
+}
+
+.property-favorite {
+  position: absolute;
+  top: 16rpx;
+  right: -12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  background: transparent;
+  padding: 0;
+}
+
+.property-favorite image {
+  width: 36rpx;
+  height: 36rpx;
+}
+
+.property-status {
+  position: absolute;
+  left: 8rpx;
+  top: 8rpx;
+  padding: 2rpx 8rpx;
+  border-radius: 4rpx;
+  color: var(--ink);
+  background: rgba(255,255,255,.94);
+  font-size: 22rpx;
+}

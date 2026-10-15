@@ -12,22 +12,30 @@
     "start": "next start",
     "lint": "eslint",
     "test:cms": "node --test --test-isolation=none tests/cms.test.mjs",
-    "test:api": "tsx --test --test-isolation=none tests/lead-policy.test.ts",
+    "test:api": "tsx --test --test-isolation=none tests/lead-policy.test.ts tests/commercial.test.ts tests/request-input.test.ts tests/tokens.test.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
     "migrate:property-cms": "tsx scripts/migrate-property-cms.ts",
     "schema:ensure-leads": "node scripts/ensure-leads-schema.mjs",
-    "schema:push": "tsx scripts/push-schema.ts"
+    "schema:push": "tsx scripts/push-schema.ts",
+    "migrate:commercial": "node scripts/migrate-commercial.mjs",
+    "test:commercial:db": "node tests/with-commercial-db.mjs --import tsx tests/commercial.integration.ts",
+    "sync:commercial-options": "node scripts/sync-commercial-options.mjs",
+    "test:commercial:migration": "node tests/with-commercial-db.mjs tests/commercial-migration.mjs",
+    "test:commercial:http": "node tests/commercial-http.mjs",
+    "generate:types": "tsx scripts/generate-commercial-types.ts",
+    "migrate:payload-auth": "node scripts/migrate-payload-auth.mjs",
+    "test:prelaunch:http": "node tests/with-commercial-db.mjs --import tsx --test --test-force-exit --test-isolation=none tests/prelaunch-http.test.ts"
   },
   "dependencies": {
-    "@payloadcms/db-postgres": "^3.85.1",
-    "@payloadcms/next": "^3.85.1",
-    "@payloadcms/richtext-lexical": "^3.85.1",
-    "@payloadcms/ui": "^3.85.1",
-    "next": "16.2.9",
-    "payload": "^3.85.1",
+    "@payloadcms/db-postgres": "^3.90.2",
+    "@payloadcms/next": "^3.90.2",
+    "@payloadcms/richtext-lexical": "^3.90.2",
+    "@payloadcms/ui": "^3.90.2",
+    "next": "16.3.8",
+    "payload": "^3.90.2",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "sharp": "^0.35.1"
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
@@ -35,7 +43,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.9",
+    "eslint-config-next": "16.3.8",
     "tailwindcss": "^4",
     "tsx": "^4.22.4",
     "typescript": "^5"

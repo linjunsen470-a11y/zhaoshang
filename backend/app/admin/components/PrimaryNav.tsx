@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 
 /**
  * Nav order (business first):
- * 运营工作台 → 房源管理 → 咨询收件箱 → 分享素材 → 上架检查 → 系统设置
+ * 运营工作台 → 项目与铺位 → 咨询收件箱 → 分享素材 → 上架检查 → 系统设置
  */
 const links = [
   {
@@ -15,7 +15,7 @@ const links = [
     match: (pathname: string) => pathname === '/admin',
   },
   {
-    label: '房源管理',
+    label: '项目与铺位',
     href: '/admin/collections/projects',
     match: (pathname: string) => pathname.startsWith('/admin/collections/projects'),
   },

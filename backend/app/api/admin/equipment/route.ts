@@ -1,5 +1,6 @@
 import type { Where } from 'payload'
 import { getAuthenticatedStaff } from '../../_shared/auth'
+import { readJsonObject, jsonInputError } from '../../_shared/requestInput'
 import { getPayloadInstance, json } from '../../_shared/payloadApi'
 
 const EQUIPMENT_TYPES = ['equipment_sell', 'equipment_buy', 'equipment_recycle']
@@ -57,9 +58,9 @@ export async function PATCH(request: Request) {
   if (!staff) return json({ error: '请先登录后台' }, 401)
   let body: { id?: unknown; status?: unknown; publicRemark?: unknown }
   try {
-    body = await request.json() as typeof body
-  } catch {
-    return json({ error: '请求内容不是有效的 JSON' }, 400)
+    body = await readJsonObject(request)
+  } catch (error) {
+    return jsonInputError(error)
   }
   const id = String(body.id || '')
   const status = String(body.status || '')

@@ -6,19 +6,21 @@ This repository has four main surfaces:
 
 - `mp/`: WeChat mini-program client. Pages live in `mp/pages/<page>/` with matching `.js`, `.wxml`, `.wxss`, and `.json` files. Shared API calls are in `mp/services/api.js`; client constants are in `mp/config.js`; shared form helpers are in `mp/utils/form.js`; images are in `mp/images/`. Core user flows include finding campus shops, submitting transfer/equipment leads, viewing/editing/deleting own consultation history, and reading the privacy policy.
 - `backend/`: Payload CMS + Next.js backend and public website. App routes are in `backend/app/`, collections in `backend/collections/`, CMS configuration in `backend/payload.config.ts`, and admin UI extensions in `backend/app/admin/components/`. Shared field labels/options live in `backend/collections/shared/fieldOptions.ts`; role-based access helpers live in `backend/collections/shared/access.ts`. Mini-program compatibility APIs and shared auth/sanitization helpers are in `backend/app/api/`.
-- Root mock/admin tooling: `server.js` runs the local Node server, `admin/` contains the static admin UI, and `data.json` stores mock data.
+- Root mock tooling: `server.js` runs the local Mock API and `data.json` stores mock data. The static `admin/` UI has been retired; Payload is the only admin.
 - Deployment tooling: `docker-compose.yml`, root `.env.example`, `backend/Dockerfile`, and `backend/.env.example` support production builds.
 
 Docs belong in `docs/`, including `docs/miniprogram-ux-audit.md` and `docs/payload-admin-ux-audit.md`. Deployment configuration is in `docker-compose.yml` and `.env.example`.
 
 ## Build, Test, and Development Commands
 
-- `pnpm dev`: starts the root `server.js` mock API/admin workflow.
+- `pnpm dev`: starts the Next/Payload backend.
+- `pnpm mock:api`: starts the root `server.js` Mock API.
 - `pnpm backend:dev`: starts the Next/Payload backend from the repository root.
 - `pnpm backend:build`: builds the backend from the repository root.
 - `pnpm backend:lint`: runs backend ESLint from the repository root.
 - `pnpm --dir backend install`: installs backend dependencies using the lockfile.
-- `docker compose up -d --build`: from the root, builds and starts the Payload service plus Postgres.
+- `docker compose up -d --build`: builds and starts Payload, connecting to external Postgres via `DATABASE_URI`; Compose has no `db` service.
+- `pnpm test:ci`: runs client/backend unit tests; real HTTP contracts require explicit isolated-environment configuration.
 
 Open the mini-program with WeChat DevTools using `mp/project.config.json`.
 
@@ -40,9 +42,9 @@ For Payload admin UX changes:
 - Register custom admin components in `backend/app/admin/components/` and wire them through `backend/app/admin/[[...segments]]/importMap.js`.
 - Custom workspace views belong under `admin.components.views` with a `path` (e.g. `/workspace/inquiries`). Primary nav routes:
   - 运营工作台: `/admin`（团队待办 + 漏斗；dashboard 勿再包 AdminWorkspaceShell）
-  - 房源管理: `/admin/collections/projects`
+  - 项目与铺位: `/admin/collections/projects`
   - 咨询收件箱: `/admin/workspace/inquiries`
-  - 分享素材: `/admin/workspace/share`（文案 + 示意小程序码 + 海报图）
+  - 分享素材: `/admin/workspace/share`（文案 + 小程序码 + 海报图）
   - 上架检查: `/admin/workspace/quality`（原质量门禁，通俗命名）
   - 系统: `/admin/workspace/system`
   - 聚合数据: `GET /api/admin/ops-workbench`；咨询快捷改状态: `PATCH /api/admin/inquiries`
@@ -52,11 +54,11 @@ For Payload admin UX changes:
 - Keep dropdown labels/options aligned with the mini-program via `backend/collections/shared/fieldOptions.ts`.
 - Staff roles are `admin` and `editor`; enforce permissions through `backend/collections/shared/access.ts`.
 
-Schema changes against Postgres may require `PAYLOAD_DB_PUSH=true` during build or via `backend/scripts/push-schema.ts`.
+Schema changes against Postgres must run explicitly via `backend/scripts/push-schema.ts` after backup. Keep `PAYLOAD_DB_PUSH=false` during normal startup and production image builds.
 
 ## Testing Guidelines
 
-No automated test suite is currently configured. For backend changes, run `pnpm backend:lint` and `pnpm backend:build`. For mini-program changes, verify affected pages in WeChat DevTools, including navigation, form submission, local mock behavior, API error states, lead edit/delete, image upload, token refresh on `401`, and the privacy policy page. If tests are added, place them near the code they cover and use clear names such as `leads.test.ts` or `api.spec.js`.
+For backend changes, run `pnpm backend:lint`, `pnpm test:ci`, `pnpm --dir backend test:cms`, and `pnpm backend:build`. Tests live in `tests/` and `backend/tests/`; real HTTP/database tests must use an isolated test environment. For mini-program changes, compile templates/styles with `node scripts/mp-check-templates.mjs` and verify affected pages in WeChat DevTools, including navigation, form submission, local mock behavior, API error states, lead edit/delete, image upload, token refresh on `401`, and the privacy policy page. Distinguish skipped or unavailable E2E checks from passing tests.
 
 ## Commit & Pull Request Guidelines
 
@@ -77,5 +79,5 @@ Additional security expectations:
 - Staff-only routes (`POST/PUT/DELETE /api/projects`, `/api/stats`, `/api/admin/*`) must use `getAuthenticatedStaff()`, not the mini-program bearer token.
 - Production must use `WECHAT_AUTH_MODE=wechat`; do not rely on `X-Dev-OpenId` outside local mock mode.
 - `PAYLOAD_SECRET` is required in production.
-- The mock admin uses `X-Admin-Access` to list all leads from `server.js`; do not treat that as a production pattern.
+- `server.js` and its development OpenID mechanism are local Mock tooling only; do not use them as a production auth pattern.
 - Keep advisor phone and form length limits centralized in `mp/config.js`.

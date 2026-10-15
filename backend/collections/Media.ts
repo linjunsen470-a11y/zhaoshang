@@ -57,6 +57,7 @@ export const Media: CollectionConfig = {
     {
       name: 'ownerOpenId',
       type: 'text',
+      access: { read: ({ req: { user } }) => isStaffUser(user) },
       label: '上传用户 OpenID',
       admin: {
         readOnly: true,

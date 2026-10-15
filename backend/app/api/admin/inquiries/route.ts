@@ -1,5 +1,6 @@
 import type { Where } from 'payload'
 import { getAuthenticatedStaff } from '../../_shared/auth'
+import { readJsonObject, jsonInputError } from '../../_shared/requestInput'
 import { getPayloadInstance, json } from '../../_shared/payloadApi'
 import { leadTypesForCategory } from '@/collections/shared/fieldOptions'
 
@@ -71,6 +72,7 @@ export async function GET(request: Request) {
         leadType: String(doc.leadType || 'leasing'),
         status: String(doc.status || 'new'),
         businessType: String(doc.businessType || ''),
+        businessScene: String(doc.businessScene || ''),
         budgetRange: String(doc.budgetRange || ''),
         regionPreference: String(doc.regionPreference || ''),
         remark: String(doc.remark || ''),
@@ -105,9 +107,9 @@ export async function PATCH(request: Request) {
 
     let body: { id?: unknown; status?: unknown; internalNote?: unknown }
     try {
-      body = await request.json() as typeof body
-    } catch {
-      return json({ error: '请求内容不是有效的 JSON' }, 400)
+      body = await readJsonObject(request)
+    } catch (error) {
+      return jsonInputError(error)
     }
 
     const id = String(body.id || '')

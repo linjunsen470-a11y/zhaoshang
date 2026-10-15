@@ -16,15 +16,14 @@ export function isAdminUser(user: PayloadRequest['user']): boolean {
 }
 
 export function canManageProjects(user: PayloadRequest['user']): boolean {
-  const role = getStaffRole(user)
-  return role === 'admin' || role === 'editor'
+  return isStaffUser(user)
 }
 
 export function canManageLeads(user: PayloadRequest['user']): boolean {
-  const role = getStaffRole(user)
-  return role === 'admin' || role === 'editor'
+  return isStaffUser(user)
 }
 
 export function isStaffUser(user: PayloadRequest['user']): boolean {
-  return canManageProjects(user) || canManageLeads(user)
+  const role = getStaffRole(user)
+  return role === 'admin' || role === 'editor'
 }

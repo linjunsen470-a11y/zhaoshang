@@ -1,5 +1,7 @@
 'use client'
 
+import { BUSINESS_SCENE_OPTIONS } from '@/collections/shared/fieldOptions'
+
 import { useField } from '@payloadcms/ui'
 import {
   LEAD_TYPE_LABELS,
@@ -81,9 +83,10 @@ export function CustomerSnapshotField() {
         <Row label="咨询类型" value={typeLabel} />
         <Row label="来源" value={SOURCE_LABELS[snapshot.sourceChannel || ''] || snapshot.sourceChannel} />
         <Row label="经营品类/设备" value={snapshot.businessType} />
+        <Row label="意向场景" value={BUSINESS_SCENE_OPTIONS.find(item => item.value === snapshot.businessScene)?.label || '不限/历史未填写'} />
         <Row label="预算/期望价格" value={snapshot.budgetRange} />
         <Row label="意向区域" value={snapshot.regionPreference} />
-        <Row label="校园经营经验" value={snapshot.hasCampusExperience ? '有' : '未勾选'} />
+        {(!snapshot.businessScene || snapshot.businessScene === 'campus') ? <Row label="校园经营经验" value={snapshot.hasCampusExperience ? '有' : '未勾选'} /> : null}
         <Row label="关联房源 ID" value={snapshot.projectId != null ? String(snapshot.projectId) : ''} />
         <Row label="用户补充说明" value={snapshot.remark} />
         <Row label="附件数量" value={snapshot.attachmentIds?.length ? `${snapshot.attachmentIds.length} 个` : '无'} />

@@ -7,6 +7,7 @@ const { safeIdentifier } = require('../../utils/navigation.js');
 Page({
   behaviors: [formBehavior],
   data: {
+    requiredFields: [{ key: 'locationText', message: '请填写店铺位置' }, { key: 'businessType', message: '请填写当前业态' }],
     locationText: '',
     businessType: '',
     feeText: '',
@@ -29,8 +30,8 @@ Page({
     });
   },
 
-  onInputLocation(e) { this.setData({ locationText: clip(e.detail.value, config.MAX_REGION_LENGTH) }); },
-  onInputBusiness(e) { this.setData({ businessType: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
+  onInputLocation(e) { this.clearFieldError('locationText'); this.setData({ locationText: clip(e.detail.value, config.MAX_REGION_LENGTH) }); },
+  onInputBusiness(e) { this.clearFieldError('businessType'); this.setData({ businessType: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
   onInputFee(e) { this.setData({ feeText: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
   onInputTransferFee(e) { this.setData({ transferFee: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
   onInputTerm(e) { this.setData({ remainingTerm: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },

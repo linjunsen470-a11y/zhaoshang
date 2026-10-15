@@ -1,10 +1,16 @@
 /** Mini-program share copy + poster helpers for staff CMS. */
 
+import { publicCampusLabel, scrubSchoolText } from './publicSchool'
+
 export type ShareableProject = {
   id: string | number
   title?: string | null
+  listingKind?: string | null
+  businessScene?: string | null
+  venueName?: string | null
   schoolName?: string | null
   schoolAlias?: string | null
+  city?: string | null
   district?: string | null
   areaText?: string | null
   feeText?: string | null
@@ -21,17 +27,18 @@ export function miniProgramDetailPath(projectId: string | number) {
 
 export function buildShareMaterial(project: ShareableProject) {
   const id = String(project.id)
-  const title = (project.title || '校园商铺').trim()
-  const school = (project.schoolName || project.schoolAlias || '').trim()
+  const campus = project.businessScene === 'campus' || Boolean((project.schoolName || project.schoolAlias || '').trim())
+  const placeLabel = campus ? publicCampusLabel(project.city, project.district) : (project.venueName || '').trim()
+  const title = scrubSchoolText((project.title || '开店找铺').trim(), project)
   const district = (project.district || '').trim()
-  const area = (project.areaText || '').trim()
-  const fee = (project.feeText || '').trim()
-  const type = project.opportunityType === 'transfer' ? '店铺转让' : '招商铺位'
+  const area = scrubSchoolText((project.areaText || '').trim(), project)
+  const fee = scrubSchoolText((project.feeText || '').trim(), project)
+  const type = project.listingKind === 'project' ? '项目招商' : project.opportunityType === 'transfer' ? '店铺转让' : '招商铺位'
   const path = miniProgramDetailPath(id)
 
   const lines = [
     `【${type}】${title}`,
-    school ? `学校：${school}` : '',
+    placeLabel ? `位置：${placeLabel}` : '',
     district ? `区域：${district}` : '',
     area ? `面积：${area}` : '',
     fee ? `费用：${fee}` : '',
@@ -43,7 +50,8 @@ export function buildShareMaterial(project: ShareableProject) {
     path,
     headline: title,
     copyText: lines.filter(Boolean).join('\n'),
-    shortText: [title, school || district, fee].filter(Boolean).join(' · '),
+    placeLabel,
+    shortText: [title, placeLabel || district, fee].filter(Boolean).join(' · '),
     typeLabel: type,
     coverImage: project.coverImage || '',
     scanHint: '微信扫码看房源',
@@ -165,7 +173,7 @@ export async function renderSharePoster(project: ShareableProject, miniProgramCo
   ctx.fillRect(0, 0, width, 88)
   ctx.fillStyle = '#f8fafc'
   ctx.font = '700 28px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif'
-  ctx.fillText('校园商铺', 40, 56)
+  ctx.fillText('开店找铺', 40, 56)
   ctx.font = '500 20px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif'
   ctx.fillStyle = 'rgba(248,250,252,0.72)'
   ctx.fillText(material.typeLabel, width - 40 - ctx.measureText(material.typeLabel).width, 56)
@@ -222,7 +230,7 @@ export async function renderSharePoster(project: ShareableProject, miniProgramCo
   // Meta rows
   const metaY = cardY + 64 + titleLines.length * 48 + 28
   const meta = [
-    { k: '学校', v: (project.schoolName || project.schoolAlias || '').trim() },
+    { k: '位置', v: material.placeLabel },
     { k: '区域', v: (project.district || '').trim() },
     { k: '面积', v: (project.areaText || '').trim() },
     { k: '费用', v: (project.feeText || '').trim() },
@@ -256,7 +264,7 @@ export async function renderSharePoster(project: ShareableProject, miniProgramCo
   // Bottom footer
   ctx.fillStyle = '#94a3b8'
   ctx.font = '500 18px "PingFang SC", "Microsoft YaHei", system-ui, sans-serif'
-  ctx.fillText('校园商铺招商 · 扫码查看完整信息', 40, height - 28)
+  ctx.fillText('开店找铺招商 · 扫码查看完整信息', 40, height - 28)
 
   return new Promise((resolve, reject) => {
     canvas.toBlob(blob => {

@@ -79,7 +79,7 @@ export function QualityWorkspaceView() {
         <div>
           <p className="cms-eyebrow">上架前核对</p>
           <h1>上架检查</h1>
-          <p>看看哪些房源资料还没齐，齐了才能放心上架。</p>
+          <p>检查房源资料是否齐全，补齐缺项后再上架。</p>
         </div>
         <div className="cms-row-actions">
           <Link className="cms-button" href="/admin/collections/projects?quality=blocked">查看资料不全的房源</Link>
@@ -145,7 +145,7 @@ export function QualityWorkspaceView() {
                   </tbody>
                 </table>
               </div>
-            ) : <div className="cms-empty" style={{ padding: 28 }}>当前检查范围内资料都齐了</div>}
+            ) : <div className="cms-empty" style={{ padding: 28 }}>当前检查范围内没有缺资料的房源。</div>}
           </section>
 
           <section className="cms-panel cms-ops-card">
@@ -165,7 +165,7 @@ export function QualityWorkspaceView() {
                   </li>
                 ))}
               </ul>
-            ) : <div className="cms-empty" style={{ padding: 24 }}>暂无待发布的完整草稿</div>}
+            ) : <div className="cms-empty" style={{ padding: 24 }}>暂无资料齐全的待发布草稿。</div>}
           </section>
         </>
       ) : null}

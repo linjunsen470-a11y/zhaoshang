@@ -7,6 +7,7 @@ const { safeIdentifier } = require('../../utils/navigation.js');
 Page({
   behaviors: [formBehavior],
   data: {
+    requiredFields: [{ key: 'shopArea', message: '请填写店铺面积' }, { key: 'renovationType', message: '请选择装修类型' }],
     shopArea: '',
     renovationType: '',
     designStyle: '',
@@ -32,11 +33,11 @@ Page({
     });
   },
 
-  onInputShopArea(e) {
+  onInputShopArea(e) { this.clearFieldError('shopArea');
     this.setData({ shopArea: clip(e.detail.value, config.MAX_TEXT_LENGTH) });
   },
 
-  onRenovationTypeChange(e) {
+  onRenovationTypeChange(e) { this.clearFieldError('renovationType');
     const val = e.detail.value;
     this.setData({
       renovationTypeIndex: val,

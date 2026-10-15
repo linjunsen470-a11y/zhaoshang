@@ -2,7 +2,8 @@
 
 import { useDocumentInfo, useForm, useFormFields, useFormModified, useFormProcessing } from '@payloadcms/ui'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ShareMaterialPanel } from './ShareMaterialPanel'
 
 function fieldValue(fields: Record<string, { value?: unknown }>, name: string) {
@@ -16,7 +17,7 @@ function hasValue(value: unknown) {
 const CHECKS = [
   { key: 'title', label: '房源标题' },
   { key: 'coverImage', label: '封面图' },
-  { key: 'projectType', label: '房源类型' },
+  { key: 'businessScene', label: '商业场景' },
   { key: 'district', label: '区域' },
   { key: 'feeText', label: '费用说明' },
   { key: 'customerInfo', label: '客群说明' },
@@ -25,15 +26,35 @@ const CHECKS = [
 
 export function ProjectEditHints() {
   const { id } = useDocumentInfo()
-  const { submit } = useForm()
+  const { submit, dispatchFields, setModified } = useForm()
+  const searchParams = useSearchParams()
+  const parentId = searchParams.get('parentProject')
+  const initializedParent = useRef<string | null>(null)
   const modified = useFormModified()
   const processing = useFormProcessing()
   const fields = useFormFields(([allFields]) => allFields)
   const [message, setMessage] = useState('')
 
+  useEffect(() => {
+    if (id || !parentId || initializedParent.current === parentId) return
+    const controller = new AbortController()
+    fetch(`/api/projects/${encodeURIComponent(parentId)}`, { signal: controller.signal })
+      .then(async response => { if (!response.ok) throw new Error('无法读取所属项目'); return response.json() })
+      .then(parent => {
+        if (parent.listingKind !== 'project') throw new Error('所属项目不是整项目招商')
+        for (const [path, value] of Object.entries({ listingKind: 'unit', parentProject: Number(parent.id), businessScene: parent.businessScene, city: parent.city, district: parent.district })) {
+          dispatchFields({ type: 'UPDATE', path, value })
+        }
+        setModified(true)
+        initializedParent.current = parentId
+      })
+      .catch(error => { if (error.name !== 'AbortError') setMessage(error.message) })
+    return () => controller.abort()
+  }, [id, parentId, dispatchFields, setModified])
+
   const checks = CHECKS.map(item => ({
     ...item,
-    ok: hasValue(fieldValue(fields, item.key)),
+    ok: hasValue(fieldValue(fields, item.key)) || (item.key === 'businessScene' && Boolean(fieldValue(fields, 'legacyUnclassified'))),
   }))
   const missing = checks.filter(item => !item.ok)
 
@@ -62,7 +83,7 @@ export function ProjectEditHints() {
   }
 
   const title = String(fieldValue(fields, 'title') || '')
-  const schoolName = String(fieldValue(fields, 'schoolName') || '')
+  const schoolName = String(fieldValue(fields, 'venueName') || fieldValue(fields, 'schoolName') || '')
   const district = String(fieldValue(fields, 'district') || '')
   const areaText = String(fieldValue(fields, 'areaText') || '')
   const feeText = String(fieldValue(fields, 'feeText') || '')
@@ -72,6 +93,8 @@ export function ProjectEditHints() {
     <div className="cms-editor-panel">
       <section>
         <h3>上架前检查</h3>
+        <p>面积与月租请填相同上下限或完整范围，未知可留空。整项目面积指可招商单元范围。</p>
+        {id && fieldValue(fields, 'listingKind') === 'project' ? <><Link className="cms-button" href={`/admin/collections/projects/create?parentProject=${id}`}>新增所属铺位</Link><Link className="cms-button" href={`/admin/collections/projects?parentProject=${id}`}>查看所属铺位</Link><p>项目已满时请检查各铺位状态；下架项目将暂停展示关联铺位。</p></> : null}
         <span className={`cms-status ${missing.length ? 'cms-status--draft' : 'cms-status--online'}`}>
           {missing.length ? `还差 ${missing.length} 项` : '可以上架'}
         </span>
@@ -101,6 +124,7 @@ export function ProjectEditHints() {
           project={{
             id,
             title,
+            listingKind: String(fieldValue(fields, 'listingKind') || 'unit'),
             schoolName,
             district,
             areaText,

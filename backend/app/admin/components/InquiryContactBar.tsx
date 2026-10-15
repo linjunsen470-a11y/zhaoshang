@@ -2,6 +2,7 @@
 
 import { useDocumentInfo, useFormFields } from '@payloadcms/ui'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { LEAD_STATUS_OPTIONS, LEAD_TYPE_LABELS, categoryForLeadType } from '@/collections/shared/fieldOptions'
 
 function fieldValue(fields: Record<string, { value?: unknown }>, name: string) {
@@ -29,6 +30,7 @@ const STATUS_TONE: Record<string, string> = Object.fromEntries(
 )
 
 export function InquiryContactBar() {
+  const router = useRouter()
   const { id } = useDocumentInfo()
   const fields = useFormFields(([allFields]) => allFields)
   const [message, setMessage] = useState('')
@@ -69,7 +71,7 @@ export function InquiryContactBar() {
       const payload = await response.json() as { error?: string; projectId?: string }
       if (!response.ok) throw new Error(payload.error || '生成房源失败')
       setMessage('房源草稿已生成，正在打开…')
-      window.location.assign(`/admin/collections/projects/${payload.projectId}`)
+      router.push(`/admin/collections/projects/${payload.projectId}`)
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '生成房源失败')
     } finally {

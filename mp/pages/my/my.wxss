@@ -1,177 +1,178 @@
-/* pages/my/my.wxss */
-
-/* 头部信息卡背景 */
-.user-header-bg {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-  padding: 40rpx 30rpx 80rpx 30rpx;
+.container {
+  padding: 40rpx 32rpx 64rpx;
 }
 
-.user-card {
-  background-color: #ffffff;
-  border-radius: 20rpx;
-  padding: 30rpx;
-  box-shadow: 0 10rpx 25rpx rgba(15, 23, 42, 0.15);
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  padding-bottom: 40rpx;
+  border-bottom: 1rpx solid var(--line);
+}
+
+.avatar-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 104rpx;
+  height: 104rpx;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--pine-soft);
 }
 
 .user-avatar {
-  width: 110rpx;
-  height: 110rpx;
-  border-radius: 50%;
-  margin-right: 24rpx;
-  border: 4rpx solid #eff6ff;
-  background-color: #e2e8f0;
+  width: 52rpx;
+  height: 52rpx;
 }
 
 .user-name {
   font-size: 32rpx;
-  font-weight: 700;
-  color: #0f172a;
-}
-
-.menu-text-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.menu-sub {
-  font-size: 22rpx;
-  color: #94a3b8;
-  margin-top: 4rpx;
-}
-
-.user-role-badge {
-  font-size: 20rpx;
-  background-color: #eff6ff;
-  color: #3b82f6;
-  padding: 2rpx 10rpx;
-  border-radius: 6rpx;
-  margin-left: 12rpx;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .user-phone {
-  font-size: 24rpx;
-  color: #64748b;
   margin-top: 8rpx;
+  font-size: 24rpx;
+  color: var(--muted);
 }
 
 .edit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 8rpx 0 8rpx 16rpx;
   font-size: 24rpx;
-  color: #3b82f6;
-  border: 2rpx solid #3b82f6;
-  padding: 6rpx 20rpx;
-  border-radius: 30rpx;
+  background: transparent;
+  color: var(--pine);
+}
+
+.section-caption {
+  margin: 40rpx 0 24rpx;
+  font-size: 28rpx;
   font-weight: 600;
 }
 
-/* 选项列表 */
-.menu-list-container {
-  padding: 0 30rpx;
-  margin-top: -30rpx;
+.shortcut-grid {
+  display: flex;
+  gap: 16rpx;
 }
 
-.menu-card {
-  padding: 0 30rpx !important;
+.shortcut {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  padding: 24rpx;
+  background: var(--wash);
+  border-radius: 16rpx;
+  line-height: 1.5;
+  text-align: left;
+}
+
+.shortcut-title {
+  margin-top: 24rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.shortcut-desc {
+  margin-top: 8rpx;
+  font-size: 24rpx;
+  color: var(--muted);
+}
+
+.shortcut-arrow {
+  position: absolute;
+  top: 24rpx;
+  right: 24rpx;
+  color: var(--muted);
 }
 
 .menu-item {
-  padding: 30rpx 0;
-  border-bottom: 1rpx solid #f1f5f9;
-}
-
-.menu-icon {
-  font-size: 34rpx;
-  margin-right: 20rpx;
+  display: flex;
+  align-items: center;
+  gap: 24rpx;
+  width: 100%;
+  min-height: 112rpx;
+  padding: 24rpx 0;
+  background: transparent;
+  border-radius: 0;
+  border-bottom: 1rpx solid var(--line);
+  text-align: left;
+  line-height: 1.6;
 }
 
 .menu-text {
+  flex: 1;
+  min-width: 0;
   font-size: 28rpx;
-  color: #334155;
-  font-weight: 500;
-}
-
-.menu-hint-text {
-  font-size: 22rpx;
-  color: #3b82f6;
-  background-color: rgba(59, 130, 246, 0.08);
-  padding: 2rpx 12rpx;
-  border-radius: 20rpx;
+  color: var(--ink);
 }
 
 .menu-arrow {
-  font-size: 22rpx;
-  color: #94a3b8;
+  color: var(--muted);
 }
 
-/* 编辑模态框 */
 .edit-modal-mask {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(15, 23, 42, 0.6);
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(24,35,31,.4);
   z-index: 1000;
 }
 
 .edit-modal-box {
-  width: 620rpx;
-  padding: 40rpx !important;
-  margin-bottom: 0 !important;
-  animation: modalShow 0.2s ease-out;
-}
-
-@keyframes modalShow {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 32rpx 32rpx calc(32rpx + env(safe-area-inset-bottom));
+  background: #fff;
+  border-radius: 24rpx 24rpx 0 0;
 }
 
 .modal-title {
   font-size: 32rpx;
-  font-weight: 700;
-  color: #0f172a;
-  text-align: center;
-  margin-bottom: 12rpx;
-}
-
-.modal-desc {
-  font-size: 22rpx;
-  color: #64748b;
-  text-align: center;
-  line-height: 1.5;
-  margin-bottom: 30rpx;
-}
-
-.modal-form {
-  border: 1rpx solid #e2e8f0;
-  border-radius: 12rpx;
-  background-color: #f8fafc;
-  padding: 0 24rpx;
-  margin-bottom: 30rpx;
-}
-
-.modal-form-item {
-  display: flex;
-  align-items: center;
-  padding: 20rpx 0;
-  border-bottom: 1rpx solid #e2e8f0;
-}
-
-.modal-label {
-  font-size: 26rpx;
-  color: #475569;
-  width: 140rpx;
   font-weight: 600;
 }
 
-.modal-input {
-  flex: 1;
+.modal-desc {
+  margin: 16rpx 0 32rpx;
+  color: var(--muted);
   font-size: 26rpx;
-  color: #1e293b;
+  line-height: 1.7;
 }
 
-.modal-btn {
+.modal-form-item {
+  margin: 24rpx 0;
+}
+
+.modal-label {
+  display: block;
+  margin-bottom: 16rpx;
   font-size: 26rpx;
-  height: 80rpx;
-  line-height: 1.5;
+}
+
+.modal-input {
+  width: 100%;
+  min-height: 44px;
+  height: 88rpx;
+  padding: 16rpx;
+  font-size: 28rpx;
+  border: 1rpx solid var(--line);
+  border-radius: 12rpx;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 32rpx;
+}
+
+.modal-actions .btn {
+  flex: 1;
 }

@@ -26,7 +26,7 @@ ENV NODE_ENV=production
 
 # Payload needs a secret while Next collects route data during build.
 # Runtime containers still receive the real secret from docker compose.
-RUN PAYLOAD_SECRET=build-time-placeholder-secret PAYLOAD_DB_PUSH=true pnpm build
+RUN PAYLOAD_SECRET=build-time-placeholder-secret PAYLOAD_DB_PUSH=false pnpm build
 RUN pnpm prune --prod
 
 # Production image, copy all the files and run next
@@ -43,14 +43,13 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 
 # Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
+RUN mkdir -p .next media && chown nextjs:nodejs .next media
 
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# Next standalone tracing can miss sharp's optional libvips package on Alpine.
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.pnpm/@img+sharp-libvips-* ./node_modules/.pnpm/
+# Copy the pruned tree to preserve pnpm's package directories and symlinks,
+# including Sharp's Alpine libvips dependency missed by standalone tracing.
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/payload.config.ts ./payload.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/collections ./collections

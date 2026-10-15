@@ -29,19 +29,32 @@ function validateEnvironment(envVersion, environment) {
   return { apiUrl, error: '' };
 }
 
-const ENV_VERSION = detectEnvVersion();
-const environment = ENVIRONMENTS[ENV_VERSION];
-const validation = validateEnvironment(ENV_VERSION, environment);
+function buildRuntime(envVersion) {
+  const environment = ENVIRONMENTS[envVersion] || ENVIRONMENTS.develop;
+  const validation = validateEnvironment(envVersion, environment);
+  return {
+    ENV_VERSION: envVersion,
+    API_URL: validation.apiUrl,
+    USE_LOCAL_MOCK: Boolean(environment.useLocalMock),
+    ALLOW_DEV_OPEN_ID: Boolean(environment.allowDevOpenId),
+    DEV_OPEN_ID: environment.allowDevOpenId ? 'dev-openid-local' : '',
+    CONFIG_ERROR: validation.error,
+    IS_API_CONFIGURED: !validation.error
+  };
+}
+
+const runtime = buildRuntime('develop');
+
+function refreshRuntimeConfig() {
+  const next = buildRuntime(detectEnvVersion());
+  Object.assign(module.exports, next);
+  return next;
+}
 
 module.exports = {
-  ENV_VERSION,
-  API_URL: validation.apiUrl,
-  USE_LOCAL_MOCK: Boolean(environment.useLocalMock),
-  ALLOW_DEV_OPEN_ID: Boolean(environment.allowDevOpenId),
-  DEV_OPEN_ID: environment.allowDevOpenId ? 'dev-openid-local' : '',
-  CONFIG_ERROR: validation.error,
-  IS_API_CONFIGURED: !validation.error,
+  ...runtime,
   validateEnvironment,
+  refreshRuntimeConfig,
   ADVISOR_PHONE: '18888888888',
   MAX_NAME_LENGTH: 20,
   MAX_PHONE_LENGTH: 11,

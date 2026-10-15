@@ -6,26 +6,23 @@ Page({
     searchKeyword: '',
     primaryService: {
       id: 'find',
-      name: '找校园铺位',
-      desc: '食堂档口/商业街/服务点',
-      icon: '🏫',
+      name: '全部铺位',
+      desc: '校园、社区、文旅与购物中心',
+      icon: '/images/icons/shops.png',
       action: 'list'
     },
     secondaryServices: [
-      { id: 'transfer', name: '委托转让', desc: '退店换店，平台撮合', icon: '🔁', action: 'transfer' },
-      { id: 'equipment', name: '餐饮设备', desc: '设备求购/出售/回收', icon: '🧊', action: 'equipment' },
-      { id: 'renovation', name: '商铺装修', desc: '设计施工，一步到位', icon: '🛠', action: 'renovation' }
+      { id: 'transfer', name: '委托转让', desc: '登记信息，协助联系意向方', icon: '/images/icons/transfer.png', action: 'transfer' },
+      { id: 'equipment', name: '餐饮设备', desc: '求购、出售与回收登记', icon: '/images/icons/equipment.png', action: 'equipment' },
+      { id: 'renovation', name: '商铺装修', desc: '登记需求，对接施工服务', icon: '/images/icons/renovation.png', action: 'renovation' }
     ],
     categories: [
-      { id: 'cat1', name: '食堂档口', icon: '🍜', type: 'projectType', val: '食堂档口' },
-      { id: 'cat2', name: '商业街', icon: '🏬', type: 'projectType', val: '校园商业街' },
-      { id: 'cat3', name: '小吃快餐', icon: '🍔', type: 'business', val: '小吃' },
-      { id: 'cat4', name: '奶茶咖啡', icon: '🥤', type: 'business', val: '奶茶' },
-      { id: 'cat5', name: '便利零售', icon: '🛒', type: 'business', val: '便利店' },
-      { id: 'cat6', name: '店铺转让', icon: '🔁', type: 'opportunityType', val: 'transfer' },
-      { id: 'cat7', name: '低预算', icon: '💰', type: 'budget', val: '5万以内' },
-      { id: 'cat8', name: '推荐项目', icon: '🔥', type: 'recommended', val: 'true' }
+      { id: 'campus', name: '校园商铺', icon: '/images/icons/campus.png', type: 'businessScene', val: 'campus' },
+      { id: 'community', name: '社区商业', icon: '/images/icons/community.png', type: 'businessScene', val: 'community' },
+      { id: 'tourism', name: '文旅街区', icon: '/images/icons/tourism.png', type: 'businessScene', val: 'tourism' },
+      { id: 'mall', name: '购物中心', icon: '/images/icons/mall.png', type: 'businessScene', val: 'mall' },
     ],
+    services: [],
     recommendedList: [],
     latestList: [],
     loading: true,
@@ -33,6 +30,7 @@ Page({
   },
 
   onLoad() {
+    this.setData({ services: [this.data.primaryService, ...this.data.secondaryServices] });
     this.loadData();
   },
 
@@ -56,37 +54,31 @@ Page({
   loadData(callback) {
     this.setData({ loading: true, loadError: false });
 
+    let timer;
     const requestTimeout = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('请求超时，请检查后端是否已启动')), 16000);
+      timer = setTimeout(() => reject(new Error('请求超时，请稍后重试')), 16000);
     });
 
-    Promise.race([api.getProjects({ public: true }), requestTimeout])
-      .then(projects => {
-        const list = Array.isArray(projects) ? projects : [];
+    Promise.race([Promise.all([
+      api.getProjectPage({ public: true, recommended: 'true', page: 1, limit: 6 }),
+      api.getProjectPage({ public: true, sort: 'latest', page: 1, limit: 4 })
+    ]), requestTimeout])
+      .then(([recommended, latest]) => {
         const favs = wx.getStorageSync('favorites') || [];
-        const activeProjects = list.filter(isPublicProject);
-        activeProjects.sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-
-        this.setData({
-          recommendedList: activeProjects
-            .filter(p => p.isRecommended)
-            .map(p => ({ ...p, isFav: favs.includes(p.id) })),
-          latestList: activeProjects.slice(0, 4).map(p => ({ ...p, isFav: favs.includes(p.id) })),
-          loading: false,
-          loadError: false
-        });
+        const prepare = rows => rows.filter(isPublicProject).map(p => ({ ...p, isFav: favs.includes(p.id) }));
+        this.setData({ recommendedList: prepare(recommended.docs), latestList: prepare(latest.docs), loading: false, loadError: false });
         if (callback) callback();
       })
       .catch(err => {
         console.error('index.loadData failed:', err);
         this.setData({ loading: false, loadError: true });
         wx.showToast({
-          title: '项目加载失败',
+          title: '项目与铺位加载失败',
           icon: 'none',
           duration: 2000
         });
         if (callback) callback();
-      });
+      }).finally(() => clearTimeout(timer));
   },
 
   onRetryLoad() {
@@ -106,6 +98,7 @@ Page({
   onServiceTap(e) {
     const action = e.currentTarget.dataset.action;
     if (action === 'list') {
+      wx.setStorageSync('pendingListFilter', {});
       wx.switchTab({ url: '/pages/list/list' });
     } else if (action === 'transfer') {
       wx.navigateTo({ url: '/pages/transfer/transfer' });
@@ -119,7 +112,8 @@ Page({
   onCategoryTap(e) {
     const { type, val } = e.currentTarget.dataset;
     const filter = {};
-    if (type === 'projectType') filter.projectType = val;
+    if (type === 'businessScene') filter.businessScene = val;
+    else if (type === 'projectType') filter.projectType = val;
     else if (type === 'business') filter.business = val;
     else if (type === 'budget') filter.budget = val;
     else if (type === 'status') filter.status = val;
@@ -154,6 +148,7 @@ Page({
     if (index < 0 || this.data[listName][index].coverImageError) return;
     this.setData({ [`${listName}[${index}].coverImageError`]: true });
   },
+
   onToggleFav(e) {
     const id = e.currentTarget.dataset.id;
     let favs = wx.getStorageSync('favorites') || [];

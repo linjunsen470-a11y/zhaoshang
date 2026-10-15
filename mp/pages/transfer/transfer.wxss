@@ -1,10 +1,7 @@
 @import "../apply/apply.wxss";
-
 .hint-card {
-  background: #fff7ed;
-  border: 1rpx solid #fed7aa;
-  color: #9a3412;
-  font-size: 24rpx;
-  line-height: 1.6;
-  padding: 24rpx;
+  border: 0;
+  background: var(--pine-soft);
+  color: var(--pine);
+  font-size: 26rpx;
 }

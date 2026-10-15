@@ -1,3 +1,4 @@
+const { options: commercialOptions } = require('../../utils/commercial.js');
 const api = require('../../services/api.js');
 const formBehavior = require('../../utils/formBehavior.js');
 const { clip, config } = require('../../utils/form.js');
@@ -7,17 +8,22 @@ const { allowedValue, safeIdentifier } = require('../../utils/navigation.js');
 Page({
   behaviors: [formBehavior],
   data: {
+    requiredFields: [{ key: 'businessType', message: '请选择经营品类' }, { key: 'budgetRange', message: '请选择投资预算' }],
+    businessScene: '',
+    scenes: [{ label: '不限', value: '' }, ...commercialOptions.scenes],
+    sceneIndex: 0,
     leadType: 'leasing',
     projectId: '',
     projectTitle: '',
     projectCover: '',
     projectCoverError: false,
+    projectIsDemoImage: false,
     projectFeeText: '',
     businessType: '',
     budgetRange: '',
     regionPreference: '',
     hasCampusExperience: false,
-    businesses: ['快餐', '粉面', '小吃', '奶茶', '咖啡', '便利店', '水果', '文具', '打印', '快递', '维修', '洗衣', '其他'],
+    businesses: commercialOptions.businesses,
     budgets: ['5万以内', '5-10万', '10-20万', '20-50万', '50万以上', '暂不确定'],
     businessIndex: -1,
     budgetIndex: -1
@@ -37,6 +43,8 @@ Page({
         budgetRange: lead.budgetRange,
         regionPreference: lead.regionPreference || '',
         hasCampusExperience: lead.hasCampusExperience || false,
+        businessScene: lead.businessScene || '',
+        sceneIndex: Math.max(0, this.data.scenes.findIndex(s => s.value === lead.businessScene)),
         businessIndex,
         budgetIndex
       });
@@ -50,30 +58,41 @@ Page({
   },
 
   loadProjectTitle(id) {
+    this.setData({ projectLoading: true, projectLoadError: false });
     api.getProjectDetail(id)
       .then(project => {
+        if (!project) throw new Error('项目暂不可用');
         if (project) {
           this.setData({
             projectTitle: project.title,
+            businessScene: project.businessScene || '',
+            sceneIndex: Math.max(0, this.data.scenes.findIndex(s => s.value === project.businessScene)),
             projectCover: project.coverImage || '',
+            projectIsDemoImage: Boolean(project.isDemoImage),
             projectCoverError: false,
-            projectFeeText: project.feeText || '',
+            projectFeeText: project.priceText || project.feeText || '',
+            projectLoading: false,
             regionPreference: project.district
           });
         }
       })
-      .catch(err => console.error('获取项目标题失败', err));
+      .catch(err => { console.error('获取项目标题失败', err); this.setData({ projectLoading: false, projectLoadError: true }); });
   },
 
   onProjectCoverError() {
     this.setData({ projectCoverError: true });
   },
-  onInputRegion(e) { this.setData({ regionPreference: clip(e.detail.value, config.MAX_REGION_LENGTH) }); },
-  onBusinessChange(e) {
+
+  onSceneChange(e) {
+    const sceneIndex = Number(e.detail.value);
+    this.setData({ sceneIndex, businessScene: this.data.scenes[sceneIndex].value });
+  },
+  onInputRegion(e) { this.clearFieldError('regionPreference'); this.setData({ regionPreference: clip(e.detail.value, config.MAX_REGION_LENGTH) }); },
+  onBusinessChange(e) { this.clearFieldError('businessType');
     const val = e.detail.value;
     this.setData({ businessIndex: val, businessType: this.data.businesses[val] });
   },
-  onBudgetChange(e) {
+  onBudgetChange(e) { this.clearFieldError('budgetRange');
     const val = e.detail.value;
     this.setData({ budgetIndex: val, budgetRange: this.data.budgets[val] });
   },
@@ -82,7 +101,13 @@ Page({
   },
 
   onClearForm() {
+    wx.showModal({ title: '清空已填写的内容？', content: '清空后需要重新填写，当前咨询对象会保留。', confirmText: '清空', success: res => { if (res.confirm) this.clearFormFields(); } });
+  },
+
+  clearFormFields() {
     this.setData({
+      fieldErrors: {},
+      focusField: '',
       name: '',
       phone: '',
       businessType: '',
@@ -115,6 +140,7 @@ Page({
     this.setData({ submitting: true });
     const payload = {
       leadType,
+      businessScene: this.data.businessScene,
       sourceChannel: 'mini_program',
       name,
       phone,

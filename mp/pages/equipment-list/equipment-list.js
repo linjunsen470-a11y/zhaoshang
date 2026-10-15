@@ -4,7 +4,8 @@ const { allowedValue } = require('../../utils/navigation.js');
 
 function formatTime(timestamp) {
   if (!timestamp) return '';
-  const date = new Date(Number(timestamp));
+  const date = new Date(/^\d+$/.test(String(timestamp)) ? Number(timestamp) : timestamp);
+  if (Number.isNaN(date.getTime())) return '';
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
 
@@ -18,7 +19,8 @@ Page({
     ],
     activeTab: '全部',
     equipmentList: [],
-    loading: true
+    loading: true,
+    loadError: false
   },
 
   onLoad() {
@@ -33,7 +35,8 @@ Page({
   },
 
   loadData(callback) {
-    this.setData({ loading: true });
+    const requestId = this._requestId = (this._requestId || 0) + 1;
+    this.setData({ loading: true, loadError: false });
     
     const params = {};
     if (this.data.activeTab !== '全部') {
@@ -42,6 +45,7 @@ Page({
 
     api.getEquipments(params)
       .then(res => {
+        if (requestId !== this._requestId) return;
         const formatted = (res || []).map(item => ({
           ...item,
           attachments: normalizeAttachments(item.attachments),
@@ -57,8 +61,9 @@ Page({
         if (callback) callback();
       })
       .catch(err => {
+        if (requestId !== this._requestId) return;
         console.error('获取设备列表失败:', err);
-        this.setData({ loading: false });
+        this.setData({ loading: false, loadError: true });
         wx.showToast({ title: '获取列表失败', icon: 'none' });
         if (callback) callback();
       });
@@ -69,6 +74,13 @@ Page({
     this.setData({ activeTab: tab }, () => {
       this.loadData();
     });
+  },
+
+  onRetryLoad() { this.loadData(); },
+  onUnload() { this._requestId = (this._requestId || 0) + 1; },
+  onImageError(e) {
+    const { itemindex, imageindex } = e.currentTarget.dataset;
+    this.setData({ [`equipmentList[${itemindex}].attachments[${imageindex}].imageError`]: true });
   },
 
   onPreviewImage(e) {

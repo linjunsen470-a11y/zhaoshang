@@ -56,7 +56,7 @@ test('isolated backend lead API contract', { skip: !enabled }, async t => {
         method: 'POST',
         body: {
           leadType,
-          name: `API测试-${runId}`,
+          name: 'API测试用户',
           phone: '13812345678',
           businessType: `type-${leadType}`,
           budgetRange: '5-10万',

@@ -1,5 +1,7 @@
 'use client'
 
+import { BUSINESS_SCENE_OPTIONS } from '@/collections/shared/fieldOptions'
+
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { FormEvent, useCallback, useEffect, useState } from 'react'
@@ -17,6 +19,7 @@ type Inquiry = {
   leadType: string
   status: string
   businessType: string
+  businessScene?: string
   budgetRange: string
   regionPreference: string
   remark: string
@@ -255,7 +258,7 @@ export function InquiryInboxView() {
                       </td>
                       <td>
                         <small>
-                          {[item.businessType, item.budgetRange, item.regionPreference].filter(Boolean).join(' · ') || '暂无补充'}
+                          {[BUSINESS_SCENE_OPTIONS.find(scene => scene.value === item.businessScene)?.label, item.businessType, item.budgetRange, item.regionPreference].filter(Boolean).join(' · ') || '暂无补充'}
                         </small>
                       </td>
                       <td>
@@ -292,7 +295,7 @@ export function InquiryInboxView() {
             </table>
           </div>
         ) : (
-          <div className="cms-empty">当前筛选下暂无咨询。</div>
+          <div className="cms-empty">当前筛选下暂无咨询。可调整条件查看其他记录。</div>
         )}
 
         {data && data.totalPages > 1 ? (

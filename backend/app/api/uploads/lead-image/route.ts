@@ -1,8 +1,9 @@
 import { randomUUID } from 'crypto'
-import sharp from 'sharp'
+import sharp, { type Metadata } from 'sharp'
 import { requireAuth } from '../../_shared/auth'
 import { getPayloadInstance, json, mapMedia } from '../../_shared/payloadApi'
 import { getClientIp, takeRateLimit } from '../../_shared/rateLimit'
+import { readRequestBytes, RequestInputError } from '../../_shared/requestInput'
 
 export const runtime = 'nodejs'
 
@@ -38,8 +39,10 @@ export async function POST(request: Request) {
 
   let formData: FormData
   try {
-    formData = await request.formData()
-  } catch {
+    const body = await readRequestBytes(request, MAX_FILE_SIZE + 64 * 1024)
+    formData = await new Response(new Uint8Array(body), { headers: { 'Content-Type': request.headers.get('content-type') || '' } }).formData()
+  } catch (error) {
+    if (error instanceof RequestInputError && error.status === 413) return uploadError('图片不能超过 10MB', 413)
     return uploadError('上传请求格式无效', 400)
   }
 
@@ -51,7 +54,7 @@ export async function POST(request: Request) {
   if (file.size > MAX_FILE_SIZE) return uploadError('图片不能超过 10MB', 413)
 
   const originalBuffer = Buffer.from(await file.arrayBuffer())
-  let metadata: sharp.Metadata
+  let metadata: Metadata
   try {
     metadata = await sharp(originalBuffer, { failOn: 'error' }).metadata()
   } catch {

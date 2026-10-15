@@ -48,6 +48,7 @@ function loadLeadForEdit(api, leadId, onSuccess, onFail) {
   api.getLead(leadId)
     .then(lead => {
       if (!lead) {
+        if (onFail) onFail(new Error('未找到该咨询记录'));
         wx.showToast({ title: '未找到该咨询记录', icon: 'none' });
         return;
       }

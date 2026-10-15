@@ -1,74 +1,36 @@
-import type { Where } from 'payload'
+import { commercialFilters, pageNumber, publicCommercialWhere } from '../../../lib/commercial'
 import {
-  ALL,
-  PUBLIC_STATUSES,
   getPayloadInstance,
-  getProjectBudgetCategory,
   json,
   mapProject,
   sanitizeProjectInput,
 } from '../_shared/payloadApi'
 import { getAuthenticatedStaff } from '../_shared/auth'
+import { readJsonObject, jsonInputError } from '../_shared/requestInput'
 
 export async function GET(request: Request) {
   const payload = await getPayloadInstance()
   const { searchParams } = new URL(request.url)
   const staff = await getAuthenticatedStaff('projects')
   const showPublicOnly = !staff || searchParams.get('public') === 'true'
-
-  const andConditions: Where[] = []
-
-  if (showPublicOnly) {
-    andConditions.push({ status: { in: PUBLIC_STATUSES } })
-  }
-
-  const opportunityType = searchParams.get('opportunityType')
-  if (opportunityType && opportunityType !== ALL) {
-    andConditions.push({ opportunityType: { equals: opportunityType } })
-  }
-
-  const q = searchParams.get('q')?.toLowerCase().trim()
-  if (q) {
-    andConditions.push({
-      or: [
-        { title: { contains: q } },
-        { schoolName: { contains: q } },
-        { district: { contains: q } },
-        { suitableBusiness: { contains: q } },
-      ],
+  try {
+    const conditions = commercialFilters(searchParams)
+    if (showPublicOnly) conditions.push(publicCommercialWhere())
+    const paginated = searchParams.get('pagination') === 'true'
+    const result = await payload.find({
+      collection: 'projects',
+      where: conditions.length ? { and: conditions } : undefined,
+      page: pageNumber(searchParams.get('page'), 1, 100000),
+      limit: pageNumber(searchParams.get('limit'), paginated ? 20 : 100, 100),
+      sort: searchParams.get('sort') === 'latest' ? ['-createdAt', '-id'] : ['-sort', '-createdAt', '-id'],
+      depth: 1,
+      overrideAccess: true,
     })
+    const docs = result.docs.map(doc => mapProject(doc, Boolean(staff) && searchParams.get('public') !== 'true'))
+    return json(paginated ? { docs, page: result.page, totalPages: result.totalPages, totalDocs: result.totalDocs, hasNextPage: result.hasNextPage } : docs)
+  } catch (error) {
+    return json({ error: error instanceof Error ? error.message : '查询失败' }, 400)
   }
-
-  for (const key of ['district', 'projectType', 'status'] as const) {
-    const value = searchParams.get(key)
-    if (value && value !== ALL) {
-      andConditions.push({ [key]: { equals: value } } as Where)
-    }
-  }
-
-  const business = searchParams.get('business')
-  if (business && business !== ALL) {
-    andConditions.push({ suitableBusiness: { contains: business } })
-  }
-
-  const result = await payload.find({
-    collection: 'projects',
-    where: andConditions.length > 0 ? { and: andConditions } : undefined,
-    limit: 100,
-    sort: '-sort',
-    depth: 1,
-    overrideAccess: true,
-  })
-
-  let projects = result.docs.map(doc => mapProject(doc, Boolean(staff)))
-
-  const budget = searchParams.get('budget')
-  if (budget && budget !== ALL) {
-    projects = projects.filter(project => getProjectBudgetCategory(project) === budget)
-  }
-
-  projects.sort((a, b) => Number(b.sort || 0) - Number(a.sort || 0) || Number(b.createdAt) - Number(a.createdAt))
-  return json(projects)
 }
 
 export async function POST(request: Request) {
@@ -79,12 +41,12 @@ export async function POST(request: Request) {
 
   let input: Record<string, unknown>
   try {
-    input = await request.json() as Record<string, unknown>
-  } catch {
-    return json({ error: '无效的 JSON 请求体' }, 400)
+    input = await readJsonObject(request)
+  } catch (error) {
+    return jsonInputError(error)
   }
 
-  if (!input.title || !input.city || !input.district || !input.projectType) {
+  if (!input.title || !input.city || !input.district) {
     return json({ error: '缺少必填字段' }, 400)
   }
 

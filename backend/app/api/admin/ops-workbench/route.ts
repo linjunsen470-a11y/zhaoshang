@@ -1,3 +1,4 @@
+import { publicCommercialWhere } from '../../../../lib/commercial'
 import type { Where } from 'payload'
 import { getAuthenticatedStaff } from '../../_shared/auth'
 import { absoluteUrl, getPayloadInstance, json } from '../../_shared/payloadApi'
@@ -84,7 +85,7 @@ export async function GET() {
       }),
       payload.find({
         collection: 'projects',
-        where: { status: { in: ['online', 'coming'] } },
+        where: publicCommercialWhere(),
         limit: 20,
         depth: 1,
         overrideAccess: true,
@@ -134,7 +135,9 @@ export async function GET() {
         title: String(row.title || '未命名房源'),
         status: String(row.status || 'draft'),
         district: String(row.district || ''),
-        schoolName: String(row.schoolName || ''),
+        listingKind: String(row.listingKind || 'unit'),
+        venueName: String(row.venueName || ''),
+        schoolName: String(row.venueName || row.schoolName || ''),
         missingFields: missing,
         ready: missing.length === 0,
         updatedAt: row.updatedAt,
@@ -188,7 +191,7 @@ export async function GET() {
         readyToPublishCount: readyDrafts.length,
         publicIncompleteCount: publicIncomplete.length,
         requiredFields: [
-          '房源标题', '封面图', '房源类型', '区域', '费用说明', '客群说明', '详情图片',
+          '房源标题', '封面图', '商业场景（旧待分类记录除外）', '区域', '费用说明', '客群说明', '详情图片',
         ],
         blocked: blocked.slice(0, 20),
         publicIncomplete: publicIncomplete.slice(0, 10),
@@ -205,8 +208,12 @@ export async function GET() {
           const material = buildShareMaterial({
             id: row.id,
             title: String(row.title || ''),
+            listingKind: String(row.listingKind || 'unit'),
+            businessScene: String(row.businessScene || ''),
+            venueName: String(row.venueName || ''),
             schoolName: String(row.schoolName || ''),
             schoolAlias: String(row.schoolAlias || ''),
+            city: String(row.city || ''),
             district: String(row.district || ''),
             areaText: String(row.areaText || ''),
             feeText: String(row.feeText || ''),
@@ -219,7 +226,12 @@ export async function GET() {
             id: String(row.id),
             title: String(row.title || '未命名房源'),
             status: String(row.status || ''),
+            listingKind: String(row.listingKind || 'unit'),
+            businessScene: String(row.businessScene || ''),
+            venueName: String(row.venueName || ''),
             schoolName: String(row.schoolName || ''),
+            schoolAlias: String(row.schoolAlias || ''),
+            city: String(row.city || ''),
             district: String(row.district || ''),
             areaText: String(row.areaText || ''),
             feeText: String(row.feeText || ''),

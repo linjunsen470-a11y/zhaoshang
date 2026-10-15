@@ -1,6 +1,8 @@
 # Payload Backend
 
-Payload CMS 3 + Next.js 16 + PostgreSQL backend for the campus shop platform.
+Payload CMS 3 + Next.js 16 + PostgreSQL backend for campus and commercial listings.
+
+当前 demo 状态与验证限制见 [2026-10-16 审计](../docs/demo-prelaunch-audit-2026-10-16.md)。命令均在仓库根目录执行。
 
 ## Admin
 
@@ -9,7 +11,7 @@ Payload is the only admin interface. Workspace entry points:
 | 模块 | URL |
 |------|-----|
 | 运营工作台 | `/admin`（团队待办 + 咨询漏斗） |
-| 房源管理 | `/admin/collections/projects` |
+| 项目与铺位 | `/admin/collections/projects` |
 | 咨询收件箱 | `/admin/workspace/inquiries` |
 | 分享素材 | `/admin/workspace/share`（文案 / 真实小程序码 / 海报） |
 | 上架检查 | `/admin/workspace/quality`（资料是否齐全） |
@@ -30,7 +32,9 @@ Custom components are under `app/admin/components/`. Data models remain `project
 
 ```bash
 cp backend/.env.example backend/.env
-docker compose up -d db
+# 填写 backend/.env 的 DATABASE_URI，连接事先准备好的 PostgreSQL
+# 仅首次空库初始化；已有库先备份并按迁移说明处理
+pnpm --dir backend schema:push
 pnpm dev
 ```
 
@@ -55,12 +59,15 @@ Payload `db push` can hang on interactive enum rename prompts leftover from the 
 pnpm --dir backend schema:ensure-leads
 ```
 
-Full Payload push (choose **create** for new enums, not rename). In Docker this is deliberately behind the `schema` profile:
+Full Payload push (choose **create** for new enums, not rename). Back up the target database first and run explicitly from the maintenance environment:
 
 ```bash
 pnpm --dir backend schema:push
-# or: docker compose --profile schema run --rm migrate
 ```
+
+Compose 仅提供后端，没有 `db`、`migrate` 服务或 `schema` profile；数据库由 `DATABASE_URI` 指向外部 PostgreSQL。正常启动及镜像构建保持 `PAYLOAD_DB_PUSH=false`。
+
+商业字段与 Payload 认证字段升级分别见 [商业迁移说明](../docs/商业项目接入-迁移与发布说明.md) 和根目录 [README](../README.md#验证)。
 
 ## Migration from the retired CRM admin
 
@@ -78,7 +85,7 @@ The migrate command creates timestamped backup tables and maps legacy states. Pr
 - Public equipment images are served only when the parent equipment inquiry has been reviewed and published.
 - Transfer inquiry attachments may prefill a draft, but public properties must replace them with staff-reviewed media before publishing.
 - Public submissions and uploads use lightweight per-IP/per-openid rate limits; use a shared limiter if the service scales to multiple instances.
-- Public property reads only expose `online`, `coming`, and `full` records.
+- Public property reads only expose `online`, `coming`, and `full` records; child units also require a public parent project.
 - Admin APIs use the Payload session through `getAuthenticatedStaff()`.
 - Only `admin` can manage accounts or permanently delete content.
 - `PAYLOAD_SECRET` is mandatory in production; production WeChat auth must use `WECHAT_AUTH_MODE=wechat`.
@@ -88,7 +95,9 @@ The migrate command creates timestamped backup tables and maps legacy states. Pr
 
 ```bash
 pnpm backend:lint
+pnpm test:ci
 pnpm --dir backend test:cms
-node backend/node_modules/typescript/bin/tsc --noEmit -p backend/tsconfig.json
 pnpm backend:build
 ```
+
+构建包含 TypeScript 检查。真实 HTTP、商业数据库和迁移测试需要隔离测试库；`test:ci` 默认跳过 HTTP 契约。不得用业务数据库替代测试库。

@@ -1,282 +1,54 @@
-# 小程序上线前检查清单
+# Demo 与正式发布检查清单
 
-> 整理日期：2026-06-22  
-> 适用范围：`mp/` 微信小程序 + `backend/` Payload API  
-> 目标：区分「发布闸门」（必须完成）与「上线后迭代」（可延后）
+更新：2026-10-16。当前复验结果见 [demo 预上线审计](demo-prelaunch-audit-2026-10-16.md)；微信端操作说明见 [自动化测试](miniprogram-automation-test.md)。
 
----
+## 本地 demo
 
-## 一、结论
+- [ ] 微信开发者工具打开 `mp/project.config.json`，使用 develop 模式。
+- [ ] 保持 `mp/config/environments.js` 中 develop 的 `useLocalMock: true`；演示数据保存在本机 Storage，不需要后端。
+- [ ] 浏览校园、社区、文旅、购物中心，检查列表筛选、详情和父项目/子铺位跳转。
+- [ ] 提交找铺、转让、设备、装修咨询，检查隐私同意、字段错误、查询/编辑/删除与成功页返回。
+- [ ] 演示摄影保留「示意 / 非实拍」标识；顾问占位电话仅用于本地演示，勿拨打测试。
+- [ ] 本地连续导航存在历史自动化超时记录，手工复核「提交成功 → 首页 → 其他场景」及「子铺位 → 返回列表」。
 
-**功能层面已达到 MVP 上线标准**，主链路（找铺 → 详情 → 咨询 → 跟进记录，以及转让、设备支线）完整可用，UX 审计中的 P0/P1 问题已基本修复。
+网站与 CMS 演示需单独准备 PostgreSQL，设置 `backend/.env` 后运行 `pnpm dev`。当前 Compose 只有后端服务，不提供数据库。已有数据库升级先备份，按 [商业迁移说明](商业项目接入-迁移与发布说明.md) 与根目录 [README](../README.md#数据迁移) 操作。
 
-**但发布配置尚未完成**。在补齐 API 地址、微信登录、后端部署和运营配置之前，真机用户无法正常使用。这些属于运维与配置工作，通常 1–2 天可完成。
-
-补齐发布闸门后，订阅消息、地图、对比、分享海报等增长功能**可以上线后逐步完善**，不影响首版发布。
-
----
-
-## 二、功能就绪情况（已满足）
-
-| 能力 | 状态 | 说明 |
-|------|------|------|
-| 找铺浏览 / 筛选 / 搜索 | ✅ | 含招商/转让来源筛选、推荐筛选 |
-| 项目详情 | ✅ | 多图、收藏、分享、联系顾问、我要咨询 |
-| 找铺 / 转让 / 设备表单 | ✅ | 含图片上传、编辑模式 |
-| 我的咨询记录 | ✅ | 查看、编辑、删除、三段处理状态、中文类型展示 |
-| 隐私合规 | ✅ | 隐私政策页 + 表单勾选同意 |
-| 设备列表隐私 | ✅ | 联系方式隐藏，区域/备注脱敏 |
-| 体验保障 | ✅ | 加载态、错误重试、下拉刷新、智能列表刷新 |
-| API 联调模式 | ✅ | `useLocalMock: false`，默认走 Payload 后端 |
-| API 安全加固 | ✅ | 线索鉴权、项目公开校验、附件归属、staff 权限、生产 dev 登录禁用 |
-
----
-
-## 二点五、近期安全修补（2026-06-23）
-
-以下项已在 `feature/remediate-issues` 分支完成，发 PR 前建议按第四节真机流程复验：
-
-| 项 | 状态 | 说明 |
-|----|------|------|
-| 线索列表必须登录 | ✅ | 移除手机号旁路查询 |
-| 线索 CRUD 所有权校验 | ✅ | 按 `submitterOpenId` 隔离 |
-| 项目写操作 staff 鉴权 | ✅ | POST/PUT/DELETE `/api/projects` |
-| 项目详情公开校验 | ✅ | 非 staff 无法读取草稿/驳回项目 |
-| 管理端操作 staff 鉴权 | ✅ | properties / inquiries / equipment / create-property |
-| 附件归属强化 | ✅ | 禁止引用 seed/admin 媒体；lead_attachment 必须归属当前用户 |
-| 图片上传 401 修复 | ✅ | token 无效时返回标准 JSON |
-| 生产 dev 登录禁用 | ✅ | `NODE_ENV=production` 下忽略 `WECHAT_AUTH_MODE=dev` |
-| Token 主动刷新 | ✅ | 过期前 30 分钟自动重新登录 |
-
----
-
-## 二点六、近期小程序端专项加固（2026-07-08）
-
-以下项已在小程序客户端（`mp/`）加固修复：
-
-| 项 | 状态 | 说明 |
-|----|------|------|
-| 动态环境域名适配 | ✅ | 根据开发/体验/正式版自动适配域名，防止泄露本地开发 HTTP |
-| 编辑模式隐私拦截解除 | ✅ | 编辑模式下跳过隐私政策同意校验，解决表单保存受阻问题 |
-| 图片上传 401 重载 | ✅ | `wx.uploadFile` 支持 token 过期自动刷新登录并重试一次 |
-| 详情页状态安全检查 | ✅ | 详情页二次拦截 draft/offline/rejected 项目，与后端防护呼应 |
-| URL 参数安全解码 | ✅ | `safeDecode` 包裹 `decodeURIComponent`，规避非法参数白屏崩溃 |
-| 顾问电话逻辑统一 | ✅ | 集中在全局 `app.js` 的 ActionSheet 电话交互，减少冗余代码 |
-| 个人中心限制同步 | ✅ | 统合至全局 `form.js` 和配置，不再采用硬编码校验及长度裁剪 |
-
----
-
-## 三、发布闸门（上线前必须完成）
-
-以下项**不是功能增强**，而是真用户能用的前提。未完成则不应提交审核或对外推广。
-
-### 3.1 生产 API 地址
-
-**现状：**
-
-- **[已修复]** `API_URL` 已通过 `wx.getAccountInfoSync()` 实现动态环境解析（开发版/体验版/正式版各自适配不同域名），无需再手动修改配置代码。
-
-**要求：**
-
-- [x] 将 `API_URL` 改为线上 HTTPS 地址，例如 `https://your-domain.com/api` （通过 `wx.getAccountInfoSync` 动态注入）
-- [ ] 确保接口仅使用 HTTPS（微信正式版要求）
-- [ ] 在微信公众平台 → 开发管理 → 开发设置 → 服务器域名中，配置 **request 合法域名**
-- [ ] 若使用图片上传，同步配置 **uploadFile 合法域名**
-
-**验证：** 真机（非开发者工具）打开首页，项目列表能正常加载。
-
----
-
-### 3.2 微信登录生产模式
-
-**现状（示例配置）：**
-
-```env
-# backend/.env 或 docker-compose 环境变量
-WECHAT_AUTH_MODE=dev
-WECHAT_AUTH_DEV_OPENID=dev-openid-local
-WECHAT_APP_SECRET=
-```
-
-**要求：**
-
-- [ ] 设置 `WECHAT_AUTH_MODE=wechat`
-- [ ] 填写真实 `WECHAT_APPID`（与 `mp/project.config.json` 中 appid 一致）
-- [ ] 填写真实 `WECHAT_APP_SECRET`（勿提交到 Git）
-- [ ] 设置 `WECHAT_CODE_ENV_VERSION=release`，并实测分享海报中的真实小程序码
-- [ ] 生产环境**不得**依赖 `X-Dev-OpenId` 或 `devOpenId` 调试头
-
-**说明：** 线索按 `submitterOpenId` 隔离。若仍使用 dev 模式，不同用户可能共用同一 openid，咨询记录会混乱。
-
-**验证：** 真机提交一条咨询，在 CMS 线索池能看到对应记录；换账号仅能看到自己的记录。
-
----
-
-### 3.3 后端部署与数据
-
-**要求：**
-
-- [ ] 使用 `docker compose up -d --build` 或等价方式部署 Payload + PostgreSQL
-- [ ] 设置强随机 `PAYLOAD_SECRET`
-- [ ] 设置 `PAYLOAD_PUBLIC_SERVER_URL` 为真实 HTTPS 域名（用于后台链接和媒体 URL）
-- [x] `docker-compose.yml` 已将 `WECHAT_*` 环境变量传入 Payload 容器
-- [ ] 确认 `payload-media` 卷纳入备份，容器重建后图片仍可访问
-- [ ] 保持 `PAYLOAD_DB_PUSH=false`；结构变更前备份并显式运行 schema profile
-- [ ] CMS 中录入真实招商项目（非空列表、非纯 demo 图）
-- [ ] 房源 `status` 为 `online` / `coming` / `full` 才会在小程序公开展示
-
-**验证：**
+## 代码闸门
 
 ```bash
-# 本地构建检查（发布前建议执行）
 pnpm backend:lint
+pnpm test:ci
+pnpm --dir backend test:cms
 pnpm backend:build
+node scripts/mp-check-templates.mjs
 ```
 
-线上访问 `https://your-domain.com/api/projects?public=true` 应返回项目 JSON。
+`backend:build` 包含类型检查；模板编译需要微信开发者工具，可用 `MP_COMPILER_DIR` 指定编译器目录。`test:ci` 默认跳过真实 HTTP 契约；配置独立测试后端与两名测试用户后再执行集成测试，勿写入业务库。
 
----
+## 体验版 / 正式发布
 
-### 3.4 运营配置替换占位值
+先补齐真实配置，再运行 `pnpm launch:check`。本轮静态检查的 9 项缺项：
 
-| 配置项 | 当前值 | 要求 |
-|--------|--------|------|
-| `mp/config.js` → `ADVISOR_PHONE` | `18888888888` | 改为真实招商顾问电话 |
-| 隐私政策联系方式 | 文档内占位 | 与运营方实际联系方式一致 |
-| 小程序服务类目 | — | 选择与「商业服务 / 招商」等匹配类目 |
-| 审核材料 | — | 准备功能说明、测试账号（若需要） |
+- [ ] trial HTTPS API 地址：`mp/config/environments.js`。
+- [ ] release HTTPS API 地址：同上；trial/release 保持关闭 Mock 与开发 OpenID。
+- [ ] 真实顾问电话：`mp/config/index.js`。
+- [ ] 独立随机 `MINIPROGRAM_TOKEN_SECRET`，至少 32 字符且与 `PAYLOAD_SECRET` 不同。
+- [ ] `WECHAT_AUTH_MODE=wechat`。
+- [ ] 真实 `WECHAT_APP_SECRET`。
+- [ ] `WECHAT_APPID` 与 `mp/project.config.json` 的 appid 一致。
+- [ ] 正式版 `WECHAT_CODE_ENV_VERSION=release`（体验版按对应环境配置）。
+- [ ] 真实 HTTPS `PAYLOAD_PUBLIC_SERVER_URL`。
 
-**验证：** 详情页 / 我的页点击「联系顾问」能拨通真实号码。
+静态检查还会检查 `PAYLOAD_SECRET`、`DATABASE_URI` 与 `PAYLOAD_DB_PUSH=false`。目标部署环境须单独检查；本地检查结果不证明线上配置正确。
 
----
+## 目标环境验收
 
-### 3.5 微信平台合规
+- [ ] HTTPS、公众平台 request/uploadFile/downloadFile 合法域名已配置，开启域名校验复测。
+- [ ] 真实微信 code 登录与两个账号的咨询/附件隔离通过。
+- [ ] CMS admin/editor 权限、上架/下架、咨询处理与真实小程序码通过。
+- [ ] iOS / Android 真机验证图片上传/预览、401 刷新、键盘、安全区、分享、电话与隐私授权。
+- [ ] 已录入真实且获准展示的房源、联系方式、服务类目和隐私指引。
+- [ ] 数据库迁移在隔离环境验证，并完成目标库与 media 卷的配套备份/恢复演练。
+- [ ] 正常启动与镜像构建关闭自动 schema push；反向代理覆盖不可信的 IP 转发头。
 
-**要求：**
-
-- [ ] 小程序后台填写「用户隐私保护指引」，声明收集：openid、称呼、手机号、经营意向、上传图片等
-- [ ] 隐私政策页面可正常访问（`pages/privacy/privacy`）
-- [ ] 表单提交前须勾选同意隐私政策（已实现，审核时会抽查）
-- [ ] 若后续增加订阅消息，需单独申请消息模板并在合适场景请求用户授权
-
-**参考文件：**
-
-- `mp/pages/privacy/privacy.wxml`
-- `mp/utils/form.js`（`validatePrivacyConsent`）
-
----
-
-## 四、建议的真机验收流程
-
-上线前在**正式版/体验版真机**完整走通以下路径（不要用本地 mock）：
-
-1. [ ] **浏览**：首页加载 → 找铺列表 → 筛选/搜索 → 进入详情
-2. [ ] **收藏**：收藏项目 → 我的 → 我的收藏 → 能看到收藏项
-3. [ ] **咨询**：从详情提交找铺咨询 → 成功页 → 我的咨询记录可见
-4. [ ] **转让 / 设备**：各提交一条测试线索（可选）
-5. [ ] **编辑 / 删除**：在咨询记录中编辑并删除测试数据
-6. [ ] **顾问侧**：CMS 能看到新线索，顾问可添加跟进记录；用户端时间线同步展示
-7. [ ] **弱网**：断网或飞行模式下，错误提示为用户友好文案（非开发向提示）
-8. [x] **安全**：未登录无法拉取线索列表；图片上传在 token 过期后能自动刷新并重试
-
----
-
-## 五、可上线后迭代（不阻断首版）
-
-| 项目 | 优先级 | 说明 |
-|------|--------|------|
-| 收藏云端同步 | P1 | 当前仅本机存储，已有「仅保存在本机」提示 |
-| 微信订阅消息 | P2 | 线索状态变更、新匹配项目推送 |
-| 详情页相似推荐 | P2 | 提升转化与停留 |
-| 项目对比视图 | P2 | 高意向用户决策辅助 |
-| 地图 / 导航 | P2 | 跳转腾讯地图或 `wx.openLocation` |
-| 开店预算计算器 | P2 | 内容型获客工具 |
-| 分享海报 + 带参追踪 | P2 | 微信群传播增强 |
-| 学校专属落地页 | P2 | 精准获客 |
-| 品牌合作入口（小程序） | P2 | 网站与后台已支持 `brand_cooperation` |
-| 视觉统一（emoji → 图标库） | P3 | 品牌打磨 |
-| 网站详情页 + 小程序码闭环 | P2 | 公域获客 |
-
-详见 [miniprogram-ux-audit.md](./miniprogram-ux-audit.md) 第三阶段路线图。
-
----
-
-## 六、配置改动速查
-
-### 6.1 小程序端
-
-| 文件 | 改动 |
-|------|------|
-| `mp/config.js` | `API_URL` → 生产 HTTPS；`ADVISOR_PHONE` → 真实电话 |
-| `mp/project.config.json` | 确认 `appid` 与微信公众平台一致 |
-
-### 6.2 后端 / 部署
-
-| 文件 / 位置 | 改动 |
-|-------------|------|
-| 根目录 `.env` | `PAYLOAD_SECRET`、`PAYLOAD_PUBLIC_SERVER_URL`、`POSTGRES_PASSWORD` |
-| `backend/.env` 或 compose 环境变量 | `WECHAT_AUTH_MODE=wechat`、`WECHAT_APPID`、`WECHAT_APP_SECRET` |
-| `docker-compose.yml` | 已传入 `WECHAT_*`；部署方需提供真实值并保留 `payload-media` 卷 |
-| Payload CMS | 录入并审核上线真实项目 |
-
-### 6.3 微信公众平台
-
-| 配置项 | 说明 |
-|--------|------|
-| request 合法域名 | 后端 API 域名 |
-| uploadFile 合法域名 | 图片上传域名（与 API 同域即可） |
-| 用户隐私保护指引 | 与隐私政策页内容一致 |
-| 体验版 / 正式版 | 先用体验版内测，再提交审核 |
-
----
-
-## 七、上线前最小检查清单（可打印打勾）
-
-### 发布闸门
-
-- [ ] `mp/config.js` 已改为生产 HTTPS API
-- [ ] 微信后台已配置 request / upload 合法域名
-- [ ] `WECHAT_AUTH_MODE=wechat` 且 AppSecret 已配置
-- [ ] 后端已部署稳定，数据库有真实项目
-- [ ] 顾问电话、隐私指引、服务类目已填好
-- [ ] 真机验收 7 步流程已通过
-- [ ] 顾问能在 CMS 看到线索并跟进
-
-### 建议但非阻塞
-
-- [ ] `pnpm backend:lint` 通过
-- [ ] `pnpm backend:build` 通过
-- [ ] 准备运营 SOP：新线索响应时效、跟进话术
-
----
-
-## 八、完成度参考
-
-```
-功能完成度     ██████████  约 90%  → 可以上线
-发布配置完成度 ████░░░░░░  约 40%  → 需 1–2 天运维工作
-增长功能完成度 ██░░░░░░░░  约 20%  → 适合上线后迭代
-```
-
-**上线最低要求 = 功能 MVP ✅ + 发布配置完成 ⏳**
-
----
-
-## 九、相关文档
-
-| 文档 | 内容 |
-|------|------|
-| [PRD-学校商铺招商小程序.md](./PRD-学校商铺招商小程序.md) | 产品功能与 API 约定 |
-| [miniprogram-ux-audit.md](./miniprogram-ux-audit.md) | UX 审计与 P0/P1/P2 路线图 |
-| [payload-admin-ux-audit.md](./payload-admin-ux-audit.md) | 后台运营能力 |
-| 根目录 [README.md](../README.md) | 本地开发与部署命令 |
-
----
-
-## 十、版本记录
-
-| 日期 | 说明 |
-|------|------|
-| 2026-06-22 | 初版：整理上线前发布闸门、验收流程与可延后项 |
-| 2026-06-23 | 补充安全修补清单与真机验收项 |
-| 2026-07-08 | 补充小程序端专项安全加固与代码逻辑清理项 |
+真实 HTTP、容器和真机验收未完成时，不将本地 demo 成功写成正式发布通过。订阅消息、地图、对比、收藏云同步等增长功能可后续迭代。

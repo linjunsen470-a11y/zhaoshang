@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f8fb;
-  --foreground: #0f172a;
+  --background: #ffffff;
+  --foreground: #161a18;
   --font-geist-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
   --font-geist-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
@@ -22,7 +22,7 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans);
 }
 
 input,
@@ -30,4 +30,232 @@ select,
 textarea,
 button {
   font: inherit;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(31, 61, 50, 0.35);
+  outline-offset: 2px;
+}
+
+.web-skip-link {
+  position: fixed;
+  left: 16px;
+  top: 12px;
+  z-index: 100;
+  transform: translateY(-160%);
+  border-radius: 2px;
+  background: #1e3a34;
+  color: #fff;
+  padding: 10px 14px;
+  transition: transform 160ms ease;
+}
+
+.web-skip-link:focus {
+  transform: translateY(0);
+}
+
+.web-header-action,
+.web-primary-button,
+.web-secondary-action {
+  border-radius: 2px;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 18px;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.web-header-action,
+.web-primary-button {
+  background: #1e3a34;
+  color: #fff;
+}
+
+.web-secondary-action {
+  border: 1px solid #e3e7e5;
+  background: #fff;
+  color: #161a18;
+}
+
+.web-header-action:hover,
+.web-primary-button:hover:not(:disabled) {
+  background: #16302b;
+}
+
+.web-secondary-action:hover {
+  border-color: #1e3a34;
+  color: #1e3a34;
+}
+
+.web-header-action:active,
+.web-secondary-action:active,
+.web-primary-button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.web-primary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.web-stat-card,
+.web-service-card,
+.web-opportunity-card {
+  border: 1px solid #e3e7e5;
+  border-radius: 4px;
+  background: #fff;
+}
+
+.web-stat-card {
+  padding: 16px;
+}
+
+.web-service-card {
+  min-height: 120px;
+  padding: 20px;
+  background: #fff;
+}
+
+.web-opportunity-card {
+  overflow: hidden;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.web-opportunity-card:hover {
+  border-color: #161a18;
+}
+
+.web-lead-form {
+  display: grid;
+  gap: 16px;
+  border: 1px solid #e3e7e5;
+  border-radius: 4px;
+  background: #fff;
+  padding: 22px;
+}
+
+.web-form-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.web-field {
+  display: grid;
+  gap: 7px;
+  color: #66706c;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.web-field b {
+  color: #161a18;
+}
+
+.web-field input,
+.web-field select,
+.web-field textarea {
+  width: 100%;
+  border: 1px solid #e3e7e5;
+  border-radius: 2px;
+  background: #fff;
+  color: #161a18;
+  font-size: 14px;
+  font-weight: 400;
+  padding: 12px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.web-field input:focus,
+.web-field select:focus,
+.web-field textarea:focus {
+  border-color: #1e3a34;
+  box-shadow: 0 0 0 3px rgba(30, 58, 52, 0.12);
+}
+
+.web-field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.web-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #66706c;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.web-consent input {
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  flex: 0 0 auto;
+}
+
+.web-form-message {
+  margin: 0;
+  border-radius: 2px;
+  padding: 11px 13px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.web-form-message--success {
+  background: #e7eeea;
+  color: #1e3a34;
+}
+
+.web-form-message--error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+@media (max-width: 640px) {
+  .web-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .web-header-action {
+    flex: 0 0 auto;
+    padding-inline: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .web-skip-link,
+  .web-header-action,
+  .web-secondary-action,
+  .web-primary-button,
+  .web-opportunity-card,
+  .web-field input,
+  .web-field select,
+  .web-field textarea {
+    transition: none;
+  }
+
+  .web-opportunity-card:hover {
+    transform: none;
+  }
 }

@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 import { canManageLeads, isAdminUser } from './shared/access'
 import {
   ADMIN_GROUPS,
+  BUSINESS_SCENE_OPTIONS,
   EQUIPMENT_PUBLICATION_OPTIONS,
   LEAD_STATUS_OPTIONS,
 } from './shared/fieldOptions'
@@ -10,6 +11,7 @@ import { buildLeadSnapshot, isLeadSnapshot } from '../lib/leadSnapshot'
 const EQUIPMENT_TYPES = ['equipment_sell', 'equipment_buy', 'equipment_recycle']
 
 const workingFields: CollectionConfig['fields'] = [
+  { name: 'businessScene', type: 'select', label: '意向场景', options: BUSINESS_SCENE_OPTIONS },
   {
     type: 'row',
     fields: [
@@ -57,7 +59,7 @@ const workingFields: CollectionConfig['fields'] = [
       { name: 'regionPreference', type: 'text', label: '意向区域' },
     ],
   },
-  { name: 'hasCampusExperience', type: 'checkbox', label: '有校园经营经验' },
+  { name: 'hasCampusExperience', type: 'checkbox', label: '有校园经营经验', admin: { condition: data => data?.businessScene === 'campus' } },
   { name: 'attachments', type: 'upload', relationTo: 'media', hasMany: true, label: '用户上传图片/附件' },
   {
     name: 'transferDetails',

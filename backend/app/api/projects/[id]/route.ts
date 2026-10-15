@@ -1,5 +1,6 @@
 import { getPayloadInstance, isPublicProject, json, mapProject, sanitizeProjectInput } from '../../_shared/payloadApi'
 import { getAuthenticatedStaff } from '../../_shared/auth'
+import { readJsonObject, jsonInputError } from '../../_shared/requestInput'
 import { isAdminUser } from '../../../../collections/shared/access'
 
 type Args = {
@@ -31,9 +32,9 @@ export async function PUT(request: Request, { params }: Args) {
   const { id } = await params
   let input: Record<string, unknown>
   try {
-    input = await request.json() as Record<string, unknown>
-  } catch {
-    return json({ error: '无效的 JSON 请求体' }, 400)
+    input = await readJsonObject(request)
+  } catch (error) {
+    return jsonInputError(error)
   }
 
   const payload = await getPayloadInstance()

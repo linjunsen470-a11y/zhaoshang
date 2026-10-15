@@ -16,6 +16,12 @@ App({
   },
 
   onLaunch() {
+    const runtime = config.refreshRuntimeConfig();
+    this.globalData.apiUrl = runtime.API_URL;
+    this.globalData.envVersion = runtime.ENV_VERSION;
+    this.globalData.devOpenId = runtime.DEV_OPEN_ID;
+    this.globalData.configError = runtime.CONFIG_ERROR;
+    this.globalData.useLocalMock = runtime.USE_LOCAL_MOCK;
     const favs = wx.getStorageSync('favorites');
     if (!favs) wx.setStorageSync('favorites', []);
     if (config.CONFIG_ERROR) {

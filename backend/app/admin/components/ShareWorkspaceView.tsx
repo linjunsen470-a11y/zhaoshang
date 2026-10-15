@@ -7,7 +7,12 @@ type ShareProject = {
   id: string
   title: string
   status: string
+  listingKind?: string
+  businessScene?: string
+  venueName?: string
   schoolName?: string
+  schoolAlias?: string
+  city?: string
   district?: string
   areaText?: string
   feeText?: string
@@ -70,9 +75,9 @@ export function ShareWorkspaceView() {
     <main className="cms-page" id="main-content">
       <header className="cms-page-header">
         <div>
-          <p className="cms-eyebrow">获客投放</p>
+          <p className="cms-eyebrow">分享推广</p>
           <h1>分享素材</h1>
-          <p>复制分享文案，生成带房源图与真实微信小程序码的海报。</p>
+          <p>选择已公开的项目或铺位，复制分享文案并生成海报。</p>
         </div>
         <button className="cms-button" type="button" disabled={loading} onClick={refresh}>
           {loading ? '刷新中…' : '刷新房源'}
@@ -100,7 +105,7 @@ export function ShareWorkspaceView() {
               ))}
             </ul>
           ) : (
-            !loading && <div className="cms-empty" style={{ padding: 24 }}>暂无开放中房源，请先上架。</div>
+            !loading && <div className="cms-empty" style={{ padding: 24 }}>暂无可分享的房源。请先完成上架，再生成素材。</div>
           )}
         </article>
 
@@ -111,7 +116,12 @@ export function ShareWorkspaceView() {
               project={{
                 id: selected.id,
                 title: selected.title,
+                listingKind: selected.listingKind,
+                businessScene: selected.businessScene,
+                venueName: selected.venueName,
                 schoolName: selected.schoolName,
+                schoolAlias: selected.schoolAlias,
+                city: selected.city,
                 district: selected.district,
                 areaText: selected.areaText,
                 feeText: selected.feeText,
@@ -121,7 +131,7 @@ export function ShareWorkspaceView() {
               }}
             />
           ) : (
-            <div className="cms-empty" style={{ padding: 24 }}>请选择左侧房源</div>
+            <div className="cms-empty" style={{ padding: 24 }}>请选择左侧房源，查看可用的分享素材。</div>
           )}
         </article>
       </div>

@@ -75,7 +75,7 @@ export async function GET(request: Request) {
 
   try {
     const payload = await getPayloadInstance()
-    const project = await payload.findByID({ collection: 'projects', id: projectId, depth: 0, overrideAccess: true })
+    const project = await payload.findByID({ collection: 'projects', id: projectId, depth: 1, overrideAccess: true })
     if (!isPublicProject(project as unknown as Record<string, unknown>)) {
       return json({ error: '房源尚未公开，不能生成对外分享码' }, 409)
     }

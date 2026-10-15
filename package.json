@@ -19,9 +19,13 @@
     "test:mp": "pnpm test:mp:smoke",
     "test:mp:smoke": "node --test --test-isolation=none tests/mp.test.mjs",
     "test:mp:smoke:junit": "node --test --test-isolation=none --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-results/mp-e2e/junit-smoke.xml tests/mp.test.mjs",
-    "test:mp:full": "node --test --test-isolation=none tests/mp.test.mjs tests/mp-full.test.mjs",
-    "test:mp:full:junit": "node --test --test-isolation=none --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-results/mp-e2e/junit-full.xml tests/mp.test.mjs tests/mp-full.test.mjs",
-    "test:ci": "pnpm test:unit && pnpm test:api"
+    "test:mp:full": "node --test --test-concurrency=1 --test-isolation=none tests/mp.test.mjs tests/mp-full.test.mjs",
+    "test:mp:full:junit": "node --test --test-concurrency=1 --test-isolation=none --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=test-results/mp-e2e/junit-full.xml tests/mp.test.mjs tests/mp-full.test.mjs",
+    "test:ci": "pnpm test:unit && pnpm test:api",
+    "test:mp:commercial": "node --test --test-isolation=none tests/mp-commercial.test.mjs",
+    "test:mp:local": "node --test --test-concurrency=1 --test-isolation=none tests/mp-local-scenes.test.mjs",
+    "test:mp:interface": "node --test --test-force-exit --test-isolation=none tests/mp-interface.test.mjs",
+    "launch:check": "node scripts/check-launch.mjs"
   },
   "devDependencies": {
     "miniprogram-automator": "^0.12.1"

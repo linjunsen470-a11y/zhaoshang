@@ -10,7 +10,7 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 const ALL = '全部';
 const PUBLIC_STATUSES = new Set(['online', 'coming', 'full']);
 const LEAD_USER_FIELDS = [
-  'name', 'phone', 'businessType', 'budgetRange', 'regionPreference', 'hasCampusExperience',
+  'name', 'phone', 'businessScene', 'businessType', 'budgetRange', 'regionPreference', 'hasCampusExperience',
   'transferDetails', 'equipmentDetails', 'renovationDetails', 'attachments', 'remark', 'leadType', 'sourceChannel', 'projectId',
 ];
 
@@ -118,20 +118,19 @@ function readBody(req) {
 }
 
 
-function getProjectBudgetCategory(project) {
-  const text = project.feeText || '';
-  if (text.includes('面议') || text.includes('扣点') || text.includes('抽成')) return '面议';
-
-  const match = text.match(/([\d.]+)/);
-  if (!match) return '面议';
-
-  const val = parseFloat(match[1]);
-  const yearly = text.includes('月') ? val * 12 : val;
-  if (yearly < 5) return '5万以内';
-  if (yearly <= 10) return '5-10万';
-  if (yearly <= 20) return '10-20万';
-  if (yearly <= 50) return '20-50万';
-  return '50万以上';
+const commercialOptions = JSON.parse(fs.readFileSync(path.join(__dirname, 'backend/collections/shared/commercialOptions.json'), 'utf8'));
+const sceneOf = p => p.businessScene || (commercialOptions.campusTypes.includes(p.projectType) ? 'campus' : '');
+const parentId = p => p.parentProject && typeof p.parentProject === 'object' ? p.parentProject.id : p.parentProject;
+function isPublic(p, all) {
+  if (!p || !PUBLIC_STATUSES.has(p.status)) return false;
+  if (!parentId(p)) return true;
+  const parent = all.find(row => String(row.id) === String(parentId(p)));
+  return !!parent && parent.listingKind === 'project' && PUBLIC_STATUSES.has(parent.status);
+}
+function publicProject(p, all) {
+  const parent = all.find(row => String(row.id) === String(parentId(p)));
+  const { remark, sourceLead, sourceLeadKey, seedKey, legacyUnclassified, ...publicFields } = p;
+  return { ...publicFields, listingKind: p.listingKind || 'unit', businessScene: sceneOf(p), parentProject: parent && isPublic(parent, all) ? { id: parent.id, title: parent.title, status: parent.status } : null };
 }
 
 function normalizeProject(raw) {
@@ -169,41 +168,31 @@ function normalizeLead(raw, projects) {
 }
 
 function filterProjects(projects, query) {
-  let result = [...projects];
-
-  if (query.public === 'true') {
-    result = result.filter(p => PUBLIC_STATUSES.has(p.status));
+  let result = projects.filter(p => isPublic(p, projects)).map(p => publicProject(p, projects));
+  for (const key of ['district', 'projectType', 'status', 'opportunityType', 'businessScene', 'listingKind']) {
+    if (query[key] && query[key] !== ALL) result = result.filter(p => p[key] === query[key]);
   }
-  if (query.opportunityType && query.opportunityType !== ALL) {
-    result = result.filter(p => (p.opportunityType || 'leasing') === query.opportunityType);
-  }
+  if (query.parentProject) result = result.filter(p => String(parentId(p)) === query.parentProject);
+  if (query.recommended === 'true') result = result.filter(p => p.isRecommended);
+  if (query.ids !== undefined) result = result.filter(p => query.ids.split(',').includes(String(p.id)));
+  if (query.business && query.business !== ALL) result = result.filter(p => p.suitableBusiness.includes(query.business));
   if (query.q) {
     const q = query.q.toLowerCase().trim();
-    result = result.filter(p =>
-      p.title.toLowerCase().includes(q) ||
-      (p.schoolName && p.schoolName.toLowerCase().includes(q)) ||
-      (p.district && p.district.toLowerCase().includes(q)) ||
-      (p.suitableBusiness || []).some(b => b.toLowerCase().includes(q))
-    );
+    result = result.filter(p => [p.title, p.schoolName, p.schoolAlias, p.venueName, p.district, p.addressText, ...p.suitableBusiness].some(v => String(v || '').toLowerCase().includes(q)));
   }
-  if (query.district && query.district !== ALL) {
-    result = result.filter(p => p.district === query.district);
+  for (const [key, ranges, min, max] of [['area', commercialOptions.areas, 'areaMin', 'areaMax'], ['rent', commercialOptions.rents, 'monthlyRentMin', 'monthlyRentMax']]) {
+    if (!query[key] || query[key] === ALL) continue;
+    const range = ranges.find(r => r.value === query[key]);
+    if (!range) throw new Error('筛选无效');
+    result = result.filter(p => typeof p[min] === 'number' && typeof p[max] === 'number' && p[max] >= range.min && (range.max === null || p[min] < range.max));
   }
-  if (query.projectType && query.projectType !== ALL) {
-    result = result.filter(p => p.projectType === query.projectType);
-  }
-  if (query.budget && query.budget !== ALL) {
-    result = result.filter(p => getProjectBudgetCategory(p) === query.budget);
-  }
-  if (query.business && query.business !== ALL) {
-    result = result.filter(p => (p.suitableBusiness || []).includes(query.business));
-  }
-  if (query.status && query.status !== ALL) {
-    result = result.filter(p => p.status === query.status);
-  }
-
-  result.sort((a, b) => (b.sort || 0) - (a.sort || 0) || b.createdAt - a.createdAt);
-  return result;
+  const timestamp = v => typeof v === 'number' ? v : Date.parse(v) || 0;
+  result.sort((a, b) => (query.sort === 'latest' ? 0 : b.sort - a.sort) || timestamp(b.createdAt) - timestamp(a.createdAt) || String(b.id).localeCompare(String(a.id)));
+  const page = Math.max(1, Math.floor(Number(query.page) || 1));
+  const limit = Math.min(100, Math.max(1, Math.floor(Number(query.limit) || (query.pagination === 'true' ? 20 : 100))));
+  const totalDocs = result.length, totalPages = Math.ceil(totalDocs / limit);
+  const docs = result.slice((page - 1) * limit, page * limit);
+  return query.pagination === 'true' ? { docs, page, totalDocs, totalPages, hasNextPage: page < totalPages } : docs;
 }
 
 const server = http.createServer(async (req, res) => {
@@ -232,14 +221,14 @@ const server = http.createServer(async (req, res) => {
     data.leads = data.leads || [];
 
     if ((urlPath === '/api/projects' || urlPath === '/api/opportunities') && req.method === 'GET') {
-      sendJSON(filterProjects(data.projects, query));
+      try { sendJSON(filterProjects(data.projects, query)); } catch (error) { sendJSON({ error: error.message }, 400); }
       return;
     }
 
     if (urlPath.startsWith('/api/projects/') && req.method === 'GET') {
       const id = urlPath.substring('/api/projects/'.length);
-      const project = data.projects.find(p => p.id === id);
-      sendJSON(project || { error: '项目不存在' }, project ? 200 : 404);
+      const project = data.projects.find(p => String(p.id) === id && isPublic(p, data.projects));
+      sendJSON(project ? publicProject(project, data.projects) : { error: '项目不存在' }, project ? 200 : 404);
       return;
     }
 
@@ -278,6 +267,12 @@ const server = http.createServer(async (req, res) => {
           sendJSON({ error: '手机号格式不正确' }, 400);
           return;
         }
+        if (payload.projectId) {
+          const project = data.projects.find(p => String(p.id) === String(payload.projectId));
+          if (!isPublic(project, data.projects) || project.status === 'full') { sendJSON({ error: '该项目暂不接受咨询' }, 400); return; }
+          payload.businessScene = sceneOf(project);
+        }
+        payload.customerSnapshot = { ...payload, capturedAt: new Date().toISOString() };
         payload.id = generateId('l');
         payload.createdAt = Date.now();
         payload.updatedAt = Date.now();
@@ -299,6 +294,8 @@ const server = http.createServer(async (req, res) => {
           return;
         }
         const updateFields = pickLeadUserFields(await readBody(req));
+        delete updateFields.projectId;
+        if (data.leads[index].projectId) delete updateFields.businessScene;
         data.leads[index] = {
           ...data.leads[index],
           ...updateFields,

@@ -35,10 +35,11 @@ test('local mock replaces old remote demo photos without changing project data',
   };
   const { api, storage } = makeLocalApi({ local_projects: [original], local_leads: [] });
   const [project] = await api.getProjects({ public: true });
-  assert.equal(project.coverImage, '/images/shop-demo-food.png');
-  assert.deepEqual(Array.from(project.images), ['/images/shop-demo-food.png']);
+  assert.equal(project.coverImage, '/images/demo/campus.jpg');
+  assert.equal(project.isDemoImage, true);
+  assert.deepEqual(Array.from(project.images), ['/images/demo/campus.jpg']);
   assert.equal(project.title, original.title);
-  assert.equal(storage.getStorageSync('local_projects')[0].coverImage, '/images/shop-demo-food.png');
+  assert.equal(storage.getStorageSync('local_projects')[0].coverImage, '/images/demo/campus.jpg');
 });
 
 test('local mock lead CRUD is isolated by current openid', async () => {

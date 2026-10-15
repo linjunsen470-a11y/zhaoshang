@@ -13,7 +13,7 @@ export async function GET() {
     payload.find({ collection: 'leads', limit: 1000, depth: 1, overrideAccess: true }),
   ])
 
-  const projects = projectsResult.docs.map(doc => mapProject(doc))
+  const projects = projectsResult.docs.map(doc => mapProject(doc, true))
   const leads = leadsResult.docs
 
   const todayStart = new Date()

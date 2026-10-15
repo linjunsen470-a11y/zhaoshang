@@ -1,89 +1,62 @@
 <view class="container">
-  <view class="user-header-bg">
-    <view class="user-card flex align-center">
-      <image src="{{userInfo.avatarUrl}}" mode="aspectFill" class="user-avatar" />
-      <view class="user-info flex-1">
-        <view class="flex align-center">
-          <text class="user-name">{{userInfo.nickname || '未设置称呼'}}</text>
-          <text class="user-role-badge">意向商户</text>
-        </view>
-        <view class="user-phone">联系手机：{{userInfo.phone || '提交咨询时填写'}}</view>
-      </view>
-      <view class="edit-btn" bindtap="onEditProfile">编辑</view>
+  <view class="profile">
+    <view class="avatar-wrap">
+      <image src="/images/icons/my.png" class="user-avatar" />
     </view>
+    <view class="user-info flex-1">
+      <view class="user-name">{{userInfo.nickname || '欢迎来到商业空间'}}</view>
+      <view class="user-phone">{{userInfo.phone || '完善联系方式，咨询更省心'}}</view>
+    </view>
+    <button class="edit-btn" bindtap="onEditProfile">编辑</button>
   </view>
-
-  <view class="menu-list-container">
-    <view class="card menu-card">
-      <view class="menu-item flex align-center justify-between" bindtap="onGoToLeads">
-        <view class="flex align-center">
-          <text class="menu-icon">▣</text>
-          <text class="menu-text">我的咨询记录</text>
-        </view>
-        <text class="menu-arrow">›</text>
-      </view>
-
-      <view class="menu-item flex align-center justify-between" bindtap="onGoToFavorites">
-        <view class="flex align-center">
-          <text class="menu-icon">☆</text>
-          <view class="menu-text-group">
-            <text class="menu-text">我的收藏项目</text>
-            <text class="menu-sub">收藏仅保存在本机</text>
-          </view>
-        </view>
-        <text class="menu-arrow">›</text>
-      </view>
-    </view>
-
-    <view class="card menu-card">
-      <view class="menu-item flex align-center justify-between" bindtap="onGoToPrivacy">
-        <view class="flex align-center">
-          <text class="menu-icon">◎</text>
-          <text class="menu-text">隐私政策</text>
-        </view>
-        <text class="menu-arrow">›</text>
-      </view>
-
-      <view class="menu-item flex align-center justify-between" bindtap="onCallService">
-        <view class="flex align-center">
-          <text class="menu-icon">☎</text>
-          <text class="menu-text">联系招商客服</text>
-        </view>
-        <text class="menu-arrow">›</text>
-      </view>
-
-      <view class="menu-item flex align-center justify-between border-none" bindtap="onShowAbout">
-        <view class="flex align-center">
-          <text class="menu-icon">i</text>
-          <text class="menu-text">关于招商宝平台</text>
-        </view>
-        <text class="menu-arrow">›</text>
-      </view>
-    </view>
+  <view class="section-caption">我的找铺</view>
+  <view class="shortcut-grid">
+    <button class="shortcut" bindtap="onGoToLeads">
+      <image class="line-icon" src="/images/icons/leads.png" />
+      <view class="shortcut-title">咨询记录</view>
+      <view class="shortcut-desc">查看与管理已提交需求</view>
+      <text class="shortcut-arrow">›</text>
+    </button>
+    <button class="shortcut" bindtap="onGoToFavorites">
+      <image class="line-icon" src="/images/icons/star.png" />
+      <view class="shortcut-title">收藏的空间</view>
+      <view class="shortcut-desc">收藏仅保存在本机</view>
+      <text class="shortcut-arrow">›</text>
+    </button>
   </view>
-
-  <view class="edit-modal-mask flex align-center justify-center" wx:if="{{showEditModal}}">
-    <view class="edit-modal-box card">
+  <view class="section-caption">服务与帮助</view>
+  <view class="menu-list">
+    <button class="menu-item" bindtap="onCallService">
+      <image class="line-icon" src="/images/icons/phone.png" />
+      <text class="menu-text">联系招商顾问</text>
+      <text class="menu-arrow">›</text>
+    </button>
+    <button class="menu-item" bindtap="onGoToPrivacy">
+      <image class="line-icon" src="/images/icons/privacy.png" />
+      <text class="menu-text">隐私政策</text>
+      <text class="menu-arrow">›</text>
+    </button>
+    <button class="menu-item" bindtap="onShowAbout">
+      <image class="line-icon" src="/images/icons/info.png" />
+      <text class="menu-text">关于商业空间</text>
+      <text class="menu-arrow">›</text>
+    </button>
+  </view>
+  <view class="edit-modal-mask" wx:if="{{showEditModal}}" catchtouchmove="noop">
+    <view class="edit-modal-box">
       <view class="modal-title">编辑联系信息</view>
-      <view class="modal-desc">修改后，提交咨询时将自动填充新信息。咨询记录按当前微信账号关联，与手机号修改无关。</view>
-
-      <view class="modal-form">
-        <view class="modal-form-item">
-          <text class="modal-label">你的称呼</text>
-          <input class="modal-input" type="text" placeholder="例如：张总"
-                 bindinput="onNicknameInput" value="{{editNickname}}" />
-        </view>
-
-        <view class="modal-form-item border-none">
-          <text class="modal-label">手机号码</text>
-          <input class="modal-input" type="number" maxlength="11" placeholder="常用电话"
-                 bindinput="onPhoneInput" value="{{editPhone}}" />
-        </view>
+      <view class="modal-desc">保存后，新的咨询会自动填入以下信息。已有记录仍归属当前微信账号。</view>
+      <view class="modal-form-item">
+        <label class="modal-label" for="profile-name">你的称呼</label>
+        <input id="profile-name" class="modal-input" aria-label="你的称呼" maxlength="20" placeholder="例如：张老板" bindinput="onNicknameInput" value="{{editNickname}}" />
       </view>
-
-      <view class="modal-actions flex">
-        <button class="btn btn-secondary flex-1 modal-btn" bindtap="onCancelEdit">取消</button>
-        <button class="btn btn-primary flex-1 modal-btn" style="margin-left: 20rpx;" bindtap="onSaveEdit">保存</button>
+      <view class="modal-form-item">
+        <label class="modal-label" for="profile-phone">手机号码</label>
+        <input id="profile-phone" class="modal-input" aria-label="手机号码" type="number" maxlength="11" placeholder="用于顾问联系" bindinput="onPhoneInput" value="{{editPhone}}" />
+      </view>
+      <view class="modal-actions">
+        <button class="btn btn-secondary" bindtap="onCancelEdit">取消</button>
+        <button class="btn btn-primary" bindtap="onSaveEdit">保存</button>
       </view>
     </view>
   </view>

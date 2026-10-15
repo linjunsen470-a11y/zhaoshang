@@ -1,14 +1,14 @@
 {
   "appid": "wx22fb8f72be05d5c3",
   "compileType": "miniprogram",
-  "libVersion": "2.25.0",
+  "libVersion": "3.16.1",
   "projectname": "school-shop-miniprogram",
   "setting": {
     "urlCheck": false,
     "es6": true,
     "enhance": true,
     "postcss": true,
-    "minified": true,
+    "minified": false,
     "compileWorklet": false,
     "uglifyFileName": false,
     "uploadWithSourceMap": false,

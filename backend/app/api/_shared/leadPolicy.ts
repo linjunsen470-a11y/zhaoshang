@@ -1,3 +1,5 @@
+import commercialOptions from '../../../collections/shared/commercialOptions.json'
+import { relationIds, toDatabaseId } from './relationIds'
 export const MINI_PROGRAM_LEAD_TYPES = [
   'leasing',
   'transfer',
@@ -7,49 +9,35 @@ export const MINI_PROGRAM_LEAD_TYPES = [
   'renovation_consult',
 ]
 
-function booleanValue(value: unknown) {
-  return Boolean(value)
-}
-
-function toDatabaseId(value: unknown): string | number | undefined {
-  if (typeof value === 'number') return value
-  if (typeof value === 'string') {
-    const num = Number(value)
-    return Number.isNaN(num) ? value : num
-  }
-  if (value && typeof value === 'object' && 'id' in value) {
-    return toDatabaseId((value as { id: unknown }).id)
-  }
-  return undefined
-}
-
-function ids(value: unknown) {
-  if (!Array.isArray(value)) return undefined
-  return value.map(toDatabaseId).filter(Boolean) as (string | number)[]
-}
-
 function sanitizeLeadUserFields(
   input: Record<string, unknown>,
   submitterOpenId: string,
-  stable?: { leadType?: unknown; sourceChannel?: unknown },
+  stable?: { leadType?: unknown; sourceChannel?: unknown; project?: unknown; businessScene?: unknown },
 ) {
   return {
     submitterOpenId,
     leadType: stable?.leadType || input.leadType || 'leasing',
-    sourceChannel: stable?.sourceChannel || input.sourceChannel || 'mini_program',
-    name: input.name,
+    sourceChannel: stable?.sourceChannel || 'mini_program',
+    name: typeof input.name === 'string' ? input.name.trim() : input.name,
     phone: input.phone,
     businessType: input.businessType,
+    businessScene: stable?.project ? stable.businessScene : (input.businessScene === undefined && stable ? undefined : input.businessScene || null),
     budgetRange: input.budgetRange,
     regionPreference: input.regionPreference,
-    hasCampusExperience: booleanValue(input.hasCampusExperience),
-    transferDetails: input.transferDetails,
-    equipmentDetails: input.equipmentDetails,
-    renovationDetails: input.renovationDetails,
-    attachments: ids(input.attachments),
+    hasCampusExperience: input.hasCampusExperience === undefined ? (stable ? undefined : false) : input.hasCampusExperience,
+    transferDetails: pickGroup(input.transferDetails, ['locationText', 'feeText', 'transferFee', 'remainingTerm', 'includesEquipment']),
+    equipmentDetails: pickGroup(input.equipmentDetails, ['equipmentName', 'specText', 'equipmentCondition', 'expectedPrice']),
+    renovationDetails: pickGroup(input.renovationDetails, ['shopArea', 'renovationType', 'designStyle', 'budgetText', 'expectedStartDate']),
+    attachments: relationIds(input.attachments),
     remark: input.remark,
-    project: toDatabaseId(input.project || input.projectId),
+    project: stable ? toDatabaseId(stable.project) : toDatabaseId(input.project || input.projectId),
   }
+}
+
+function pickGroup(value: unknown, fields: string[]) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
+  const group = value as Record<string, unknown>
+  return Object.fromEntries(fields.filter(key => group[key] !== undefined).map(key => [key, group[key]]))
 }
 
 export function sanitizeLeadCreateInput(input: Record<string, unknown>, submitterOpenId: string) {
@@ -62,7 +50,7 @@ export function sanitizeLeadCreateInput(input: Record<string, unknown>, submitte
 export function sanitizeLeadUpdateInput(
   input: Record<string, unknown>,
   submitterOpenId: string,
-  stable: { leadType?: unknown; sourceChannel?: unknown },
+  stable: { leadType?: unknown; sourceChannel?: unknown; project?: unknown; businessScene?: unknown },
 ) {
   return sanitizeLeadUserFields(input, submitterOpenId, stable)
 }
@@ -93,10 +81,13 @@ const LEAD_GROUP_LIMITS: Record<string, number> = {
 }
 
 export function validateLeadUserInput(input: Record<string, unknown>): string | null {
+  if (input.name !== undefined && (typeof input.name !== 'string' || !input.name.trim())) return '称呼不能为空'
+  if (input.hasCampusExperience !== undefined && typeof input.hasCampusExperience !== 'boolean') return '校园经营经验格式无效'
+  if (input.businessScene && !commercialOptions.scenes.some(item => item.value === input.businessScene)) return '意向场景无效'
   for (const [key, limit] of Object.entries(LEAD_TEXT_LIMITS)) {
     const value = input[key]
     if (value !== undefined && typeof value !== 'string') return `${key} 格式无效`
-    if (typeof value === 'string' && value.trim().length > limit) return `${key} 内容过长`
+    if (typeof value === 'string' && value.length > limit) return `${key} 内容过长`
   }
 
   if (input.phone !== undefined && !/^1[3-9]\d{9}$/.test(String(input.phone))) {
@@ -105,6 +96,10 @@ export function validateLeadUserInput(input: Record<string, unknown>): string | 
   if (input.attachments !== undefined) {
     if (!Array.isArray(input.attachments)) return '附件格式无效'
     if (input.attachments.length > 6) return '最多上传 6 张图片'
+    if (input.attachments.some(value => {
+      const id = toDatabaseId(value)
+      return typeof id !== 'number' || !Number.isSafeInteger(id) || id <= 0
+    })) return '附件编号无效'
   }
 
   for (const groupName of ['transferDetails', 'equipmentDetails', 'renovationDetails']) {
@@ -113,11 +108,13 @@ export function validateLeadUserInput(input: Record<string, unknown>): string | 
     if (!group || typeof group !== 'object' || Array.isArray(group)) return `${groupName} 格式无效`
     for (const [key, limit] of Object.entries(LEAD_GROUP_LIMITS)) {
       const value = (group as Record<string, unknown>)[key]
-      if (value !== undefined && typeof value !== 'string' && typeof value !== 'boolean') {
+      if (value !== undefined && typeof value !== 'string') {
         return `${groupName}.${key} 格式无效`
       }
-      if (typeof value === 'string' && value.trim().length > limit) return `${groupName}.${key} 内容过长`
+      if (typeof value === 'string' && value.length > limit) return `${groupName}.${key} 内容过长`
     }
+    const includesEquipment = (group as Record<string, unknown>).includesEquipment
+    if (includesEquipment !== undefined && typeof includesEquipment !== 'boolean') return `${groupName}.includesEquipment 格式无效`
   }
 
   return null

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>商业空间 · 页面布局预览</title>
+<style id="native-reset">
+*,*::before,*::after{box-sizing:border-box}html,body{margin:0;padding:0}body{overflow-x:hidden}
+button,input,textarea{font:inherit;appearance:none}button{border:0;line-height:1.5;cursor:pointer}
+input,textarea{box-sizing:border-box}a{color:inherit;text-decoration:none}img{object-fit:cover}
+input[type=checkbox],input[type=radio]{appearance:auto;accent-color:#204c3c;width:20px;height:20px}
+.native-scroll{overflow:auto;scrollbar-width:none}.native-scroll::-webkit-scrollbar{display:none}
+.scroll-y{overflow-x:hidden}.native-swiper-item:not(:first-child){display:none}
+.native-success{display:flex;width:64px;height:64px;background:#204c3c;color:#fff;border-radius:50%;align-items:center;justify-content:center;font-size:40px}
+.preview-nav{height:44px;display:flex;align-items:center;justify-content:center;background:#fff;border-bottom:1px solid #e5ebe7;color:#18231f;font-size:16px;font-weight:600}
+.preview-tabs{display:flex;justify-content:space-around;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #e5ebe7;padding:10px 0;z-index:300}
+.preview-tabs img{width:22px;height:22px}.preview-tabs a{display:flex;align-items:center;flex-direction:column;gap:4px;font-size:11px}
+.has-tabs{padding-bottom:64px}.review-index{padding:32px;max-width:900px;margin:auto;font:16px/1.8 system-ui;color:#18231f}.review-index a{color:#204c3c}
+</style>
+<style id="page-style"></style>
+<body><main id="app"></main>
+<script>
+const pages = ['index','list','detail','apply','transfer','equipment','renovation','my','leads','equipment-list','success','privacy'];
+const titles = ['商业空间','找商铺','项目与铺位','找铺咨询','委托转让','设备供需登记','商铺装修','我的','咨询记录','设备供需','提交成功','隐私政策'];
+const query = new URLSearchParams(location.search);
+const page = query.get('page'), state = query.get('state') || 'normal';
+const phase = query.get('phase') === 'before' ? 'before' : 'after';
+const sourceUrl = file => '/source/' + file + '?phase=' + phase;
+const evaluate = (expression, scope) => { try { return Function('scope', 'with(scope){return (' + expression + ')}')(scope); } catch { return undefined; } };
+const interpolate = (value, scope) => String(value || '').replace(/{{([\s\S]*?)}}/g, (_, expression) => evaluate(expression, scope) ?? '');
+const escape = value => String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');
+function parse(source) {
+  const tree = {tag:'root',attrs:{},children:[]}, stack = [tree];
+  for (const token of source.match(/<!--[\s\S]*?-->|<(?:[^>"']|"[^"]*"|'[^']*')*>|[^<]+/g) || []) {
+    if (token.startsWith('<!--')) continue;
+    if (token.startsWith('</')) { stack.pop(); continue; }
+    if (!token.startsWith('<')) { stack.at(-1).children.push({text:token}); continue; }
+    const tag = token.match(/^<([\w-]+)/)?.[1]; if (!tag) continue;
+    const attrs = {};
+    for (const m of token.slice(tag.length+1).replace(/\/?\s*>$/,'').matchAll(/([\w:-]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s]+)))?/g)) attrs[m[1]] = m[2] ?? m[3] ?? m[4] ?? '';
+    const node = {tag,attrs,children:[]}; stack.at(-1).children.push(node);
+    if (!token.endsWith('/>') && !['input','image','checkbox','radio','import','include'].includes(tag)) stack.push(node);
+  }
+  return tree;
+}
+function render(nodes, scope, templates = {}) {
+  let matched = false;
+  return nodes.map(node => {
+    if (node.text !== undefined) return escape(interpolate(node.text,scope));
+    const a = node.attrs;
+    if ('wx:for' in a) {
+      const values = evaluate(a['wx:for'].replace(/^{{|}}$/g,''),scope) || [];
+      return Array.from(values).map((value,index) => { const copy = {...node,attrs:{...a}}; delete copy.attrs['wx:for']; return render([copy],{...scope,[a['wx:for-item']||'item']:value,[a['wx:for-index']||'index']:index},templates); }).join('');
+    }
+    if ('wx:if' in a) { matched = Boolean(evaluate(a['wx:if'].replace(/^{{|}}$/g,''),scope)); if (!matched) return ''; }
+    else if ('wx:elif' in a) { if (matched) return ''; matched = Boolean(evaluate(a['wx:elif'].replace(/^{{|}}$/g,''),scope)); if (!matched) return ''; }
+    else if ('wx:else' in a) { if (matched) return ''; matched = true; }
+    else matched = false;
+    if (['import','wxs'].includes(node.tag)) return '';
+    if (node.tag === 'template') return a.is ? render(templates[a.is]?.children || [],{...scope,...evaluate('({' + a.data.replace(/^{{|}}$/g,'') + '})',scope)},templates) : '';
+    const tag = {view:'div',block:'div',text:'span',image:'img',navigator:'a','scroll-view':'div',swiper:'div','swiper-item':'div',picker:'div','radio-group':'div',checkbox:'input',radio:'input',icon:'span'}[node.tag] || node.tag;
+    let cls = interpolate(a.class,scope), extra = '';
+    if (node.tag === 'scroll-view') cls += ' native-scroll ' + ('scroll-x' in a ? 'scroll-x' : 'scroll-y');
+    if (node.tag === 'swiper-item') cls += ' native-swiper-item';
+    if (node.tag === 'image') extra += ' src="' + escape(interpolate(a.src,scope)) + '"';
+    if (['checkbox','radio'].includes(node.tag)) extra += ' type="' + node.tag + '" ' + (interpolate(a.checked,scope)==='true'?'checked':'');
+    if (node.tag === 'input') extra += ' value="' + escape(interpolate(a.value,scope)) + '"';
+    if (a.placeholder) extra += ' placeholder="' + escape(a.placeholder) + '"';
+    if (a.id) extra += ' id="' + escape(a.id) + '"';
+    for (const key of ['aria-label', 'aria-expanded', 'role', 'for']) if (key in a) extra += ' ' + key + '="' + escape(interpolate(a[key],scope)) + '"';
+    if ('disabled' in a && interpolate(a.disabled||'true',scope)!=='false') extra += ' disabled';
+    if (node.tag === 'icon') return '<span class="native-success">✓</span>';
+    if (a.style) extra += ' style="' + escape(interpolate(a.style,scope)) + '"';
+    return '<'+tag+' class="'+escape(cls)+'"'+extra+'>'+(tag==='textarea'?escape(interpolate(a.value,scope)):render(node.children,scope,templates))+'</'+tag+'>';
+  }).join('');
+}
+async function css(file, seen = new Set()) {
+  if (seen.has(file)) return ''; seen.add(file);
+  let text = await (await fetch(sourceUrl(file))).text();
+  for (const match of [...text.matchAll(/@import\s+"([^"]+)";/g)]) {
+    const pathname = new URL(match[1], 'http://preview/' + file).pathname.slice(1);
+    text = text.replace(match[0], await css(pathname,seen));
+  }
+  return text.replace(/\bpage\s*{/g,'body {').replace(/(-?[\d.]+)rpx/g,(_,n)=>Number(n)/7.5+'vw');
+}
+async function main() {
+  if (!pages.includes(page)) {
+    document.querySelector('#app').innerHTML = '<div class="review-index"><h1>商业空间 · 界面升级</h1><p>根据实际 WXML、WXSS 与演示数据生成。此处检查布局；原生控件和业务交互以开发者工具、真机为准。</p>'+pages.map((p,i)=>'<p><a href="/?page='+p+'">'+titles[i]+'</a></p>').join('')+'<p>状态预览：'+['filters','empty','error','loading'].map(s=>'<a href="/?page=list&state='+s+'">'+s+'</a>　').join('')+'<a href="/?page=detail&state=missing">缺图与长内容</a>　<a href="/?page=apply&state=invalid">表单错误</a></p></div>';
+    return;
+  }
+  let data = await (await fetch('/'+page+'.json')).json();
+  if (state==='loading') Object.assign(data,{loading:true,formLoading:true});
+  if (state==='error') Object.assign(data,{loading:false,loadError:true,formLoadError:true});
+  if (state==='empty') Object.assign(data,{projectList:[],equipmentList:[],leadsList:[],latestList:[],recommendedList:[],hasFilters:true});
+  if (state==='filters') data.activeTab='more';
+  if (state==='invalid') data.fieldErrors={name:'请输入称呼',phone:'请输入正确的 11 位手机号',businessType:'请选择经营品类'};
+  if (state==='edit') data.showEditModal=true;
+  if (state==='full') data.project.status='full';
+  if (state==='missing') Object.assign(data.project,{images:[],coverImage:'',isDemoImage:false,title:'一个用于检查长标题与复杂费用排版的社区商业项目及临街铺位',priceText:'3000—18000元/月，另计物业管理费用'});
+  const shared = parse(await (await fetch('/source/templates/property.wxml')).text());
+  const templates = Object.fromEntries(shared.children.filter(n=>n.tag==='template').map(n=>[n.attrs.name,n]));
+  const markup = parse(await (await fetch(sourceUrl('pages/'+page+'/'+page+'.wxml'))).text());
+  document.querySelector('#page-style').textContent = await css('app.wxss') + '\n' + await css('pages/'+page+'/'+page+'.wxss');
+  const hasTabs = ['index','list','my'].includes(page);
+  document.body.classList.toggle('has-tabs',hasTabs);
+  document.querySelector('#app').innerHTML = '<div class="preview-nav">'+titles[pages.indexOf(page)]+'</div>'+render(markup.children,data,templates)+(hasTabs?'<nav class="preview-tabs">'+['index','list','my'].map((p,i)=>'<a href="/?page='+p+'"><img src="/images/tab_'+['home','list','my'][i]+(p===page?'_sel':'')+'.png">'+['首页','找铺','我的'][i]+'</a>').join('')+'</nav>':'');
+  window.previewReady = true;
+}
+main().catch(error=>{ document.querySelector('#app').textContent=error.stack; });
+</script>
+</body>
+</html>

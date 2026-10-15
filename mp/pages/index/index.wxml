@@ -1,141 +1,98 @@
+<import src="../../templates/property.wxml" />
 <view class="container">
-  <view class="header-bg">
-    <view class="welcome-text">校园开店资源撮合平台</view>
+  <view class="masthead">
+    <view class="brand-line">商业空间 · 招商服务</view>
+    <view class="home-title">为你的生意，找到合适空间</view>
     <view class="search-bar">
-      <icon type="search" size="16" color="#94a3b8" class="search-icon"></icon>
-      <input class="e2e-search-input" data-test="home-search-input" type="text" placeholder="搜索学校、区域、业态，如：奶茶 / 快餐"
-             confirm-type="search" bindconfirm="onSearch" bindinput="onSearchInput" value="{{searchKeyword}}" />
+      <image class="search-icon" src="/images/icons/search.png" />
+      <input class="e2e-search-input" data-test="home-search-input" aria-label="搜索项目、区域或品类" placeholder="搜索项目、区域或品类" confirm-type="search" bindconfirm="onSearch" bindinput="onSearchInput" value="{{searchKeyword}}" />
       <button class="search-btn e2e-search-button" data-test="home-search-submit" bindtap="onSearch">搜索</button>
     </view>
   </view>
-
-  <view class="service-grid card">
-    <view class="service-item service-item-primary e2e-service-entry" data-test="service-entry"
-          bindtap="onServiceTap" data-action="{{primaryService.action}}">
-      <text class="service-icon">{{primaryService.icon}}</text>
-      <view class="service-copy">
-        <view class="service-title">{{primaryService.name}}</view>
-        <view class="service-desc">{{primaryService.desc}}</view>
-      </view>
+  <view class="scene-row">
+    <button class="scene-item" wx:for="{{categories}}" wx:key="id" bindtap="onCategoryTap" data-type="{{item.type}}" data-val="{{item.val}}" hover-class="tap-active">
+      <image src="{{item.icon}}" class="scene-icon" />
+      <text>{{item.name}}</text>
+    </button>
+  </view>
+  <view class="service-row">
+    <button class="service-item e2e-service-entry" data-test="service-entry" wx:for="{{services}}" wx:key="id" data-action="{{item.action}}" bindtap="onServiceTap" hover-class="tap-active">
+      {{item.name}}
+      <text class="service-arrow">›</text>
+    </button>
+  </view>
+  <view class="section-container" wx:if="{{loading}}">
+    <view class="skeleton skeleton-title">
     </view>
-    <view class="service-row-secondary">
-      <view class="service-item e2e-service-entry" data-test="service-entry" wx:for="{{secondaryServices}}" wx:key="id"
-            bindtap="onServiceTap" data-action="{{item.action}}">
-        <text class="service-icon">{{item.icon}}</text>
-        <view class="service-title">{{item.name}}</view>
-        <view class="service-desc">{{item.desc}}</view>
-      </view>
+    <view class="skeleton skeleton-cover">
+    </view>
+    <view class="skeleton skeleton-line">
+    </view>
+    <view class="skeleton skeleton-row">
     </view>
   </view>
-
-  <view class="categories-card card">
-    <view class="category-grid">
-      <view class="category-item" wx:for="{{categories}}" wx:key="id"
-            bindtap="onCategoryTap"
-            data-type="{{item.type}}" data-val="{{item.val}}"
-            hover-class="category-active" hover-start-time="50" hover-stay-time="100">
-        <text class="category-icon">{{item.icon}}</text>
-        <text class="category-name">{{item.name}}</text>
-      </view>
-    </view>
+  <view class="state-box" wx:elif="{{loadError}}">
+    <text class="state-title">暂时无法加载房源</text>
+    <text class="state-desc">请检查网络连接，然后重新加载</text>
+    <button class="btn btn-primary" bindtap="onRetryLoad">重新加载</button>
   </view>
-
-  <view class="section-container section-status" wx:if="{{loading}}">
-    <view class="loading-state inline-loading">
-      <view class="spinner"></view>
-      <text>正在加载招商项目...</text>
-    </view>
-  </view>
-
-  <view class="section-container section-status" wx:elif="{{loadError}}">
-    <view class="error-state inline-error">
-      <text class="error-title">项目加载失败</text>
-      <text class="error-desc">请确认后端已启动（pnpm backend:dev），并已关闭域名校验</text>
-      <button class="btn btn-primary btn-sm" bindtap="onRetryLoad">点击重试</button>
-    </view>
-  </view>
-
   <block wx:else>
-    <view class="section-container" wx:if="{{recommendedList.length > 0}}">
-      <view class="section-header flex align-center justify-between">
+    <view class="section-container" wx:if="{{recommendedList.length}}">
+      <view class="section-header">
         <view class="section-title">重点推荐</view>
-        <text class="section-more" bindtap="onViewRecommended">查看全部</text>
+        <button class="section-more" bindtap="onViewRecommended">查看全部 ›</button>
       </view>
-
-      <scroll-view class="recommended-scroll" scroll-x="true">
-        <view class="recommended-track flex">
-          <view class="recommended-item e2e-recommended-card" data-test="recommended-card" wx:for="{{recommendedList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" style="position:relative;">
-            <image wx:if="{{item.coverImage && !item.coverImageError}}" src="{{item.coverImage}}" mode="aspectFill" class="rec-cover" binderror="onCoverError" data-list="recommendedList" data-id="{{item.id}}" />
-            <view wx:else class="rec-cover project-image-fallback">图片暂不可用</view>
-            <view class="fav-mini" catchtap="onToggleFav" data-id="{{item.id}}"
-                  style="position:absolute; top:12rpx; right:12rpx; font-size:28rpx; padding:4rpx 8rpx; background:rgba(255,255,255,0.85); border-radius:50%; z-index:2;">
-              {{item.isFav ? '★' : '☆'}}
-            </view>
-            <view class="rec-info">
-              <view class="rec-badge badge badge-online">{{item.opportunityType === 'transfer' ? '委托转让' : '重点招商'}}</view>
-              <view class="rec-title ellipsis">{{item.title}}</view>
-              <view class="rec-sub flex justify-between">
-                <text class="rec-loc">{{item.city}} · {{item.district}}</text>
-                <text class="rec-price">{{item.feeText}}</text>
+      <scroll-view class="recommended-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+        <view class="recommended-track">
+          <view class="recommended-item e2e-recommended-card" data-test="recommended-card" wx:for="{{recommendedList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" role="button" aria-label="{{item.title}}" hover-class="tap-active">
+            <view class="rec-media">
+              <image wx:if="{{item.coverImage && !item.coverImageError}}" class="rec-cover" src="{{item.coverImage}}" mode="aspectFill" lazy-load="{{index > 0}}" binderror="onCoverError" data-list="recommendedList" data-id="{{item.id}}" />
+              <view wx:else class="rec-cover property-fallback">
+                <image class="line-icon" src="/images/icons/shops.png" />
+                <text>暂无实拍</text>
               </view>
+              <text class="demo-label" wx:if="{{item.isDemoImage}}">摄影示意 · 非实拍</text>
+            </view>
+            <view class="rec-copy">
+              <view class="rec-kicker">{{item.sceneLabel}} · {{item.kindLabel}}</view>
+              <view class="rec-title ellipsis-2">{{item.title}}</view>
+              <view class="rec-place ellipsis" wx:if="{{item.placeText}}">{{item.placeText}}</view>
+              <view class="rec-price">
+                <text class="property-price-label">{{item.priceLabel}}</text>
+                {{item.priceText}}
+              </view>
+              <button class="rec-favorite" catchtap="onToggleFav" data-id="{{item.id}}" aria-label="{{item.isFav ? '取消收藏' : '收藏'}}">
+                <image src="{{item.isFav ? '/images/icons/star-fill.png' : '/images/icons/star.png'}}" />
+              </button>
             </view>
           </view>
         </view>
       </scroll-view>
     </view>
-
-    <view class="section-container">
-      <view class="section-header flex align-center justify-between">
-        <view class="section-title">最新机会</view>
-        <navigator url="/pages/list/list" open-type="switchTab" class="section-more">查看全部</navigator>
+    <view class="section-container latest-section">
+      <view class="section-header">
+        <view class="section-title">最新项目与铺位</view>
+        <navigator class="section-more" url="/pages/list/list" open-type="switchTab">查看全部 ›</navigator>
       </view>
-
-      <view class="latest-list" wx:if="{{latestList.length > 0}}">
-        <view class="latest-card card flex e2e-latest-card" data-test="latest-project-card" wx:for="{{latestList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" data-status="{{item.status}}" style="position:relative;">
-          <view style="position:relative; flex-shrink:0;">
-            <image wx:if="{{item.coverImage && !item.coverImageError}}" src="{{item.coverImage}}" mode="aspectFill" class="latest-cover" binderror="onCoverError" data-list="latestList" data-id="{{item.id}}" />
-            <view wx:else class="latest-cover project-image-fallback">图片暂不可用</view>
-            <view class="fav-mini e2e-latest-favorite" data-test="latest-project-favorite" catchtap="onToggleFav" data-id="{{item.id}}"
-                  style="position:absolute; top:8rpx; right:8rpx; font-size:26rpx; padding:2rpx 6rpx; background:rgba(255,255,255,0.9); border-radius:50%; z-index:2;">
-              {{item.isFav ? '★' : '☆'}}
-            </view>
-          </view>
-          <view class="latest-info flex-1 flex flex-col justify-between">
-            <view>
-              <view class="latest-title ellipsis">{{item.title}}</view>
-              <view class="latest-tags flex flex-wrap">
-                <text class="latest-tag">{{item.projectType}}</text>
-                <text class="latest-tag">{{item.areaText}}</text>
-                <text class="latest-tag" wx:for="{{item.suitableBusiness}}" wx:for-item="biz" wx:key="*this">{{biz}}</text>
-              </view>
-            </view>
-            <view class="latest-bottom flex align-center justify-between">
-              <view class="latest-loc">{{item.schoolAlias || item.schoolName || item.district}}</view>
-              <view class="latest-price">{{item.feeText}}</view>
-            </view>
-          </view>
+      <view wx:if="{{latestList.length}}">
+        <view class="latest-card property-row e2e-latest-card" data-test="latest-project-card" wx:for="{{latestList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" data-status="{{item.status}}" role="button" aria-label="{{item.title}}">
+          <template is="property" data="{{item, lazy: true, listName: 'latestList'}}" />
+          <button class="property-favorite e2e-latest-favorite" data-test="latest-project-favorite" catchtap="onToggleFav" data-id="{{item.id}}" aria-label="{{item.isFav ? '取消收藏' : '收藏'}}">
+            <image src="{{item.isFav ? '/images/icons/star-fill.png' : '/images/icons/star.png'}}" />
+          </button>
         </view>
       </view>
-      <view class="empty-tip" wx:else>暂无发布项目</view>
+      <view class="state-box" wx:else>
+        <text class="state-title">房源正在整理中</text>
+        <text class="state-desc">先告诉我们你的需求，顾问会协助寻找合适空间。</text>
+      </view>
+      <button class="advisor-link" bindtap="onApplyCustom">
+        <view>
+          <view class="advisor-title">还没找到合适的？</view>
+          <view class="advisor-desc">提交需求，让顾问协助匹配</view>
+        </view>
+        <text>›</text>
+      </button>
     </view>
   </block>
-
-  <view class="need-consult-card card flex align-center justify-between" bindtap="onApplyCustom">
-    <view class="consult-text-group">
-      <view class="consult-main-title">没有匹配的铺位？</view>
-      <view class="consult-sub-title">提交需求，由顾问为你匹配招商、转让和设备资源</view>
-    </view>
-    <view class="consult-go-btn">快速提交</view>
-  </view>
-
-  <view class="contact-block card flex align-center justify-between" bindtap="onContactAdvisor">
-    <view class="flex align-center">
-      <text class="advisor-avatar">☎</text>
-      <view class="advisor-info">
-        <view class="advisor-title">招商顾问专线</view>
-        <view class="advisor-desc">找铺、转让、设备资源均可咨询</view>
-      </view>
-    </view>
-    <view class="call-btn badge">立即联系</view>
-  </view>
 </view>

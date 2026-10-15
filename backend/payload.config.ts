@@ -25,8 +25,8 @@ export default buildConfig({
   admin: {
     user: 'users',
     meta: {
-      title: '校园商铺房源管理',
-      description: '快速整理、修改和上架校园商铺房源',
+      title: '开店项目与铺位管理',
+      description: '快速整理、修改和上架商业项目和铺位',
     },
     components: {
       beforeNavLinks: ['@/app/admin/components/PrimaryNav'],
@@ -75,6 +75,8 @@ export default buildConfig({
   editor: lexicalEditor({}),
   secret: secret || 'your-fallback-dev-secret-for-local-demo',
   typescript: {
+    // Export explicit collection types without retroactively changing legacy Local API generics.
+    declare: false,
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: postgresAdapter({

@@ -6,6 +6,7 @@ export type LeadSnapshot = {
   phone?: string
   leadType?: string
   sourceChannel?: string
+  businessScene?: string
   businessType?: string
   budgetRange?: string
   regionPreference?: string
@@ -52,6 +53,7 @@ export function buildLeadSnapshot(source: Record<string, unknown>, capturedAt = 
     phone: typeof source.phone === 'string' ? source.phone : '',
     leadType: typeof source.leadType === 'string' ? source.leadType : 'leasing',
     sourceChannel: typeof source.sourceChannel === 'string' ? source.sourceChannel : 'mini_program',
+    businessScene: typeof source.businessScene === 'string' ? source.businessScene : '',
     businessType: typeof source.businessType === 'string' ? source.businessType : '',
     budgetRange: typeof source.budgetRange === 'string' ? source.budgetRange : '',
     regionPreference: typeof source.regionPreference === 'string' ? source.regionPreference : '',

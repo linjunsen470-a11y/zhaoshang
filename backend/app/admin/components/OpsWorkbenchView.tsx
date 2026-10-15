@@ -149,12 +149,12 @@ export function OpsWorkbenchView() {
         <section className="cms-ops-section" aria-labelledby="ops-todo-title">
           <div className="cms-ops-section__head">
             <div>
-              <h2 id="ops-todo-title">待办与漏斗</h2>
+              <h2 id="ops-todo-title">待办与咨询进度</h2>
             </div>
             <div className="cms-ops-kpis">
               <div className="cms-ops-kpi"><span>待联系</span><strong>{data.team.summary.newLeads}</strong></div>
               <div className="cms-ops-kpi cms-ops-kpi--warn"><span>超时未联</span><strong>{data.team.summary.staleLeads}</strong></div>
-              <div className="cms-ops-kpi"><span>漏斗总量</span><strong>{data.funnel.submitted}</strong></div>
+              <div className="cms-ops-kpi"><span>咨询总量</span><strong>{data.funnel.submitted}</strong></div>
               <div className="cms-ops-kpi cms-ops-kpi--ok"><span>已联系</span><strong>{data.funnel.contacted}</strong></div>
             </div>
           </div>
@@ -230,7 +230,7 @@ export function OpsWorkbenchView() {
 
           <div className="cms-ops-grid cms-ops-grid--funnel">
             <article className="cms-panel cms-ops-card">
-              <h3>咨询漏斗</h3>
+              <h3>咨询进度</h3>
               <div className="cms-funnel">
                 <FunnelBar label="全部提交" value={data.funnel.submitted} total={data.funnel.submitted} tone="#1d4ed8" />
                 <FunnelBar label="待联系" value={data.funnel.new} total={data.funnel.submitted} tone="#2563eb" />

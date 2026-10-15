@@ -4,6 +4,7 @@ const { encodeRouteValue, safeIdentifier } = require('../../utils/navigation.js'
 
 Page({
   data: {
+    units: [], unitPage: 0, unitsLoading: false, unitsError: false, unitsHasNext: false,
     projectId: '',
     project: null,
     isFavorited: false,
@@ -21,6 +22,7 @@ Page({
     } catch (_) {}
     const id = safeIdentifier(options.id || sceneId);
     if (!id) {
+      this.setData({ loading: false, loadError: true });
       wx.showToast({ title: '项目参数无效', icon: 'none' });
       return;
     }
@@ -40,6 +42,7 @@ Page({
     api.getProjectDetail(id)
       .then(project => {
         if (!isPublicProject(project)) {
+          this.setData({ loading: false, loadError: true });
           wx.showModal({
             title: '提示',
             content: '项目已下架或不存在',
@@ -63,6 +66,7 @@ Page({
           loading: false,
           loadError: false
         });
+        if (project.listingKind === 'project') this.loadUnits(false);
       })
       .catch(err => {
         console.error(err);
@@ -70,6 +74,17 @@ Page({
         wx.showToast({ title: '拉取详情失败', icon: 'none' });
       });
   },
+
+  loadUnits(append = true) {
+    if (this.data.unitsLoading || (append && !this.data.unitsHasNext)) return;
+    const page = append ? this.data.unitPage + 1 : 1;
+    this.setData({ unitsLoading: true, unitsError: false });
+    api.getProjectPage({ public: true, parentProject: this.data.projectId, page, limit: 20 }).then(result => {
+      this.setData({ units: append ? [...this.data.units, ...result.docs] : result.docs, unitPage: result.page, unitsHasNext: result.hasNextPage, unitsLoading: false });
+    }).catch(() => this.setData({ unitsLoading: false, unitsError: true }));
+  },
+  onMoreUnits() { this.loadUnits(this.data.unitPage > 0); },
+  onRelatedProject(e) { wx.navigateTo({ url: `/pages/detail/detail?id=${encodeRouteValue(e.currentTarget.dataset.id)}` }); },
 
   onRetryLoad() {
     if (this.data.projectId) this.loadDetail(this.data.projectId);
@@ -91,6 +106,7 @@ Page({
     imageErrors[index] = true;
     this.setData({ imageErrors });
   },
+
   onPreviewImage(e) {
     const urls = ((this.data.project && this.data.project.images) || []).filter((url, index) => url && !this.data.imageErrors[index]);
     const current = e.currentTarget.dataset.src || urls[this.data.currentImageIndex];
@@ -121,14 +137,14 @@ Page({
   },
 
   onGoToConsult() {
-    if (this.data.project) {
+    if (this.data.project && ['online', 'coming'].includes(this.data.project.status)) {
       wx.navigateTo({ url: `/pages/apply/apply?projectId=${encodeRouteValue(this.data.projectId)}` });
     }
   },
 
   onCopyAddress() {
     const p = this.data.project;
-    const text = p.addressText || `${p.city || ''}${p.district || ''}${p.schoolName || ''}`;
+    const text = p.addressText || p.locationLabel || `${p.city || ''}${p.district || ''}`;
     if (!text) {
       wx.showToast({ title: '暂无地址', icon: 'none' });
       return;
@@ -141,7 +157,7 @@ Page({
 
   onShareAppMessage() {
     return {
-      title: this.data.project ? `校园商铺招商：${this.data.project.title}` : '学校商铺招商',
+      title: this.data.project ? `项目与铺位：${this.data.project.title}` : '商业空间招商服务',
       path: `/pages/detail/detail?id=${encodeRouteValue(this.data.projectId)}`
     };
   }

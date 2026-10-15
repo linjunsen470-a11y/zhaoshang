@@ -1,6 +1,7 @@
 import { json } from '../../_shared/payloadApi'
 import { signAuthToken } from '../../_shared/auth'
 import { getClientIp, takeRateLimit } from '../../_shared/rateLimit'
+import { readJsonObject, jsonInputError } from '../../_shared/requestInput'
 
 type WechatSessionResponse = {
   openid?: string
@@ -11,9 +12,6 @@ type WechatSessionResponse = {
 }
 
 export async function POST(request: Request) {
-  const contentLength = Number(request.headers.get('content-length') || 0)
-  if (contentLength > 8 * 1024) return json({ error: '登录请求内容过大' }, 413)
-
   const rate = takeRateLimit(`wechat-login:${getClientIp(request)}`, 30, 10 * 60 * 1000)
   if (!rate.allowed) {
     return Response.json(
@@ -22,7 +20,12 @@ export async function POST(request: Request) {
     )
   }
 
-  const input = await request.json().catch(() => ({})) as Record<string, unknown>
+  let input: Record<string, unknown>
+  try {
+    input = await readJsonObject(request, 8 * 1024)
+  } catch (error) {
+    return jsonInputError(error)
+  }
   const mode = process.env.WECHAT_AUTH_MODE || 'wechat'
 
   if (mode === 'dev' && process.env.NODE_ENV !== 'production') {
@@ -46,8 +49,14 @@ export async function POST(request: Request) {
   url.searchParams.set('js_code', code)
   url.searchParams.set('grant_type', 'authorization_code')
 
-  const response = await fetch(url)
-  const session = await response.json() as WechatSessionResponse
+  let response: Response
+  let session: WechatSessionResponse
+  try {
+    response = await fetch(url, { signal: AbortSignal.timeout(10_000), cache: 'no-store' })
+    session = await response.json() as WechatSessionResponse
+  } catch {
+    return json({ error: '微信登录服务暂不可用，请稍后重试' }, 502)
+  }
   if (!response.ok || !session.openid || session.errcode) {
     return json({ error: session.errmsg || '微信登录失败' }, 401)
   }

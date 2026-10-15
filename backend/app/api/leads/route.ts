@@ -1,9 +1,11 @@
+import { commercialIsPublic, commercialScene } from '../../../lib/commercial'
 import type { Where } from 'payload'
 import {
   ALL,
   MINI_PROGRAM_LEAD_TYPES,
   getPayloadInstance,
   json,
+  mapLead,
   mapLeads,
   sanitizeLeadCreateInput,
   validateLeadUserInput,
@@ -11,6 +13,7 @@ import {
 } from '../_shared/payloadApi'
 import { requireAuth, verifyAuthToken } from '../_shared/auth'
 import { getClientIp, takeRateLimit } from '../_shared/rateLimit'
+import { readJsonObject, jsonInputError } from '../_shared/requestInput'
 
 export async function GET(request: Request) {
   const auth = verifyAuthToken(request.headers.get('authorization'))
@@ -76,17 +79,14 @@ export async function POST(request: Request) {
     )
   }
 
-  const contentLength = Number(request.headers.get('content-length') || 0)
-  if (contentLength > 64 * 1024) return json({ error: '提交内容过大' }, 413)
-
   let input: Record<string, unknown>
   try {
-    input = await request.json() as Record<string, unknown>
-  } catch {
-    return json({ error: '无效的 JSON 请求体' }, 400)
+    input = await readJsonObject(request)
+  } catch (error) {
+    return jsonInputError(error)
   }
 
-  if (!input.name || !input.phone) {
+  if (typeof input.name !== 'string' || !input.name.trim() || !input.phone) {
     return json({ error: '称呼和手机号为必填项' }, 400)
   }
   if (!/^1[3-9]\d{9}$/.test(String(input.phone))) {
@@ -102,14 +102,19 @@ export async function POST(request: Request) {
   if (attachmentError) return attachmentError
 
   const payload = await getPayloadInstance()
+  if (input.projectId || input.project) {
+    try {
+      const project = await payload.findByID({ collection: 'projects', id: String(input.projectId || input.project), depth: 1, overrideAccess: true })
+      if (!commercialIsPublic(project) || project.status === 'full') return json({ error: '该项目暂不接受咨询' }, 400)
+      input.businessScene = commercialScene(project)
+    } catch { return json({ error: '咨询项目不存在' }, 400) }
+  }
   const doc = await payload.create({
     collection: 'leads',
     data: sanitizeLeadCreateInput(input, auth.openid),
     overrideAccess: true,
   })
 
-  // mapLead is still fine for single mapping
-  const { mapLead } = await import('../_shared/payloadApi')
   return json(await mapLead(doc), 201)
 }
 

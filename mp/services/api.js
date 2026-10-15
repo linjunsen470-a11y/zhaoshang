@@ -1,7 +1,7 @@
+const commercial = require('../utils/commercial.js');
 const auth = require('./auth.js');
 const config = require('../config.js');
 const { normalizeAttachments } = require('../utils/attachment.js');
-const { isPublicProject } = require('../utils/project.js');
 
 const now = Date.now();
 
@@ -68,15 +68,25 @@ const SEED_PROJECTS = [
   }
 ];
 
+const commercialSeeds = [
+  { id: 'demo-community', listingKind: 'project', businessScene: 'community', venueName: '演示社区商业', title: '【演示】社区商业项目招商', areaMin: 30, areaMax: 180, monthlyRentMin: 3000, monthlyRentMax: 18000, communityInfo: '演示客群资料，非真实招商项目。' },
+  { id: 'demo-community-unit1', parentProject: 'demo-community', businessScene: 'community', title: '【演示】社区一层 A01 铺', areaMin: 50, areaMax: 50, monthlyRentMin: 5000, monthlyRentMax: 5000 },
+  { id: 'demo-community-unit2', parentProject: 'demo-community', businessScene: 'community', title: '【演示】社区一层 A02 铺', areaMin: 100, areaMax: 100 },
+  { id: 'demo-tourism', listingKind: 'project', businessScene: 'tourism', venueName: '演示文旅街区', title: '【演示】文旅街区常驻招商', areaMin: 20, areaMax: 80, tourismInfo: '节假日与淡季存在差异，常驻经营；所有数据为演示。' },
+  { id: 'demo-mall', listingKind: 'project', businessScene: 'mall', venueName: '演示购物中心', title: '【演示】购物中心项目招商', mallInfo: '可洽谈个体与非连锁品牌；准入条件待核实。' },
+  { id: 'demo-independent', businessScene: 'community', venueName: '演示临街铺位', title: '【演示】独立社区铺位', areaMin: 200, areaMax: 200, monthlyRentMin: 20000, monthlyRentMax: 20000 },
+].map((item, index) => ({ ...SEED_PROJECTS[0], listingKind: 'unit', schoolName: '', schoolAlias: '', projectType: '其他', city: '广州', district: '天河', customerInfo: '演示客群资料，需运营核实后录入真实项目', introduction: '仅用于功能验收，不代表真实招商', operatingRequirements: '条件待核实', feeText: '演示报价，附加费用需核实', areaText: '以实测为准', isRecommended: index === 0, sort: 50 - index, ...item }));
+
 function initLocalStorage() {
-  if (!wx.getStorageSync('local_projects')) wx.setStorageSync('local_projects', SEED_PROJECTS);
+  if (!wx.getStorageSync('local_projects')) wx.setStorageSync('local_projects', [...SEED_PROJECTS, ...commercialSeeds]);
   const projects = wx.getStorageSync('local_projects');
   if (Array.isArray(projects)) {
     let changed = false;
     const migrated = projects.map(project => {
-      const demoImage = project.opportunityType === 'transfer' ? '/images/shop-demo-drink.png' : '/images/shop-demo-food.png';
+      const scene = commercial.sceneOf(project) || 'campus';
+      const demoImage = '/images/demo/' + scene + '.jpg';
       const replaceLegacyImage = url => {
-        if (typeof url === 'string' && /^https:\/\/images\.unsplash\.com\//i.test(url)) {
+        if (typeof url === 'string' && (/^https:\/\/images\.unsplash\.com\//i.test(url) || /^\/images\/shop-demo-/.test(url))) {
           changed = true;
           return demoImage;
         }
@@ -117,8 +127,8 @@ function wxRequest(options) {
 }
 
 function normalizeResponse(urlPath, payload, method = 'GET') {
-  if (urlPath === '/projects') return ensureProjectList(payload);
-  if (urlPath.startsWith('/projects/')) return payload;
+  if (urlPath === '/projects') return payload && !Array.isArray(payload) && Array.isArray(payload.docs) ? { ...payload, docs: payload.docs.map(commercial.decorate) } : ensureProjectList(payload).map(commercial.decorate);
+  if (urlPath.startsWith('/projects/')) return payload ? commercial.decorate(payload) : payload;
   if ((urlPath === '/leads' || urlPath === '/equipments') && method === 'GET') {
     return (Array.isArray(payload) ? payload : []).map(item => ({
       ...item,
@@ -188,20 +198,6 @@ async function request(options) {
   throw createApiError(res.statusCode, res.data);
 }
 
-function getBudgetCategory(project) {
-  const text = project.feeText || '';
-  if (text.includes('面议') || text.includes('扣点') || text.includes('抽成')) return '面议';
-  const match = text.match(/([\d.]+)/);
-  if (!match) return '面议';
-  const val = parseFloat(match[1]);
-  const yearly = text.includes('月') ? val * 12 : val;
-  if (yearly < 5) return '5万以内';
-  if (yearly <= 10) return '5-10万';
-  if (yearly <= 20) return '10-20万';
-  if (yearly <= 50) return '20-50万';
-  return '50万以上';
-}
-
 function getCurrentOpenId() {
   const app = getApp();
   return wx.getStorageSync('authOpenId') || (app && app.globalData && app.globalData.devOpenId) || 'dev-openid-local';
@@ -217,42 +213,27 @@ function hydrateLocalAttachments(value) {
 
 function localFallback(urlPath, method, requestData = {}) {
   if (urlPath === '/projects' && method === 'GET') {
-    let list = wx.getStorageSync('local_projects') || [];
-    if (requestData.public) {
-      list = list.filter(isPublicProject);
-    }
-    if (requestData.opportunityType && requestData.opportunityType !== '全部') list = list.filter(p => (p.opportunityType || 'leasing') === requestData.opportunityType);
-    if (requestData.q) {
-      const q = requestData.q.toLowerCase().trim();
-      list = list.filter(p =>
-        p.title.toLowerCase().includes(q) ||
-        (p.schoolName && p.schoolName.toLowerCase().includes(q)) ||
-        (p.district && p.district.toLowerCase().includes(q)) ||
-        (p.suitableBusiness || []).some(b => b.toLowerCase().includes(q))
-      );
-    }
-    if (requestData.district && requestData.district !== '全部') list = list.filter(p => p.district === requestData.district);
-    if (requestData.projectType && requestData.projectType !== '全部') list = list.filter(p => p.projectType === requestData.projectType);
-    if (requestData.budget && requestData.budget !== '全部') list = list.filter(p => getBudgetCategory(p) === requestData.budget);
-    if (requestData.business && requestData.business !== '全部') list = list.filter(p => (p.suitableBusiness || []).includes(requestData.business));
-    if (requestData.status && requestData.status !== '全部') list = list.filter(p => p.status === requestData.status);
-    return list.sort((a, b) => (b.sort || 0) - (a.sort || 0) || b.createdAt - a.createdAt);
+    return commercial.queryLocal(wx.getStorageSync('local_projects') || [], requestData);
   }
 
   if (urlPath.startsWith('/projects/') && method === 'GET') {
     const id = urlPath.substring('/projects/'.length);
-    const project = (wx.getStorageSync('local_projects') || []).find(item => item.id === id) || null;
-    return isPublicProject(project) ? project : null;
+    return commercial.queryLocal(wx.getStorageSync('local_projects') || [], { ids: id })[0] || null;
   }
 
   if (urlPath === '/leads' && method === 'GET') {
     const openid = getCurrentOpenId();
+    const projects = wx.getStorageSync('local_projects') || [];
     return (wx.getStorageSync('local_leads') || [])
       .filter(lead => !lead.submitterOpenId || lead.submitterOpenId === openid)
-      .map(lead => ({
-        ...lead,
-        attachments: hydrateLocalAttachments(lead.attachments)
-      }))
+      .map(lead => {
+        const project = projects.find(item => String(item.id) === String(lead.projectId));
+        return {
+          ...lead,
+          projectTitle: commercial.scrubKnownText(lead.projectTitle, project),
+          attachments: hydrateLocalAttachments(lead.attachments)
+        };
+      })
       .sort((a, b) => b.createdAt - a.createdAt);
   }
 
@@ -280,9 +261,12 @@ function localFallback(urlPath, method, requestData = {}) {
 
     if (newLead.projectId) {
       const p = projects.find(item => item.id === newLead.projectId);
-      if (p) newLead.projectTitle = p.title;
+      if (!p || !commercial.publicRecord(p, projects) || p.status === 'full') throw createApiError(400, { error: '该项目暂不接受咨询' });
+      newLead.projectTitle = p.title;
+      newLead.businessScene = commercial.sceneOf(p);
     }
 
+    newLead.customerSnapshot = JSON.parse(JSON.stringify(newLead));
     leads.push(newLead);
     wx.setStorageSync('local_leads', leads);
     return newLead;
@@ -345,12 +329,13 @@ function localFallback(urlPath, method, requestData = {}) {
       throw createApiError(403, { error: '无权修改此线索' });
     }
 
-    const allowed = ['name', 'phone', 'businessType', 'budgetRange', 'regionPreference', 'hasCampusExperience', 'transferDetails', 'equipmentDetails', 'renovationDetails', 'attachments', 'remark', 'projectId'];
+    const allowed = ['name', 'phone', 'businessType', 'budgetRange', 'regionPreference', 'hasCampusExperience', 'transferDetails', 'equipmentDetails', 'renovationDetails', 'attachments', 'remark', 'businessScene'];
     const patch = {};
     allowed.forEach(key => {
       if (requestData[key] !== undefined) patch[key] = requestData[key];
     });
 
+    if (leads[index].projectId) delete patch.businessScene;
     leads[index] = {
       ...leads[index],
       ...patch,
@@ -381,7 +366,8 @@ function localFallback(urlPath, method, requestData = {}) {
 }
 
 module.exports = {
-  getProjects: params => request({ url: '/projects', data: params }),
+  getProjects: params => request({ url: '/projects', data: params }).then(ensureProjectList),
+  getProjectPage: params => request({ url: '/projects', data: { ...params, pagination: 'true' } }).then(data => Array.isArray(data) ? { docs: data, page: 1, totalDocs: data.length, totalPages: 1, hasNextPage: false } : data),
   getProjectDetail: id => request({ url: `/projects/${id}` }),
   getLeads: () => request({ url: '/leads', auth: true }),
   getLead: id => request({ url: `/leads/${id}`, auth: true }),

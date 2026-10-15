@@ -1,7 +1,6 @@
 export const REQUIRED_PROJECT_FIELDS = [
   { key: 'title', label: '房源标题' },
   { key: 'coverImage', label: '封面图' },
-  { key: 'projectType', label: '房源类型' },
   { key: 'district', label: '区域' },
   { key: 'feeText', label: '费用说明' },
   { key: 'customerInfo', label: '客群说明' },
@@ -14,7 +13,9 @@ function hasValue(value) {
 }
 
 export function getProjectMissingFields(data) {
-  return REQUIRED_PROJECT_FIELDS.filter(field => !hasValue(data[field.key])).map(field => field.label)
+  const missing = REQUIRED_PROJECT_FIELDS.filter(field => !hasValue(data[field.key])).map(field => field.label)
+  if (data.listingKind && !data.businessScene && !data.legacyUnclassified) missing.push('商业场景')
+  return missing
 }
 
 export function simplifyInquiryStatus(status) {

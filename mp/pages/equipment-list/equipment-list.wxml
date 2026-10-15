@@ -2,22 +2,25 @@
   <!-- 头部筛选 Tabs -->
   <view class="tabs-bar">
     <view class="tab-item {{activeTab === item.val ? 'active' : ''}}" 
-          wx:for="{{tabs}}" wx:key="val" bindtap="onTabTap" data-tab="{{item.val}}">
-      {{item.name}}
-    </view>
+          wx:for="{{tabs}}" wx:key="val" bindtap="onTabTap" data-tab="{{item.val}}">{{item.name}}</view>
   </view>
-
   <view class="list-body">
     <!-- 加载中 -->
     <view class="loading-state" wx:if="{{loading}}">
-      <view class="spinner"></view>
-      <text>正在查询设备供需...</text>
+      <view class="skeleton">
+      </view>
+      <view class="skeleton">
+      </view>
     </view>
-
     <!-- 列表展示 -->
+    <view class="state-box" wx:elif="{{loadError}}">
+      <text class="state-title">设备信息加载失败</text>
+      <text class="state-desc">请检查网络连接后重新加载。</text>
+      <button class="btn btn-primary" bindtap="onRetryLoad">重新加载</button>
+    </view>
     <block wx:else>
       <view class="equipments-list" wx:if="{{equipmentList.length > 0}}">
-        <view class="equipment-card card" wx:for="{{equipmentList}}" wx:key="id">
+        <view class="equipment-card card" wx:for="{{equipmentList}}" wx:for-index="itemIndex" wx:key="id">
           <!-- 卡片头部：标题与类型Tag -->
           <view class="card-header flex align-center justify-between">
             <view class="title-block flex align-center">
@@ -26,7 +29,6 @@
             </view>
             <text class="date-lbl">{{item.formattedDate}}</text>
           </view>
-
           <!-- 结构化详情 -->
           <view class="card-details">
             <view class="detail-row" wx:if="{{item.equipmentDetails.specText}}">
@@ -46,23 +48,22 @@
               <text class="detail-value">{{item.regionPreference}}</text>
             </view>
           </view>
-
           <!-- 补充描述 -->
           <view class="card-remark" wx:if="{{item.remark}}">
             <text class="remark-label">补充说明：</text>
             <text class="remark-text">{{item.remark}}</text>
           </view>
-
           <!-- 图片展示 (左右滚动) -->
           <view class="card-images" wx:if="{{item.attachments && item.attachments.length > 0}}">
             <scroll-view scroll-x="true" class="images-scroll">
               <view class="images-track flex">
-                <image class="image-item" wx:for="{{item.attachments}}" wx:for-item="img" wx:key="id" wx:for-index="imgIdx"
-                       src="{{img.displayUrl}}" mode="aspectFill" bindtap="onPreviewImage" data-url="{{img.displayUrl}}" data-itemindex="{{index}}" />
+                <block wx:for="{{item.attachments}}" wx:for-item="img" wx:key="id" wx:for-index="imgIdx">
+                  <view wx:if="{{img.imageError}}" class="image-item image-fallback">图片暂不可用</view>
+                  <image wx:else class="image-item" lazy-load binderror="onImageError" data-imageindex="{{imgIdx}}" src="{{img.displayUrl}}" mode="aspectFill" bindtap="onPreviewImage" data-url="{{img.displayUrl}}" data-itemindex="{{itemIndex}}" />
+                </block>
               </view>
             </scroll-view>
           </view>
-
           <!-- 底部动作条 -->
           <view class="card-actions flex align-center justify-between">
             <text class="privacy-tip">联系方式已隐藏，请通过顾问对接</text>
@@ -70,20 +71,17 @@
           </view>
         </view>
       </view>
-
       <!-- 空白页 -->
       <view class="empty-state" wx:else>
-        <text class="empty-icon">🧊</text>
+        <image class="empty-icon line-icon" src="/images/icons/equipment.png" mode="aspectFit" />
         <text class="empty-title">当前尚无此类设备信息</text>
-        <text class="empty-desc">没有找到相关设备？提交您的供需，平台审核后再公开展示。</text>
+        <text class="empty-desc">没有找到相关设备？可以先提交供需信息，资料审核通过后再公开展示。</text>
         <button class="btn btn-primary reset-btn" bindtap="onPublishTap">提交设备供需</button>
       </view>
     </block>
   </view>
-
   <!-- 悬浮发布按钮 -->
-  <view class="floating-btn" bindtap="onPublishTap">
-    <text class="plus-icon">+</text>
-    <text class="btn-text">提交供需</text>
+  <view class="publish-bar">
+    <button class="btn btn-primary" bindtap="onPublishTap">提交设备供需</button>
   </view>
 </view>

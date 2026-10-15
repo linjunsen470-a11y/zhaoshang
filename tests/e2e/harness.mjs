@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import automator from 'miniprogram-automator';
 
@@ -11,10 +13,11 @@ export const artifactDir = path.resolve(process.env.MP_E2E_ARTIFACT_DIR || path.
 export const apiUrl = (process.env.MP_E2E_API_URL || 'http://127.0.0.1:3000/api').replace(/\/$/, '');
 
 export function withTimeout(promise, message, timeout = 5_000) {
+  let timer;
   return Promise.race([
     promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error(message)), timeout)),
-  ]);
+    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(message)), timeout); }),
+  ]).finally(() => clearTimeout(timer));
 }
 
 export async function waitUntil(predicate, message, timeout = 12_000, interval = 150) {
@@ -58,7 +61,7 @@ function resolveCliPath() {
 }
 
 async function checkBackend() {
-  const response = await fetch(`${apiUrl}/projects?public=true`, { signal: AbortSignal.timeout(8_000) });
+  const response = await fetch(`${apiUrl}/projects?public=true`, { signal: AbortSignal.timeout(30_000) });
   if (!response.ok) throw new Error(`backend preflight failed: ${response.status} ${response.statusText}`);
 }
 
@@ -76,13 +79,27 @@ export async function startE2E(options = {}) {
   } else {
     const cliPath = resolveCliPath();
     if (!cliPath) throw new Error('WeChat DevTools CLI not found; set MP_E2E_CLI_PATH');
-    miniProgram = await automator.launch({
-      cliPath,
-      projectPath,
-      port: Number(process.env.MP_E2E_PORT || 9420),
-      timeout: Number(process.env.MP_E2E_LAUNCH_TIMEOUT || 90_000),
-      trustProject: true,
-    });
+    const port = Number(process.env.MP_E2E_PORT || 9420);
+    const launchTimeout = Number(process.env.MP_E2E_LAUNCH_TIMEOUT || 90_000);
+    const cliNode = path.join(path.dirname(cliPath), 'node.exe');
+    const cliScript = path.join(path.dirname(cliPath), 'cli.js');
+    if (process.platform === 'win32' && /\.bat$/i.test(cliPath) && fs.existsSync(cliNode) && fs.existsSync(cliScript)) {
+      // Recent Node releases cannot spawn .bat files directly. Use the same
+      // bundled runtime and script as cli.bat, with no shell interpolation.
+      await promisify(execFile)(cliNode, [cliScript, 'auto', '--project', projectPath, '--auto-port', String(port), '--trust-project'], { windowsHide: true, timeout: launchTimeout });
+      await waitUntil(async () => {
+        miniProgram = await automator.connect({ wsEndpoint: `ws://127.0.0.1:${port}` });
+        return true;
+      }, 'DevTools automation connection failed', launchTimeout, 1000);
+    } else {
+      miniProgram = await automator.launch({
+        cliPath,
+        projectPath,
+        port,
+        timeout: launchTimeout,
+        trustProject: true,
+      });
+    }
   }
 
   const runtimeErrors = [];

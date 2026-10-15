@@ -22,7 +22,11 @@ module.exports = Behavior({
     submitting: false,
     isEditMode: false,
     leadId: '',
-    privacyAccepted: false
+    privacyAccepted: false,
+    fieldErrors: {},
+    focusField: '',
+    formLoading: false,
+    formLoadError: false
   },
   methods: {
     initCommonData(options, onLeadLoaded) {
@@ -36,24 +40,27 @@ module.exports = Behavior({
       }
 
       if (options.leadId) {
-        this.setData({ isEditMode: true, leadId: options.leadId });
+        this.setData({ isEditMode: true, leadId: options.leadId, formLoading: true, formLoadError: false });
         loadLeadForEdit(api, options.leadId, lead => {
           this.setData({
+            formLoading: false,
             name: lead.name,
             phone: lead.phone,
             remark: lead.remark || '',
             attachments: normalizeAttachments(lead.attachments)
           });
           if (onLeadLoaded) onLeadLoaded(lead);
-        });
+        }, () => this.setData({ formLoading: false, formLoadError: true }));
       }
     },
 
     onInputName(e) {
+      this.clearFieldError('name');
       this.setData({ name: clip(e.detail.value, config.MAX_NAME_LENGTH) });
     },
 
     onInputPhone(e) {
+      this.clearFieldError('phone');
       this.setData({ phone: clip(e.detail.value, config.MAX_PHONE_LENGTH) });
     },
 
@@ -62,6 +69,7 @@ module.exports = Behavior({
     },
 
     onTogglePrivacy() {
+      this.clearFieldError('privacy');
       this.setData({ privacyAccepted: !this.data.privacyAccepted });
     },
 
@@ -88,6 +96,23 @@ module.exports = Behavior({
       this.setData({ attachments: this.data.attachments.filter((_, i) => i !== index) });
     },
 
+    onAttachmentError(e) {
+      const index = Number(e.currentTarget.dataset.index);
+      if (this.data.attachments[index]) this.setData({ [`attachments[${index}].imageError`]: true });
+    },
+
+    onRetryForm() { this.onLoad({ leadId: this.data.leadId, projectId: this.data.projectId }); },
+
+    clearFieldError(field) {
+      if (this.data.fieldErrors[field]) this.setData({ [`fieldErrors.${field}`]: '' });
+    },
+
+    showFieldError(field, message) {
+      this.setData({ fieldErrors: { ...this.data.fieldErrors, [field]: message }, focusField: field });
+      wx.pageScrollTo({ selector: '#field-' + field, offsetTop: -24, duration: 180 });
+      return false;
+    },
+
     onPreviewAttachment(e) {
       const current = e.currentTarget.dataset.url;
       const urls = previewUrls(this.data.attachments);
@@ -95,27 +120,30 @@ module.exports = Behavior({
     },
 
     validateCommonForm() {
+      if (this.data.submitting) return false;
+      if (this.data.formLoading || this.data.projectLoading || this.data.formLoadError || this.data.projectLoadError) {
+        wx.showToast({ title: '请先重新加载咨询信息', icon: 'none' });
+        return false;
+      }
       const { name, phone, uploadingImages, isEditMode } = this.data;
       if (uploadingImages) {
         wx.showToast({ title: '图片仍在上传', icon: 'none' });
         return false;
       }
+      const errors = {};
+      (this.data.requiredFields || []).forEach(field => { if (!String(this.data[field.key] || '').trim()) errors[field.key] = field.message; });
       const nameError = validateName(name);
-      if (nameError) {
-        wx.showToast({ title: nameError, icon: 'none' });
-        return false;
-      }
-      if (!validatePhone(phone)) {
-        wx.showToast({ title: '手机号格式不正确', icon: 'none' });
-        return false;
-      }
+      if (nameError) errors.name = nameError;
+      if (!validatePhone(phone)) errors.phone = '请输入正确的 11 位手机号';
       if (!isEditMode) {
         const privacyError = validatePrivacyConsent(this.data.privacyAccepted);
         if (privacyError) {
-          wx.showToast({ title: privacyError, icon: 'none' });
-          return false;
+          errors.privacy = privacyError;
         }
       }
+      this.setData({ fieldErrors: errors, focusField: '' });
+      const first = Object.keys(errors)[0];
+      if (first) return this.showFieldError(first, errors[first]);
       return true;
     },
 

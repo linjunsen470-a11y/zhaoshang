@@ -49,6 +49,7 @@ export async function POST(_: Request, { params }: Args) {
         city: '广州',
         district,
         projectType: '店铺转让',
+        listingKind: 'unit',
         feeText: String(details.feeText || ''),
         customerInfo: String(lead.remark || ''),
         coverImage: attachments[0],

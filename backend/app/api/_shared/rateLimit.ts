@@ -18,7 +18,7 @@ export function getClientIp(request: Request) {
  */
 export function takeRateLimit(key: string, limit: number, windowMs: number) {
   const now = Date.now()
-  if (buckets.size > MAX_BUCKETS) {
+  if (buckets.size >= MAX_BUCKETS) {
     for (const [bucketKey, bucket] of buckets) {
       if (bucket.resetAt <= now) buckets.delete(bucketKey)
     }
@@ -26,6 +26,7 @@ export function takeRateLimit(key: string, limit: number, windowMs: number) {
 
   const current = buckets.get(key)
   if (!current || current.resetAt <= now) {
+    if (!current && buckets.size >= MAX_BUCKETS) return { allowed: false, retryAfterSeconds: 60 }
     buckets.set(key, { count: 1, resetAt: now + windowMs })
     return { allowed: true, retryAfterSeconds: 0 }
   }

@@ -26,10 +26,11 @@ Page({
     phone: '',
     leadsList: [],
     loading: true,
+    loadError: false,
     statusMap: {
-      new: { name: '已提交', color: '#3b82f6', bg: '#eff6ff' },
-      contacted: { name: '已联系', color: '#10b981', bg: '#ecfdf5' },
-      closed: { name: '已结束', color: '#64748b', bg: '#f1f5f9' }
+      new: { name: '已提交', color: '#204C3C', bg: '#EAF2ED' },
+      contacted: { name: '已联系', color: '#80643D', bg: '#F6F0E5' },
+      closed: { name: '已结束', color: '#67746D', bg: '#F3F6F4' }
     }
   },
 
@@ -51,7 +52,7 @@ Page({
   },
 
   refreshLeads(callback) {
-    this.setData({ loading: true });
+    this.setData({ loading: true, loadError: false });
     const userInfo = wx.getStorageSync('userInfo') || getApp().globalData.userInfo || {};
     const phone = userInfo.phone || '';
     this.setData({ phone });
@@ -75,7 +76,7 @@ Page({
       })
       .catch(err => {
         console.error(err);
-        this.setData({ loading: false });
+        this.setData({ loading: false, loadError: true });
         wx.showToast({ title: '加载咨询历史失败', icon: 'none' });
         if (callback) callback();
       });
@@ -86,6 +87,13 @@ Page({
     if (id) {
       wx.navigateTo({ url: `/pages/detail/detail?id=${id}` });
     }
+  },
+
+  onRetryLoad() { this.refreshLeads(); },
+
+  onAttachmentError(e) {
+    const { leadIndex, imageIndex } = e.currentTarget.dataset;
+    this.setData({ [`leadsList[${leadIndex}].attachments[${imageIndex}].imageError`]: true });
   },
 
   onPreviewAttachment(e) {
@@ -118,7 +126,7 @@ Page({
     wx.showModal({
       title: '确认删除',
       content: `确定要删除线索号为 ${displayId} 的记录吗？`,
-      confirmColor: '#ef4444',
+      confirmColor: '#9F2D2D',
       success: (res) => {
         if (res.confirm) {
           wx.showLoading({ title: '正在删除...' });
