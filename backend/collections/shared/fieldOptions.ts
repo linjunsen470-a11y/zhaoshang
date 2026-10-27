@@ -1,8 +1,6 @@
 import commercialOptions from './commercialOptions.json'
 
-export const CITY_OPTIONS = [
-  { label: '广州', value: '广州' },
-]
+export const CITY_OPTIONS = commercialOptions.cities.map(value => ({ label: value, value }))
 
 export const DISTRICT_OPTIONS = commercialOptions.districts.map(value => ({ label: value, value }))
 export const BUSINESS_SCENE_OPTIONS = commercialOptions.scenes
@@ -12,7 +10,6 @@ export const PROJECT_TYPE_OPTIONS = [
   { label: '食堂档口', value: '食堂档口' },
   { label: '校园商业街', value: '校园商业街' },
   { label: '校内铺位', value: '校内铺位' },
-  { label: '校外临校铺位', value: '校外临校铺位' },
   { label: '校园服务点', value: '校园服务点' },
   { label: '店铺转让', value: '店铺转让' },
   { label: '其他', value: '其他' },

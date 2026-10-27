@@ -1,21 +1,26 @@
+const { toggleFavorite } = require('../../utils/favorites.js');
 const api = require('../../services/api.js');
+const { rememberProject } = require('../../utils/recent.js');
 const { isPublicProject } = require('../../utils/project.js');
 const { encodeRouteValue, safeIdentifier } = require('../../utils/navigation.js');
 
 Page({
   data: {
+    similarProjects: [], similarLoading: false, similarError: false, anchors: [],
     units: [], unitPage: 0, unitsLoading: false, unitsError: false, unitsHasNext: false,
     projectId: '',
     project: null,
     isFavorited: false,
     loading: true,
     loadError: false,
+    unavailable: false,
     formattedUpdateTime: '',
     currentImageIndex: 0,
     imageErrors: []
   },
 
   onLoad(options) {
+    if (typeof wx.showShareMenu === 'function') wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
     let sceneId = '';
     try {
       sceneId = options.scene ? decodeURIComponent(options.scene) : '';
@@ -38,17 +43,11 @@ Page({
   },
 
   loadDetail(id) {
-    this.setData({ loading: true, loadError: false });
+    this.setData({ loading: true, loadError: false, unavailable: false });
     api.getProjectDetail(id)
       .then(project => {
         if (!isPublicProject(project)) {
-          this.setData({ loading: false, loadError: true });
-          wx.showModal({
-            title: '提示',
-            content: '项目已下架或不存在',
-            showCancel: false,
-            success: () => wx.navigateBack()
-          });
+          this.setData({ loading: false, loadError: false, unavailable: true });
           return;
         }
 
@@ -66,15 +65,34 @@ Page({
           loading: false,
           loadError: false
         });
+        wx.setNavigationBarTitle({ title: project.locationLabel || project.title || '房源详情' });
+        rememberProject(id);
+        this.setData({ anchors: [
+          { id: 'fees', label: '费用' }, { id: 'space', label: '空间' },
+          ...(project.operatingRequirements || (project.suitableBusiness || []).length || (project.unsuitableBusiness || []).length || project.premisesConditions ? [{ id: 'conditions', label: '条件' }] : []),
+          ...(project.introduction || (project.highlights || []).length || project.customerInfo ? [{ id: 'intro', label: '介绍' }] : [])
+        ] });
         if (project.listingKind === 'project') this.loadUnits(false);
+        this.loadSimilar();
       })
       .catch(err => {
         console.error(err);
-        this.setData({ loading: false, loadError: true });
-        wx.showToast({ title: '拉取详情失败', icon: 'none' });
+        const unavailable = err.statusCode === 404;
+        this.setData({ loading: false, loadError: !unavailable, unavailable });
+        if (!unavailable) wx.showToast({ title: '房源加载失败，请稍后重试', icon: 'none' });
       });
   },
 
+  onAnchorTap(e) {
+    const id = e.currentTarget.dataset.id;
+    if (this.data.anchors.some(anchor => anchor.id === id)) wx.pageScrollTo({ selector: '#section-' + id, offsetTop: -64, duration: 200 });
+  },
+  loadSimilar() {
+    this.setData({ similarLoading: true, similarError: false });
+    api.getProjectPage({ public: true, available: 'true', businessScene: this.data.project.businessScene, page: 1, limit: 5 }).then(result => {
+      this.setData({ similarProjects: result.docs.filter(item => String(item.id) !== String(this.data.projectId)).slice(0, 3), similarLoading: false });
+    }).catch(() => this.setData({ similarLoading: false, similarError: true }));
+  },
   loadUnits(append = true) {
     if (this.data.unitsLoading || (append && !this.data.unitsHasNext)) return;
     const page = append ? this.data.unitPage + 1 : 1;
@@ -89,6 +107,9 @@ Page({
   onRetryLoad() {
     if (this.data.projectId) this.loadDetail(this.data.projectId);
   },
+  onBrowseActive() { wx.setStorageSync('pendingListFilter', {}); wx.switchTab({ url: '/pages/list/list' }); },
+  onGeneralNeed() { wx.navigateTo({ url: '/pages/apply/apply' }); },
+  onFindSimilar() { wx.setStorageSync('pendingListFilter', { businessScene: this.data.project.businessScene }); wx.switchTab({ url: '/pages/list/list' }); },
 
   checkFavoriteStatus(id) {
     const favs = wx.getStorageSync('favorites') || [];
@@ -116,19 +137,7 @@ Page({
 
   onToggleFavorite() {
     const id = this.data.projectId;
-    let favs = wx.getStorageSync('favorites') || [];
-    let isFav = false;
-
-    if (favs.includes(id)) {
-      favs = favs.filter(item => item !== id);
-      wx.showToast({ title: '已取消收藏', icon: 'success' });
-    } else {
-      favs.push(id);
-      isFav = true;
-      wx.showToast({ title: '收藏成功', icon: 'success' });
-    }
-
-    wx.setStorageSync('favorites', favs);
+    const isFav = toggleFavorite(id);
     this.setData({ isFavorited: isFav });
   },
 
@@ -155,10 +164,14 @@ Page({
     });
   },
 
+  onShareTimeline() {
+    return { title: this.data.project ? this.data.project.title : '饭堂与商铺', query: 'id=' + encodeRouteValue(this.data.projectId), ...(this.data.project && this.data.project.coverImage ? { imageUrl: this.data.project.coverImage } : {}) };
+  },
   onShareAppMessage() {
     return {
-      title: this.data.project ? `项目与铺位：${this.data.project.title}` : '商业空间招商服务',
-      path: `/pages/detail/detail?id=${encodeRouteValue(this.data.projectId)}`
+      title: this.data.project ? `饭堂与商铺：${this.data.project.title}` : '饭堂与商铺招租服务',
+      path: `/pages/detail/detail?id=${encodeRouteValue(this.data.projectId)}`,
+      ...(this.data.project && this.data.project.coverImage ? { imageUrl: this.data.project.coverImage } : {})
     };
   }
 });

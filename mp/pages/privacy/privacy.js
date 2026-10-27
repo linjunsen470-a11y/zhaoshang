@@ -1,6 +1,6 @@
 Page({
   data: {
-    updatedAt: '2026-07-11'
+    updatedAt: '2026-10-25'
   },
 
   onGoBack() {

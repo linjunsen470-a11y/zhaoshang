@@ -11,6 +11,11 @@ const projectTools = [
 
 const links = [
   {
+    label: '腾讯文档同步',
+    href: '/admin/workspace/sync',
+    match: (pathname: string) => pathname.startsWith('/admin/workspace/sync'),
+  },
+  {
     label: '运营工作台',
     href: '/admin',
     match: (pathname: string) => pathname === '/admin',

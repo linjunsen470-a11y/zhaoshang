@@ -31,11 +31,12 @@ test('mini-program leasing smoke journey', { timeout: 120_000 }, async () => {
     assert.equal((await miniProgram.currentPage()).path, 'pages/apply/apply', 'empty form must not submit');
 
     await (await apply.$('.e2e-name-input')).input('自动化测试用户');
-    await (await apply.$('.e2e-phone-input')).input('12812345678');
+    // Inject fixture numbers for lead validation; native phone authorization is covered separately.
+    await apply.setData({ phone: '12812345678' });
     await apply.callMethod('onSubmitForm');
     assert.equal((await miniProgram.currentPage()).path, 'pages/apply/apply', 'invalid phone must not submit');
 
-    await (await apply.$('.e2e-phone-input')).input('13812345678');
+    await apply.setData({ phone: '13812345678' });
     await (await apply.$('.e2e-business-picker')).trigger('change', { value: 2 });
     await (await apply.$('.e2e-budget-picker')).trigger('change', { value: 1 });
     await (await apply.$('.e2e-region-input')).input('自动化测试区域');

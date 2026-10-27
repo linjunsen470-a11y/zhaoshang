@@ -2,6 +2,8 @@
 
 import { useActionState, useEffect, useRef } from 'react'
 import { useFormStatus } from 'react-dom'
+import Link from 'next/link'
+import options from '../../collections/shared/commercialOptions.json'
 
 export type LeadFormState = {
   status: 'idle' | 'success' | 'error'
@@ -10,6 +12,8 @@ export type LeadFormState = {
 
 type LeadFormProps = {
   action: (state: LeadFormState, formData: FormData) => Promise<LeadFormState>
+  selectedProject?: { id: string; title: string; businessScene: string } | null
+  initialScene?: string
 }
 
 const initialState: LeadFormState = { status: 'idle', message: '' }
@@ -24,7 +28,7 @@ function SubmitButton() {
   )
 }
 
-export function LeadForm({ action }: LeadFormProps) {
+export function LeadForm({ action, selectedProject, initialScene = '' }: LeadFormProps) {
   const [state, formAction] = useActionState(action, initialState)
   const formRef = useRef<HTMLFormElement>(null)
 
@@ -34,6 +38,7 @@ export function LeadForm({ action }: LeadFormProps) {
 
   return (
     <form ref={formRef} action={formAction} className="web-lead-form">
+      {selectedProject ? <div className="web-selected-project"><span>正在咨询</span><strong>{selectedProject.title}</strong><Link href="/#lead-form">改为通用找铺需求</Link><input type="hidden" name="projectId" value={selectedProject.id} /></div> : null}
       <div className="web-form-grid">
         <label className="web-field">
           <span>称呼 <b aria-hidden="true">*</b></span>
@@ -55,13 +60,19 @@ export function LeadForm({ action }: LeadFormProps) {
       </div>
 
       <label className="web-field">
+        <span>意向物业场景</span>
+        <select name="businessScene" defaultValue={selectedProject?.businessScene || initialScene} disabled={Boolean(selectedProject)}>
+          <option value="">暂不限定</option>
+          {options.scenes.map(scene => <option key={scene.value} value={scene.value}>{scene.label}</option>)}
+        </select>
+      </label>
+      <label className="web-field">
         <span>需求类型</span>
-        <select name="leadType" defaultValue="leasing" autoComplete="off">
-          <option value="leasing">查找项目与铺位</option>
+        <select name="leadType" defaultValue="leasing" autoComplete="off" disabled={Boolean(selectedProject)}>
+          <option value="leasing">寻找饭堂档口或配套商铺</option>
           <option value="transfer">委托店铺转让</option>
           <option value="equipment_sell">出售餐饮设备</option>
           <option value="equipment_buy">求购餐饮设备</option>
-          <option value="brand_cooperation">品牌合作</option>
         </select>
       </label>
 
@@ -72,7 +83,7 @@ export function LeadForm({ action }: LeadFormProps) {
           type="text"
           maxLength={100}
           autoComplete="off"
-          placeholder="例如：轻食、咖啡或制冰机"
+          placeholder="例如：快餐、粉面、咖啡或便利店"
         />
       </label>
 
@@ -83,13 +94,13 @@ export function LeadForm({ action }: LeadFormProps) {
           rows={5}
           maxLength={500}
           autoComplete="off"
-          placeholder="请填写意向区域、预算或其他需要说明的信息"
+          placeholder="可填写意向区域、投资预算、月租范围及预计开业时间"
         />
       </label>
 
       <label className="web-consent">
         <input name="privacyConsent" type="checkbox" required />
-        <span>我同意将以上信息用于招商咨询、需求匹配和联系跟进。</span>
+        <span>我同意将以上信息用于找铺匹配和联系跟进，并在仅工作人员可访问的业务台账中处理。</span>
       </label>
 
       {state.message ? (

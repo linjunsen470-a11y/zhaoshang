@@ -31,6 +31,10 @@ export default buildConfig({
     components: {
       beforeNavLinks: ['@/app/admin/components/PrimaryNav'],
       views: {
+        tencentSync: {
+          Component: '@/app/admin/components/TencentSyncRoute',
+          path: '/workspace/sync',
+        },
         dashboard: {
           // No AdminWorkspaceShell — dashboard already has DefaultTemplate.
           Component: '@/app/admin/components/OpsWorkbenchRoute',

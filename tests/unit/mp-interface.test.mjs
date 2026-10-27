@@ -3,18 +3,84 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { createStorage, loadMiniProgramModule } from '../helpers/load-cjs.mjs';
 
+test('local backend switch changes only the develop environment and keeps mock data intact', () => {
+  let version = 'develop';
+  const storage = createStorage({ local_projects: [{ id: 'keep-local' }] });
+  const config = loadMiniProgramModule(path.resolve('mp/config/index.js'), { globals: { wx: { ...storage, getAccountInfoSync: () => ({ miniProgram: { envVersion: version } }) } } });
+  assert.equal(config.refreshRuntimeConfig().USE_LOCAL_MOCK, true);
+  storage.setStorageSync('demo_backend_enabled', true);
+  assert.equal(config.refreshRuntimeConfig().USE_LOCAL_MOCK, false);
+  assert.equal(storage.getStorageSync('local_projects')[0].id, 'keep-local');
+  version = 'release';
+  assert.equal(config.refreshRuntimeConfig().ALLOW_DEV_OPEN_ID, false);
+  assert.equal(config.CONFIG_ERROR.includes('服务地址未配置'), true);
+});
+
+test('my page keeps saved connection settings without exposing internal runtime controls', () => {
+  const storage = createStorage({ demo_backend_enabled: true });
+  const app = { globalData: { userInfo: {}, useLocalMock: false } };
+  let definition;
+  loadMiniProgramModule(path.resolve('mp/pages/my/my.js'), { globals: { Page: value => { definition = value; }, getApp: () => app, wx: { ...storage, getAccountInfoSync: () => ({ miniProgram: { envVersion: 'develop' } }), showToast() {} } } });
+  const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } };
+  page.onShow();
+  assert.equal(app.globalData.useLocalMock, false);
+  assert.equal(storage.getStorageSync('demo_backend_enabled'), true);
+  assert.equal(page.onToggleDemoBackend, undefined);
+});
+
 function listPage() {
   let definition;
   const requests = [];
+  const navigations = [];
+  let apiError;
   loadMiniProgramModule(path.resolve('mp/pages/list/list.js'), {
-    globals: { Page: value => { definition = value; }, wx: { ...createStorage(), showToast() {} } },
-    stubs: { '../../services/api.js': { getProjectPage: async params => { requests.push(params); return { docs: [], page: 1, hasNextPage: false }; } } }
+    globals: { Page: value => { definition = value; }, console: { error() {} }, wx: { ...createStorage(), showToast() {}, navigateTo: options => navigations.push(options.url) } },
+    stubs: { '../../services/api.js': { getProjectPage: async params => { requests.push(params); if (apiError) throw apiError; return { docs: [], page: 1, hasNextPage: false }; } } }
   });
   const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } };
   page.setFilters({});
-  return { page, requests };
+  return { page, requests, navigations, failWith: error => { apiError = error; } };
 }
 const event = dataset => ({ currentTarget: { dataset } });
+
+test('retired links fall back to current scenes and availability defaults respect favorites and explicit status', async () => {
+  const { page, requests } = listPage();
+  page.setFilters({ businessScene: 'mall' });
+  assert.equal(page.data.scopeNotice, true);
+  assert.equal(page.data.filters.businessScene, '全部');
+  await page.loadProjects();
+  assert.equal(requests.at(-1).available, 'true');
+  page.setFilters({ favs: true });
+  await page.loadProjects();
+  assert.equal(requests.at(-1).available, undefined);
+  page.setFilters({ status: 'full' });
+  await page.loadProjects();
+  assert.equal(requests.at(-1).status, 'full');
+  assert.equal(requests.at(-1).available, undefined);
+});
+
+test('unavailable detail has a recovery state while request errors retain retry', async () => {
+  let definition;
+  let response = { status: 'online', businessScene: 'mall' };
+  loadMiniProgramModule(path.resolve('mp/pages/detail/detail.js'), {
+    globals: { Page: value => { definition = value; }, wx: { showToast() {} }, console: { error() {} } },
+    stubs: { '../../services/api.js': { getProjectDetail: async () => { if (response instanceof Error) throw response; return response; } } }
+  });
+  const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } };
+  page.loadDetail('retired');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(page.data.unavailable, true);
+  response = Object.assign(new Error('gone'), { statusCode: 404 });
+  page.loadDetail('gone');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(page.data.unavailable, true);
+  assert.equal(page.data.loadError, false);
+  response = new Error('network unavailable');
+  page.loadDetail('retry');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(page.data.unavailable, false);
+  assert.equal(page.data.loadError, true);
+});
 
 test('more filters are staged, cancellation discards changes and confirmation requests once', async () => {
   const { page, requests } = listPage();
@@ -39,13 +105,13 @@ test('scene changes clear campus-only filters while preserving other filters and
   const { page, requests } = listPage();
   page.setFilters({ projectType: '食堂档口', district: '天河', favs: true });
   assert.equal(page.data.filters.businessScene, 'campus');
-  page.onQuickFilter(event({ key: 'businessScene', value: 'mall' }));
+  page.onQuickFilter(event({ key: 'businessScene', value: 'office' }));
   assert.equal(page.data.filters.projectType, '全部');
   assert.equal(page.data.filters.district, '天河');
   assert.equal(page.data.filterTabs.some(tab => tab.key === 'projectType'), false);
   page.onRemoveFilter(event({ key: 'district' }));
   assert.equal(requests.at(-1).district, '全部');
-  assert.equal(requests.at(-1).businessScene, 'mall');
+  assert.equal(requests.at(-1).businessScene, 'office');
   page.onResetFilters();
   assert.equal(page.data.isFavoritesOnly, true);
   assert.equal(page.data.hasFilters, false);
@@ -62,6 +128,103 @@ test('resetting draft filters preserves primary filters and does not fetch until
   assert.equal(page.data.draftFilters.business, '全部');
   assert.equal(page.data.filters.business, '咖啡');
   assert.equal(requests.length, 0);
+});
+
+test('legacy scene links select the merged group; group changes preserve primary filters and clear subtypes', () => {
+  const { page } = listPage();
+  page.setFilters({ businessScene: 'office', district: '天河', rent: 'under5000', q: '咖啡' });
+  assert.equal(page.data.scopeNotice, false);
+  assert.equal(page.data.filters.sceneGroup, 'workplace');
+  assert.equal(page.data.filters.businessScene, 'office');
+  page.onQuickFilter(event({ key: 'sceneGroup', value: 'campus' }));
+  assert.equal(page.data.filters.businessScene, 'campus');
+  assert.equal(page.data.filters.district, '天河');
+  assert.equal(page.data.filters.rent, 'under5000');
+  assert.equal(page.data.keyword, '咖啡');
+  page.onQuickFilter(event({ key: 'sceneGroup', value: 'workplace' }));
+  assert.equal(page.data.filters.businessScene, '全部');
+  assert.equal(page.data.filters.projectType, '全部');
+  page.onRemoveFilter(event({ key: 'sceneGroup' }));
+  assert.equal(page.data.filters.sceneGroup, '全部');
+  assert.equal(page.data.filters.businessScene, '全部');
+});
+
+test('list request failures retain retry and a successful empty result clears the error', async () => {
+  const { page, requests, failWith } = listPage();
+  failWith(new Error('network unavailable'));
+  await page.loadProjects();
+  assert.equal(page.data.loadError, true);
+  assert.equal(page.data.loading, false);
+  failWith(null);
+  await page.onRetryLoad();
+  assert.equal(page.data.loadError, false);
+  assert.equal(page.data.projectList.length, 0);
+  assert.equal(requests.length, 2);
+});
+
+test('workplace subtype stages, cancels and resets without losing the group; need routes preserve precise intent', () => {
+  const { page, requests, navigations } = listPage();
+  page.setFilters({ sceneGroup: 'workplace' });
+  page.onSubmitNeed();
+  assert.equal(navigations.at(-1), '/pages/apply/apply?sceneGroup=workplace');
+  page.onTabTap(event({ tab: 'more' }));
+  assert.ok(page.data.moreGroups.some(group => group.key === 'businessScene' && group.options.length === 3));
+  page.onDraftOption(event({ key: 'businessScene', value: 'office' }));
+  assert.equal(page.data.filters.businessScene, '全部');
+  assert.equal(requests.length, 0);
+  page.closeDrawer();
+  page.onTabTap(event({ tab: 'more' }));
+  assert.equal(page.data.draftFilters.businessScene, '全部');
+  page.onDraftOption(event({ key: 'businessScene', value: 'office' }));
+  page.onApplyDraft();
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].sceneGroup, 'workplace');
+  assert.equal(requests[0].businessScene, 'office');
+  page.onSubmitNeed();
+  assert.equal(navigations.at(-1), '/pages/apply/apply?businessScene=office');
+  page.onTabTap(event({ tab: 'more' }));
+  page.onResetDraft();
+  assert.equal(page.data.draftFilters.sceneGroup, 'workplace');
+  assert.equal(page.data.draftFilters.businessScene, '全部');
+  page.setFilters({ sceneGroup: 'campus' });
+  page.onSubmitNeed();
+  assert.equal(navigations.at(-1), '/pages/apply/apply?businessScene=campus');
+});
+
+test('home service sheet opens and closes and dispatches all three service routes', () => {
+  let definition;
+  const navigations = [];
+  loadMiniProgramModule(path.resolve('mp/pages/index/index.js'), {
+    globals: { Page: value => { definition = value; }, wx: { navigateTo: options => navigations.push(options.url) } },
+    stubs: { '../../services/api.js': {}, '../../config.js': {} }
+  });
+  const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } };
+  assert.deepEqual(page.data.categories.map(item => item.val), ['campus', 'workplace']);
+  for (const [action, route] of [['transfer', 'transfer/transfer'], ['equipment', 'equipment-list/equipment-list'], ['renovation', 'renovation/renovation']]) {
+    page.onOpenServices();
+    assert.equal(page.data.showServices, true);
+    page.onServiceTap(event({ action }));
+    assert.equal(page.data.showServices, false);
+    assert.equal(navigations.at(-1), '/pages/' + route);
+  }
+  page.onOpenServices(); page.onHide();
+  assert.equal(page.data.showServices, false);
+});
+
+test('general workplace request defaults to unrestricted scene and shows the selection hint', () => {
+  let definition;
+  loadMiniProgramModule(path.resolve('mp/pages/apply/apply.js'), {
+    globals: { Page: value => { definition = value; }, getApp: () => ({}), wx: { ...createStorage(), setNavigationBarTitle() {} }, Behavior: value => value },
+    stubs: { '../../services/api.js': {}, '../../utils/formBehavior.js': {} }
+  });
+  const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); }, initCommonData() {} };
+  page.onLoad({ sceneGroup: 'workplace' });
+  assert.equal(page.data.businessScene, '');
+  assert.equal(page.data.sceneIndex, 0);
+  assert.equal(page.data.workplaceHint, true);
+  page.onLoad({ businessScene: 'office' });
+  assert.equal(page.data.businessScene, 'office');
+  assert.equal(page.data.workplaceHint, false);
 });
 
 test('form validation reports all fields, locates the first visible error and blocks duplicate submission', () => {
@@ -88,7 +251,7 @@ test('form validation reports all fields, locates the first visible error and bl
   assert.equal(page.validateCommonForm(), false);
 });
 
-test('demonstration photography is labeled and real API photos are preserved', async () => {
+test('photo provenance metadata is retained and real API photos are preserved', async () => {
   const commercial = loadMiniProgramModule(path.resolve('mp/utils/commercial.js'));
   assert.equal(commercial.decorate({ coverImage: '/images/demo/mall.jpg' }).isDemoImage, true);
   assert.equal(commercial.decorate({ coverImage: 'https://example.test/real.jpg' }).isDemoImage, false);

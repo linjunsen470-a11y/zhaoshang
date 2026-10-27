@@ -86,6 +86,7 @@ export function OpsWorkbenchView() {
       </header>
 
       {error ? <div className="cms-alert" role="alert">{error}</div> : null}
+      <p className="cms-help">Demo 协作入口：<Link href="/admin/workspace/sync">腾讯文档同步</Link>，查看房源导入和客户回写结果。</p>
       <section className="cms-start-grid" aria-label="日常操作">
         <Link className="cms-settings-card" href="/admin/collections/projects/create"><h2>1. 录入项目与铺位</h2><p>填基本资料，选公开状态，再保存。整项目与独立铺位在同一处管理。</p><span>新建记录 →</span></Link>
         <Link className="cms-settings-card" href="/admin/workspace/inquiries?status=new"><h2>2. 处理客户咨询</h2><p>查看客户需求，电话联系后更新处理状态，必要时写一条内部备注。</p><span>查看待联系 →</span></Link>

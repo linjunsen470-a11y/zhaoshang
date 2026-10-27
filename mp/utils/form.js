@@ -22,7 +22,7 @@ function validatePhone(phone) {
 
 function validateName(name) {
   const value = clip(name, config.MAX_NAME_LENGTH);
-  if (!value) return '请输入称呼';
+  if (!value) return '请先选择微信昵称';
   return '';
 }
 

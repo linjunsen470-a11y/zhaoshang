@@ -20,6 +20,17 @@ export function withTimeout(promise, message, timeout = 5_000) {
   ]).finally(() => clearTimeout(timer));
 }
 
+// The automator SDK's systemInfo() still invokes deprecated getSystemInfoSync.
+export function readSystemInfo(miniProgram) {
+  return miniProgram.evaluate(() => {
+    const read = name => typeof wx[name] === 'function' ? wx[name]() : {};
+    return {
+      ...read('getAppBaseInfo'), ...read('getDeviceInfo'), ...read('getWindowInfo'),
+      ...read('getSystemSetting'), appAuthorizeSetting: read('getAppAuthorizeSetting'),
+    };
+  });
+}
+
 export async function waitUntil(predicate, message, timeout = 12_000, interval = 150) {
   const started = Date.now();
   let lastError;

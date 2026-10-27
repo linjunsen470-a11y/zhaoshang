@@ -29,7 +29,7 @@ function makeLocalApi(initialStorage = { local_projects: [], local_leads: [] }) 
 
 test('local mock replaces old remote demo photos without changing project data', async () => {
   const original = {
-    id: 'legacy', title: '旧演示铺位', status: 'online', opportunityType: 'leasing',
+    id: 'legacy', title: '旧演示铺位', status: 'online', businessScene: 'office', opportunityType: 'leasing',
     coverImage: 'https://images.unsplash.com/photo-demo?w=400',
     images: ['https://images.unsplash.com/photo-demo?w=900', 'https://images.unsplash.com/photo-other?w=900'],
   };
@@ -38,7 +38,8 @@ test('local mock replaces old remote demo photos without changing project data',
   assert.equal(project.coverImage, '/images/demo/campus.jpg');
   assert.equal(project.isDemoImage, true);
   assert.deepEqual(Array.from(project.images), ['/images/demo/campus.jpg']);
-  assert.equal(project.title, original.title);
+  assert.equal(project.title, '旧铺位');
+  assert.equal(storage.getStorageSync('local_projects')[0].title, original.title);
   assert.equal(storage.getStorageSync('local_projects')[0].coverImage, '/images/demo/campus.jpg');
 });
 
@@ -63,6 +64,16 @@ test('local mock lead CRUD is isolated by current openid', async () => {
   storage.setStorageSync('authOpenId', 'unit-openid');
   await api.deleteLead(created.id);
   assert.equal((await api.getLeads()).length, 0);
+});
+
+test('consultation project titles hide internal labels without rewriting customer text or stored snapshots', async () => {
+  const lead = { id: 'l1', projectTitle: '【演示】示例商务楼咖啡铺', remark: '测试设备尺寸后再联系', customerSnapshot: { projectTitle: '【演示】示例商务楼咖啡铺' } };
+  const { api, storage } = makeLocalApi({ local_projects: [], local_leads: [lead] });
+  const rows = await api.getLeads();
+  assert.equal(rows[0].projectTitle, '商务楼咖啡铺');
+  assert.equal(rows[0].remark, lead.remark);
+  assert.equal((await api.getLead('l1')).projectTitle, '商务楼咖啡铺');
+  assert.deepEqual(storage.getStorageSync('local_leads')[0], lead);
 });
 
 test('remote requests refresh once after 401', async () => {

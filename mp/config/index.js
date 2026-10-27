@@ -32,10 +32,12 @@ function validateEnvironment(envVersion, environment) {
 function buildRuntime(envVersion) {
   const environment = ENVIRONMENTS[envVersion] || ENVIRONMENTS.develop;
   const validation = validateEnvironment(envVersion, environment);
+  let demoBackend = false;
+  try { demoBackend = envVersion === 'develop' && wx.getStorageSync('demo_backend_enabled') === true; } catch (_) {}
   return {
     ENV_VERSION: envVersion,
     API_URL: validation.apiUrl,
-    USE_LOCAL_MOCK: Boolean(environment.useLocalMock),
+    USE_LOCAL_MOCK: Boolean(environment.useLocalMock) && !demoBackend,
     ALLOW_DEV_OPEN_ID: Boolean(environment.allowDevOpenId),
     DEV_OPEN_ID: environment.allowDevOpenId ? 'dev-openid-local' : '',
     CONFIG_ERROR: validation.error,

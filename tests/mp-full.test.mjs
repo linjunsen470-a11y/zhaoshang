@@ -41,12 +41,12 @@ test('mini-program browse and branch navigation regression', { timeout: 90_000 }
       await miniProgram.reLaunch('/pages/index/index');
       home = await waitForPage(miniProgram, 'pages/index/index');
       await waitForData(home, 'loading', value => value === false, 20_000);
+      await home.callMethod('onOpenServices');
       const services = await home.$$('.e2e-service-entry');
-      const serviceModels = [await home.data('primaryService'), ...(await home.data('secondaryServices'))];
+      const serviceModels = await home.data('secondaryServices');
       const entry = services[serviceModels.findIndex(service => service.action === action)];
       assert.ok(entry, `missing ${action} service entry`);
-      if (action === 'equipment') await changeRoute(miniProgram, 'navigateTo', '/pages/equipment-list/equipment-list');
-      else await changeRoute(miniProgram, 'navigateTo', expectedPath.replace(/^pages/, '/pages'));
+      await entry.tap();
       const page = await waitForPage(miniProgram, expectedPath);
       assert.ok(await page.$(selector));
     }

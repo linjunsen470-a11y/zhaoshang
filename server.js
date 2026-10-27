@@ -122,10 +122,10 @@ const commercialOptions = JSON.parse(fs.readFileSync(path.join(__dirname, 'backe
 const sceneOf = p => p.businessScene || (commercialOptions.campusTypes.includes(p.projectType) ? 'campus' : '');
 const parentId = p => p.parentProject && typeof p.parentProject === 'object' ? p.parentProject.id : p.parentProject;
 function isPublic(p, all) {
-  if (!p || !PUBLIC_STATUSES.has(p.status)) return false;
+  if (!p || !PUBLIC_STATUSES.has(p.status) || !commercialOptions.scenes.some(scene => scene.value === sceneOf(p)) || p.projectType === '校外临校铺位') return false;
   if (!parentId(p)) return true;
   const parent = all.find(row => String(row.id) === String(parentId(p)));
-  return !!parent && parent.listingKind === 'project' && PUBLIC_STATUSES.has(parent.status);
+  return !!parent && parent.listingKind === 'project' && PUBLIC_STATUSES.has(parent.status) && commercialOptions.scenes.some(scene => scene.value === sceneOf(parent)) && parent.projectType !== '校外临校铺位';
 }
 function publicProject(p, all) {
   const parent = all.find(row => String(row.id) === String(parentId(p)));
@@ -168,7 +168,11 @@ function normalizeLead(raw, projects) {
 }
 
 function filterProjects(projects, query) {
+  const group = query.sceneGroup && query.sceneGroup !== ALL ? commercialOptions.browseGroups.find(item => item.value === query.sceneGroup) : null;
+  if (query.sceneGroup && query.sceneGroup !== ALL && !group) throw new Error('sceneGroup 筛选无效');
   let result = projects.filter(p => isPublic(p, projects)).map(p => publicProject(p, projects));
+  if (group) result = result.filter(p => group.scenes.includes(p.businessScene));
+  if (query.available === 'true') result = result.filter(project => project.status !== 'full');
   for (const key of ['district', 'projectType', 'status', 'opportunityType', 'businessScene', 'listingKind']) {
     if (query[key] && query[key] !== ALL) result = result.filter(p => p[key] === query[key]);
   }

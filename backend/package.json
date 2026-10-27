@@ -8,11 +8,14 @@
   },
   "scripts": {
     "dev": "next dev",
+    "dev:connected": "node scripts/dev-connected.mjs",
+    "sync:tencent": "tsx scripts/sync-tencent.ts",
+    "sync:tencent:watch": "tsx scripts/sync-tencent.ts --watch",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "test:cms": "node --test --test-isolation=none tests/cms.test.mjs",
-    "test:api": "tsx --test --test-isolation=none tests/lead-policy.test.ts tests/commercial.test.ts tests/request-input.test.ts tests/tokens.test.ts",
+    "test:api": "tsx --test --test-isolation=none tests/lead-policy.test.ts tests/commercial.test.ts tests/request-input.test.ts tests/tokens.test.ts tests/tencent-sync.test.ts tests/wechat-phone.test.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
     "migrate:property-cms": "tsx scripts/migrate-property-cms.ts",
     "schema:ensure-leads": "node scripts/ensure-leads-schema.mjs",
@@ -27,6 +30,7 @@
     "test:prelaunch:http": "node tests/with-commercial-db.mjs --import tsx --test --test-force-exit --test-isolation=none tests/prelaunch-http.test.ts"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "@payloadcms/db-postgres": "^3.90.2",
     "@payloadcms/next": "^3.90.2",
     "@payloadcms/richtext-lexical": "^3.90.2",

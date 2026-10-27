@@ -4,7 +4,7 @@
     <view class="privacy-meta">更新日期：{{updatedAt}}</view>
     <view class="privacy-section">
       <view class="section-title">1. 我们收集的信息</view>
-      <view class="section-text">为提供招商咨询服务，我们可能收集：微信登录标识（openid）、您填写的称呼、手机号、经营意向、区域偏好、备注内容及您主动上传的图片。</view>
+      <view class="section-text">为提供招商咨询服务，我们可能收集：微信登录标识（openid）、您通过微信昵称选择和手机号授权提供的昵称与手机号、经营意向、区域偏好、备注内容及您主动上传的图片。昵称由您主动选择，手机号仅在您点击授权并同意后获取，用于咨询联系。</view>
     </view>
     <view class="privacy-section">
       <view class="section-title">2. 信息使用目的</view>
@@ -21,6 +21,7 @@
     <view class="privacy-section">
       <view class="section-title">5. 第三方服务</view>
       <view class="section-text">项目展示图片可能来自第三方图床或内容分发网络，仅用于展示，不包含您的个人身份信息。</view>
+      <view class="section-text">为方便工作人员处理咨询，启用业务协作时，您的称呼、电话、需求、关联房源及处理状态会同步到仅授权工作人员可访问的腾讯文档。微信登录标识、登录凭证和您上传的私密图片不随该同步导出。您修改咨询后会在后续同步更新；删除咨询后协作记录先标记撤回，如需清理协作副本，请联系招商顾问。</view>
     </view>
     <view class="privacy-section">
       <view class="section-title">6. 设备信息公开展示</view>

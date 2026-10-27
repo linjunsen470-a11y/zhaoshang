@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "pnpm --dir backend dev",
+    "demo:connected": "pnpm --dir backend dev:connected",
     "mock:api": "node server.js",
+    "mp:open": "node scripts/mp-open.mjs",
     "backend:dev": "pnpm --dir backend dev",
     "backend:build": "pnpm --dir backend build",
     "backend:start": "pnpm --dir backend start",

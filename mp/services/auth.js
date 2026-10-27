@@ -62,9 +62,9 @@ function postLogin(code, config) {
   });
 }
 
-async function getAuthToken(forceRefresh = false) {
+async function getAuthToken(forceRefresh = false, requireRemote = false) {
   const appConfig = getAppConfig();
-  if (appConfig.useLocalMock) return '';
+  if (appConfig.useLocalMock && !requireRemote) return '';
   if (appConfig.configError || !appConfig.apiUrl) {
     throw new Error(appConfig.configError || '服务地址未配置');
   }

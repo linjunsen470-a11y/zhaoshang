@@ -3,8 +3,8 @@ import type { CollectionConfig } from 'payload'
 import { canManageProjects, isAdminUser, isStaffUser } from './shared/access'
 import {
   ADMIN_GROUPS,
-  BUSINESS_TYPE_OPTIONS,
   BUSINESS_SCENE_OPTIONS,
+  BUSINESS_TYPE_OPTIONS,
   LISTING_KIND_OPTIONS,
   CITY_OPTIONS,
   DISTRICT_OPTIONS,
@@ -134,7 +134,7 @@ export const Projects: CollectionConfig = {
         { type: 'row', fields: [
           { name: 'listingKind', type: 'select', required: true, defaultValue: 'unit', label: '录入对象', options: LISTING_KIND_OPTIONS, index: true,
             admin: { description: '具体铺位：一间店或档口；项目招商：一个项目，后续可添加所属铺位。' } },
-          { name: 'businessScene', type: 'select', label: '商业场景', options: BUSINESS_SCENE_OPTIONS, index: true },
+          { name: 'businessScene', type: 'select', label: '物业场景', options: BUSINESS_SCENE_OPTIONS, index: true, admin: { description: '服务学校、工业园区、写字楼等封闭或半封闭物业的内部空间。' } },
         ] },
         {
           name: 'coverImage',
@@ -239,9 +239,6 @@ export const Projects: CollectionConfig = {
         { name: 'introduction', type: 'textarea', label: '项目/铺位介绍' },
         { name: 'operatingRequirements', type: 'textarea', label: '经营要求' },
         { name: 'premisesConditions', type: 'textarea', label: '工程条件说明', admin: { description: '排烟、燃气、上下水、电力等；未确认的条件注明待核实。' } },
-        { name: 'communityInfo', type: 'textarea', label: '周边客群与主要营业时段', admin: { condition: data => data?.businessScene === 'community' } },
-        { name: 'tourismInfo', type: 'textarea', label: '旺淡季、经营时段与常驻要求', admin: { condition: data => data?.businessScene === 'tourism' } },
-        { name: 'mallInfo', type: 'textarea', label: '个体/非连锁品牌准入及营业要求', admin: { condition: data => data?.businessScene === 'mall' } },
         { name: 'suitableBusiness', type: 'select', hasMany: true, label: '适合业态', options: BUSINESS_TYPE_OPTIONS },
         { name: 'unsuitableBusiness', type: 'select', hasMany: true, label: '不适合业态', options: BUSINESS_TYPE_OPTIONS },
         {

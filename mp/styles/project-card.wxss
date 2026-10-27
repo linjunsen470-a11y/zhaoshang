@@ -2,7 +2,7 @@
   position: relative;
   display: flex;
   gap: 24rpx;
-  padding: 28rpx 0;
+  padding: 24rpx 0;
   border-bottom: 1rpx solid var(--line);
 }
 
@@ -42,7 +42,7 @@
 }
 
 .property-kind {
-  color: var(--pine);
+  color: var(--muted);
   font-size: 22rpx;
   margin-bottom: 4rpx;
 }
@@ -125,3 +125,5 @@
   background: rgba(255,255,255,.94);
   font-size: 22rpx;
 }
+
+.property-row:first-child { padding-top: 12rpx; }

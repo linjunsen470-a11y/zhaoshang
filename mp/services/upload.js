@@ -54,7 +54,7 @@ async function uploadImage(filePath, isRetry = false) {
       id: `mock_img_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       url: filePath,
       localPath: filePath,
-      alt: '本地调试图片'
+      alt: '咨询附件'
     });
     const localMedia = wx.getStorageSync('local_media') || [];
     wx.setStorageSync('local_media', localMedia.concat(attachment));

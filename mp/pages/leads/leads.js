@@ -28,9 +28,9 @@ Page({
     loading: true,
     loadError: false,
     statusMap: {
-      new: { name: '已提交', color: '#204C3C', bg: '#EAF2ED' },
-      contacted: { name: '已联系', color: '#80643D', bg: '#F6F0E5' },
-      closed: { name: '已结束', color: '#67746D', bg: '#F3F6F4' }
+      new: { name: '已提交', step: 1 },
+      contacted: { name: '已联系', step: 2 },
+      closed: { name: '已结束', step: 3 }
     }
   },
 
@@ -61,6 +61,7 @@ Page({
       .then(res => {
         const formatted = (res || []).map(lead => ({
           ...lead,
+          expanded: false,
           attachments: normalizeAttachments(lead.attachments),
           displayId: formatLeadId(lead.id),
           leadTypeLabel: getLeadTypeLabel(lead.leadType),
@@ -82,6 +83,10 @@ Page({
       });
   },
 
+  onToggleDetails(e) {
+    const id = e.currentTarget.dataset.id;
+    this.setData({ leadsList: this.data.leadsList.map(lead => String(lead.id) === String(id) ? { ...lead, expanded: !lead.expanded } : lead) });
+  },
   onGoToProject(e) {
     const id = e.currentTarget.dataset.id;
     if (id) {

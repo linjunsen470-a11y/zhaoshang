@@ -29,7 +29,7 @@ export function scrubSchoolText(value: string, source: SchoolSource) {
 
 const TEXT_FIELDS = [
   'title', 'addressText', 'customerInfo', 'introduction', 'operatingRequirements',
-  'venueName', 'unitLocation', 'communityInfo', 'tourismInfo', 'mallInfo',
+  'venueName', 'unitLocation',
   'premisesConditions', 'cooperationMode', 'viewingTimeText', 'feeText', 'areaText',
 ]
 

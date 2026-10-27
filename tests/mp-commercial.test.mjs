@@ -20,11 +20,11 @@ test('commercial scenes, pagination, retry, login refresh and local demo journey
     let home, list;
     if (process.env.COMMERCIAL_E2E_LOCAL_ONLY !== 'true') {
     home = await waitForPage(mp, 'pages/index/index');
-    assert.deepEqual((await home.data('categories')).map(s => s.id), ['campus', 'community', 'tourism', 'mall']);
+    assert.deepEqual((await home.data('categories')).map(s => s.id), ['campus', 'industrial_park', 'office']);
     assert.ok((await home.data('recommendedList')).length <= 6);
     assert.ok((await home.data('latestList')).length <= 4);
 
-    for (const scene of ['campus', 'community', 'tourism', 'mall']) {
+    for (const scene of ['campus', 'industrial_park', 'office']) {
       const list = await loaded(await open(`/pages/list/list?businessScene=${scene}&listingKind=project`));
       const projects = await list.data('projectList');
       assert.ok(projects.length, scene);
@@ -69,7 +69,7 @@ test('commercial scenes, pagination, retry, login refresh and local demo journey
     backup = await mp.evaluate(() => Object.fromEntries(['local_projects', 'local_leads'].map(key => [key, wx.getStorageSync(key)])));
     await mp.evaluate(() => { getApp().globalData.useLocalMock = true; wx.removeStorageSync('local_projects'); wx.removeStorageSync('local_leads'); });
     home = await loaded(await open('/pages/index/index'));
-    for (const scene of ['campus', 'community', 'tourism', 'mall']) {
+    for (const scene of ['campus', 'industrial_park', 'office']) {
       console.log(`[commercial] local ${scene}: opening`);
       list = await loaded(await open(`/pages/list/list?businessScene=${scene}`));
       const items = await list.data('projectList');
@@ -83,13 +83,13 @@ test('commercial scenes, pagination, retry, login refresh and local demo journey
       await waitForPage(mp, 'pages/success/success');
       console.log(`[commercial] local ${scene}: consultation saved`);
     }
-    const detail = await loaded(await open('/pages/detail/detail?id=demo-community'));
-    await waitForData(detail, 'units', rows => rows.length === 2);
-    await mp.evaluate(() => { setTimeout(() => getCurrentPages()[getCurrentPages().length - 1].onRelatedProject({ currentTarget: { dataset: { id: 'demo-community-unit1' } } }), 100); });
-    await waitUntil(async () => (await (await mp.currentPage()).data('project'))?.id === 'demo-community-unit1', 'child detail navigation failed');
-    assert.equal((await (await mp.currentPage()).data('project')).parentProject.id, 'demo-community');
+    const detail = await loaded(await open('/pages/detail/detail?id=demo-park'));
+    await waitForData(detail, 'units', rows => rows.length === 1);
+    await mp.evaluate(() => { setTimeout(() => getCurrentPages()[getCurrentPages().length - 1].onRelatedProject({ currentTarget: { dataset: { id: 'demo-park-unit' } } }), 100); });
+    await waitUntil(async () => (await (await mp.currentPage()).data('project'))?.id === 'demo-park-unit', 'child detail navigation failed');
+    assert.equal((await (await mp.currentPage()).data('project')).parentProject.id, 'demo-park');
 
-    list = await loaded(await open('/pages/list/list?businessScene=mall&area=200plus'));
+    list = await loaded(await open('/pages/list/list?businessScene=office&area=200plus'));
     assert.equal((await list.data('projectList')).length, 0);
     assert.ok(await list.$('.empty-state'));
     await list.callMethod('onResetFilters');
@@ -97,7 +97,7 @@ test('commercial scenes, pagination, retry, login refresh and local demo journey
     assert.ok((await list.data('projectList')).length);
     await open('/pages/privacy/privacy');
     assert.equal(context.runtimeErrors.length, 0, 'unexpected mini-program runtime exceptions');
-    console.log('[commercial] local four-scene consultations, children, empty state, retry and privacy page passed');
+    console.log('[commercial] local three-scene consultations, children, empty state, retry and privacy page passed');
   } catch (error) {
     if (context?.miniProgram) await failureScreenshot(context.miniProgram, 'commercial-failure').catch(() => {});
     throw error;

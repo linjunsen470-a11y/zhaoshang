@@ -20,6 +20,19 @@ test('legacy classification does not guess transfer or other scenes', () => {
   assert.equal(commercialScene({ projectType: '其他' }), '')
 })
 
+test('public scope excludes retired properties, their children and outside-campus units', () => {
+  for (const businessScene of ['mall', 'community', 'tourism']) {
+    assert.equal(commercialIsPublic({ businessScene, status: 'online' }), false)
+    assert.equal(commercialIsPublic({ businessScene: 'office', status: 'online', parentProject: { id: 1, listingKind: 'project', businessScene, status: 'online' } }), false)
+    assert.ok(validateCommercial({ businessScene, status: 'online' }))
+    assert.ok(validateCommercial({ businessScene, status: 'offline' }))
+    assert.throws(() => commercialFilters(new URLSearchParams({ businessScene })))
+    assert.ok(validateLeadUserInput({ businessScene }))
+  }
+  assert.equal(commercialIsPublic({ businessScene: 'campus', projectType: '校外临校铺位', status: 'online' }), false)
+  assert.deepEqual(commercialFilters(new URLSearchParams('available=true')), [{ status: { in: ['online', 'coming'] } }])
+})
+
 test('public project redaction covers nested copy without changing the staff original', () => {
   const original = {
     id: '42', title: '白云学院档口', schoolName: '广州白云学院', schoolAlias: '白云学院',
@@ -46,17 +59,27 @@ test('range validation accepts exact values and rejects incomplete or inverted v
 test('project relationships and publication remain independent', () => {
   assert.ok(validateCommercial({ listingKind: 'project', parentProject: 1 }))
   assert.ok(validateCommercial({ listingKind: 'project', opportunityType: 'transfer' }))
-  assert.equal(commercialIsPublic({ status: 'online', parentProject: { id: 1, listingKind: 'project', status: 'offline' } }), false)
-  assert.equal(commercialIsPublic({ status: 'online', parentProject: 1 }), false)
-  assert.equal(commercialIsPublic({ status: 'online', parentProject: { id: 1, listingKind: 'project', status: 'full' } }), true)
+  assert.equal(commercialIsPublic({ businessScene: 'office', status: 'online', parentProject: { id: 1, businessScene: 'office', listingKind: 'project', status: 'offline' } }), false)
+  assert.equal(commercialIsPublic({ businessScene: 'office', status: 'online', parentProject: 1 }), false)
+  assert.equal(commercialIsPublic({ businessScene: 'office', status: 'online', parentProject: { id: 1, businessScene: 'office', listingKind: 'project', status: 'full' } }), true)
 })
 test('database filters use numeric ranges before pagination; no text amount guessing', () => {
-  const filters = commercialFilters(new URLSearchParams('area=50to100&rent=5000to10000&businessScene=community'))
+  const filters = commercialFilters(new URLSearchParams('area=50to100&rent=5000to10000&businessScene=office'))
   assert.ok(filters.some(f => JSON.stringify(f) === JSON.stringify({ areaMin: { less_than: 100 } })))
   assert.ok(filters.some(f => JSON.stringify(f) === JSON.stringify({ areaMax: { greater_than_equal: 50 } })))
   assert.ok(filters.some(f => JSON.stringify(f) === JSON.stringify({ monthlyRentMin: { less_than: 10000 } })))
   assert.equal(JSON.stringify(filters).includes('feeText'), false)
   assert.throws(() => commercialFilters(new URLSearchParams('rent=invalid')))
+})
+
+test('browse group database filters preserve precise scenes as an intersection and include legacy campus records', () => {
+  assert.deepEqual(commercialFilters(new URLSearchParams('sceneGroup=workplace&businessScene=office')), [
+    { businessScene: { in: ['industrial_park', 'office'] } }, { businessScene: { equals: 'office' } },
+  ])
+  const campus = JSON.stringify(commercialFilters(new URLSearchParams('sceneGroup=campus')))
+  assert.ok(campus.includes('exists'))
+  assert.ok(campus.includes('projectType'))
+  assert.throws(() => commercialFilters(new URLSearchParams('sceneGroup=unknown')), /sceneGroup/)
 })
 test('lead edits retain original project and scene, including unsolicited project changes', () => {
   const updated = sanitizeLeadUpdateInput({ projectId: 999, businessScene: 'mall', customerSnapshot: {} }, 'owner', { project: 42, businessScene: 'community', leadType: 'leasing' })

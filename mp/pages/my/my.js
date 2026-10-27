@@ -1,5 +1,8 @@
 const app = getApp();
+const api = require('../../services/api.js');
+const { recentIds } = require('../../utils/recent.js');
 const { clip, validatePhone, config } = require('../../utils/form.js');
+const { authorizeWechatPhone, rememberContact } = require('../../utils/wechatContact.js');
 
 Page({
   data: {
@@ -8,12 +11,17 @@ Page({
       avatarUrl: '/images/tab_my.png',
       phone: ''
     },
+    favoriteCount: 0, recentCount: 0, leadCount: null,
     showEditModal: false,
     editNickname: '',
-    editPhone: ''
+    editPhone: '',
+    phoneAuthorizing: false
   },
 
   onShow() {
+    config.refreshRuntimeConfig();
+    this.setData({ favoriteCount: (wx.getStorageSync('favorites') || []).length, recentCount: recentIds().length });
+    api.getLeads().then(leads => this.setData({ leadCount: leads.length })).catch(() => this.setData({ leadCount: null }));
     const localInfo = wx.getStorageSync('userInfo');
     if (localInfo) {
       this.setData({
@@ -40,8 +48,17 @@ Page({
     this.setData({ editNickname: clip(e.detail.value, config.MAX_NAME_LENGTH) });
   },
 
-  onPhoneInput(e) {
-    this.setData({ editPhone: clip(e.detail.value, config.MAX_PHONE_LENGTH) });
+  async onGetProfilePhone(e) {
+    if (this.data.phoneAuthorizing) return;
+    this.setData({ phoneAuthorizing: true });
+    try {
+      const phone = await authorizeWechatPhone(e);
+      if (phone) this.setData({ editPhone: phone });
+    } catch (error) {
+      wx.showToast({ title: error.message || '手机号获取失败，请重试', icon: 'none' });
+    } finally {
+      this.setData({ phoneAuthorizing: false });
+    }
   },
 
   onCancelEdit() {
@@ -51,14 +68,15 @@ Page({
   noop() {},
 
   onSaveEdit() {
+    if (this.data.phoneAuthorizing) return;
     const { editNickname, editPhone } = this.data;
 
     if (!editNickname) {
-      wx.showToast({ title: '昵称不能为空', icon: 'none' });
+      wx.showToast({ title: '请先选择微信昵称', icon: 'none' });
       return;
     }
     if (!validatePhone(editPhone)) {
-      wx.showToast({ title: '手机号格式不正确', icon: 'none' });
+      wx.showToast({ title: '请授权获取微信手机号', icon: 'none' });
       return;
     }
 
@@ -67,9 +85,7 @@ Page({
       phone: editPhone
     };
 
-    wx.setStorageSync('userInfo', updatedUser);
-    app.globalData.userInfo.nickname = editNickname;
-    app.globalData.userInfo.phone = editPhone;
+    rememberContact(updatedUser);
 
     this.setData({
       userInfo: {
@@ -92,6 +108,10 @@ Page({
     wx.switchTab({ url: '/pages/list/list' });
   },
 
+  onGoToRecent() {
+    wx.setStorageSync('pendingListFilter', { recent: true });
+    wx.switchTab({ url: '/pages/list/list' });
+  },
   onCallService() {
     getApp().callAdvisor();
   },
@@ -102,8 +122,8 @@ Page({
 
   onShowAbout() {
     wx.showModal({
-      title: '关于商业空间招商服务',
-      content: '为餐饮、零售和校园服务商户提供项目与铺位查询、店铺转让、设备供需及顾问对接服务。版本：v1.0.0',
+      title: '关于饭堂与商铺招租服务',
+      content: '专注学校、工业园区、写字楼等封闭或半封闭物业，为经营者匹配饭堂档口与配套商铺，并提供需求登记、看铺沟通和顾问跟进服务。版本：v1.0.0',
       showCancel: false,
       confirmText: '我知道了'
     });

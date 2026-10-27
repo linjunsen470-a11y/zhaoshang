@@ -194,9 +194,6 @@ export function mapProject(doc: Doc, isStaff = false) {
     areaMax: typeof doc.areaMax === 'number' ? doc.areaMax : null,
     monthlyRentMin: typeof doc.monthlyRentMin === 'number' ? doc.monthlyRentMin : null,
     monthlyRentMax: typeof doc.monthlyRentMax === 'number' ? doc.monthlyRentMax : null,
-    communityInfo: stringValue(doc.communityInfo),
-    tourismInfo: stringValue(doc.tourismInfo),
-    mallInfo: stringValue(doc.mallInfo),
     premisesConditions: stringValue(doc.premisesConditions),
     introduction: stringValue(doc.introduction),
     operatingRequirements: stringValue(doc.operatingRequirements),
@@ -286,7 +283,7 @@ export async function mapLead(doc: Doc) {
 
 export function sanitizeProjectInput(input: Record<string, unknown>) {
   return {
-    ...Object.fromEntries(['listingKind', 'businessScene', 'parentProject', 'venueName', 'unitLocation', 'areaMin', 'areaMax', 'monthlyRentMin', 'monthlyRentMax', 'communityInfo', 'tourismInfo', 'mallInfo', 'premisesConditions', 'introduction', 'operatingRequirements', 'coverImage', 'images'].filter(key => input[key] !== undefined).map(key => [key, input[key]])),
+    ...Object.fromEntries(['listingKind', 'businessScene', 'parentProject', 'venueName', 'unitLocation', 'areaMin', 'areaMax', 'monthlyRentMin', 'monthlyRentMax', 'premisesConditions', 'introduction', 'operatingRequirements', 'coverImage', 'images'].filter(key => input[key] !== undefined).map(key => [key, input[key]])),
     opportunityType: input.opportunityType || 'leasing',
     title: input.title,
     city: input.city,

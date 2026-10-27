@@ -204,7 +204,7 @@ button::after {
 }
 
 .required-mark {
-  color: var(--pine);
+  color: var(--danger);
 }
 
 .line-icon {
@@ -273,20 +273,25 @@ button::after {
   font-size: 26rpx;
 }
 
-.demo-label {
-  position: absolute;
-  right: 12rpx;
-  bottom: 12rpx;
-  padding: 2rpx 10rpx;
-  border-radius: 4rpx;
-  background: rgba(24,35,31,.72);
-  color: #fff;
-  font-size: 22rpx;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .btn, .tap-active {
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* Shared geometry keeps navigation glyphs aligned with the text baseline. */
+.ui-chevron { display: inline-block; flex-shrink: 0; width: 12rpx; height: 12rpx; border-top: 3rpx solid currentColor; border-right: 3rpx solid currentColor; transform: rotate(45deg); margin: 0 6rpx; vertical-align: middle; }
+.ui-chevron-down { transform: rotate(135deg); margin-top: -6rpx; }
+.ui-close { position: relative; display: inline-block; flex-shrink: 0; width: 28rpx; height: 28rpx; vertical-align: middle; }
+.ui-close::before, .ui-close::after { content: ''; position: absolute; left: 13rpx; top: 0; width: 2rpx; height: 28rpx; background: currentColor; transform: rotate(45deg); }
+.ui-close::after { transform: rotate(-45deg); }
+.price-number { font-weight: 600; font-variant-numeric: tabular-nums; }
+.price-unit { margin-left: 6rpx; font-size: 22rpx; font-weight: 400; color: var(--muted); white-space: nowrap; }
+.skeleton { background: linear-gradient(100deg, var(--wash) 30%, #e7ede9 50%, var(--wash) 70%); background-size: 240% 100%; animation: skeleton-shimmer 1.8s ease-in-out infinite; }
+@keyframes sheet-in { from { opacity: .5; transform: translateY(48rpx); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes skeleton-shimmer { from { background-position: 140% 0; } to { background-position: -100% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .skeleton, .services-sheet, .services-backdrop, .filter-sheet, .drawer-backdrop, .edit-modal-box { animation: none !important; transition: none !important; }
 }

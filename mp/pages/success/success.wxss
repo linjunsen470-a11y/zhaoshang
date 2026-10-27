@@ -40,3 +40,8 @@
   border: 0;
   color: var(--pine);
 }
+
+.next-steps { padding: 28rpx; background: var(--wash); border-radius: 16rpx; color: var(--muted); font-size: 25rpx; }
+.next-title { color: var(--ink); font-size: 28rpx; font-weight: 600; margin-bottom: 20rpx; }
+.next-steps > view + view { display: flex; align-items: flex-start; gap: 16rpx; margin-top: 16rpx; }
+.step-num { flex-shrink: 0; display: inline-flex; justify-content: center; align-items: center; width: 36rpx; height: 36rpx; border-radius: 50%; color: var(--pine); background: #e1ece5; font-size: 22rpx; }

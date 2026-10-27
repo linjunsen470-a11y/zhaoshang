@@ -12,12 +12,12 @@ Page({
     businessScene: '',
     scenes: [{ label: '不限', value: '' }, ...commercialOptions.scenes],
     sceneIndex: 0,
+    workplaceHint: false,
     leadType: 'leasing',
     projectId: '',
     projectTitle: '',
     projectCover: '',
     projectCoverError: false,
-    projectIsDemoImage: false,
     projectFeeText: '',
     businessType: '',
     budgetRange: '',
@@ -31,6 +31,7 @@ Page({
 
   onLoad(options) {
     const leadId = safeIdentifier(options.leadId);
+    wx.setNavigationBarTitle({ title: leadId ? '编辑找铺需求' : (options.projectId ? '咨询房源' : '帮我找铺') });
     const projectId = safeIdentifier(options.projectId);
     this.initCommonData({ ...options, leadId }, lead => {
       const businessIndex = this.data.businesses.indexOf(lead.businessType);
@@ -50,7 +51,10 @@ Page({
       });
     });
 
-    if (!leadId) this.setData({ leadType: allowedValue(options.leadType, ['leasing'], 'leasing') });
+    if (!leadId) {
+      const businessScene = allowedValue(options.businessScene, commercialOptions.scenes.map(scene => scene.value), '');
+      this.setData({ leadType: allowedValue(options.leadType, ['leasing'], 'leasing'), businessScene, sceneIndex: Math.max(0, this.data.scenes.findIndex(scene => scene.value === businessScene)), workplaceHint: options.sceneGroup === 'workplace' && !businessScene });
+    }
     if (!leadId && projectId) {
       this.setData({ projectId });
       this.loadProjectTitle(projectId);
@@ -68,7 +72,6 @@ Page({
             businessScene: project.businessScene || '',
             sceneIndex: Math.max(0, this.data.scenes.findIndex(s => s.value === project.businessScene)),
             projectCover: project.coverImage || '',
-            projectIsDemoImage: Boolean(project.isDemoImage),
             projectCoverError: false,
             projectFeeText: project.priceText || project.feeText || '',
             projectLoading: false,

@@ -3,36 +3,35 @@
   <view class="sticky-header">
     <view class="search-box">
       <image src="/images/icons/search.png" class="search-icon" />
-      <input aria-label="搜索项目、铺位、区域或品类" placeholder="搜索项目、铺位、区域或品类" value="{{keyword}}" bindinput="onSearchInput" bindconfirm="onSearch" confirm-type="search" />
-      <button class="clear-btn" wx:if="{{keyword}}" bindtap="onClearKeyword" aria-label="清除搜索词">×</button>
+      <input aria-label="搜索区域、场所或经营品类" placeholder="搜区域、场所或经营品类" value="{{keyword}}" bindinput="onSearchInput" bindconfirm="onSearch" confirm-type="search" />
+      <button class="clear-btn" wx:if="{{keyword}}" bindtap="onClearKeyword" aria-label="清除搜索词"><text class="ui-close" aria-hidden="true"></text></button>
     </view>
-    <scroll-view scroll-x class="scene-scroll" enhanced show-scrollbar="{{false}}">
+    <view class="scene-scroll">
       <view class="scene-tabs">
-        <button wx:for="{{scenes}}" wx:key="value" class="scene-tab {{filters.businessScene === item.value ? 'scene-active' : ''}}" data-key="businessScene" data-value="{{item.value}}" bindtap="onQuickFilter">{{item.label === '全部' ? '全部场景' : item.label}}</button>
+        <button wx:for="{{scenes}}" wx:key="value" class="scene-tab {{filters.sceneGroup === item.value ? 'scene-active' : ''}}" data-key="sceneGroup" data-value="{{item.value}}" bindtap="onQuickFilter">{{item.label}}</button>
       </view>
-    </scroll-view>
-    <view class="kind-tabs">
-      <button wx:for="{{kinds}}" wx:key="value" class="kind-tab {{filters.listingKind === item.value ? 'kind-active' : ''}}" data-key="listingKind" data-value="{{item.value}}" bindtap="onQuickFilter">{{item.label}}</button>
     </view>
     <view class="filter-tabs">
       <button class="filter-tab-item {{item.active ? 'active-filter' : ''}}" wx:for="{{primaryTabs}}" wx:key="key" data-tab="{{item.key}}" bindtap="onTabTap" aria-expanded="{{activeTab === item.key}}">
         <text class="ellipsis">{{item.label}}</text>
-        <text class="filter-chevron">⌄</text>
+        <text class="filter-chevron"><text class="ui-chevron ui-chevron-down" aria-hidden="true"></text></text>
       </button>
     </view>
   </view>
   <view class="list-body">
+    <view class="scope-notice" wx:if="{{scopeNotice}}">已为你切换到当前服务范围：学校商铺、园区与写字楼。</view>
     <view class="selected-filters" wx:if="{{selectedChips.length}}">
       <button wx:for="{{selectedChips}}" wx:key="key" class="filter-chip" data-key="{{item.key}}" bindtap="onRemoveFilter" aria-label="移除筛选：{{item.label}}">
         {{item.label}}
-        <text>×</text>
+        <text><text class="ui-close" aria-hidden="true"></text></text>
       </button>
     </view>
     <view class="results-heading">
-      <text>{{isFavoritesOnly ? '收藏的项目与铺位' : '项目与铺位'}}</text>
+      <view><text>{{isRecentOnly ? '最近浏览的房源' : (isFavoritesOnly ? '收藏的房源' : (filters.status === 'full' ? '已租满房源' : '可咨询房源'))}}</text><text class="result-count" wx:if="{{!loading && totalDocs}}">{{totalDocs}} 处</text></view>
       <button wx:if="{{hasFilters}}" class="reset-btn-link" bindtap="onResetFilters">清空筛选</button>
     </view>
-    <view class="fav-local-tip" wx:if="{{isFavoritesOnly}}">收藏仅保存在本机，换设备后需重新收藏</view>
+    <view class="fav-local-tip" wx:if="{{isFavoritesOnly || isRecentOnly}}">{{isRecentOnly ? '按最近浏览排序，最多保留 20 处' : '收藏仅保存在本机，换设备后需重新收藏'}}</view>
+    <view class="listing-note" wx:else>默认展示开放中与即将开放的房源，费用及条件请向顾问确认。</view>
     <view class="loading-state" wx:if="{{loading}}">
       <view class="skeleton skeleton-card">
       </view>
@@ -50,22 +49,23 @@
       <view wx:if="{{projectList.length}}">
         <view class="project-card property-row" wx:for="{{projectList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" role="button" aria-label="{{item.title}}">
           <template is="property" data="{{item, lazy: index > 2, listName: 'projectList'}}" />
-          <button class="property-favorite" catchtap="onToggleFavInList" data-id="{{item.id}}" aria-label="{{item.isFav ? '取消收藏' : '收藏'}}">
+          <button class="{{item.isFav ? 'favorite-active' : ''}} property-favorite" catchtap="onToggleFavInList" data-id="{{item.id}}" aria-label="{{item.isFav ? '取消收藏' : '收藏'}}">
             <image src="{{item.isFav ? '/images/icons/star-fill.png' : '/images/icons/star.png'}}" />
           </button>
         </view>
       </view>
       <view class="state-box empty-state" wx:else>
         <image class="line-icon" src="/images/icons/shops.png" />
-        <text class="state-title">{{isFavoritesOnly ? '还没有收藏房源' : (hasFilters ? '没有找到匹配的空间' : '房源正在整理中')}}</text>
-        <text class="state-desc">{{isFavoritesOnly ? '看到合适的项目或铺位，点收藏就能留在这里。' : (hasFilters ? '试试放宽区域、月租或面积条件。' : '可以先提交需求，让顾问协助匹配。')}}</text>
-        <button class="btn btn-secondary" wx:if="{{hasFilters && !isFavoritesOnly}}" bindtap="onResetFilters">清除筛选</button>
-        <button class="btn btn-primary" wx:if="{{isFavoritesOnly}}" bindtap="onBrowseAll">查看全部房源</button>
-        <button class="btn btn-primary" wx:else bindtap="onSubmitNeed">提交找铺需求</button>
+        <text class="state-title">{{isRecentOnly ? (hasFilters ? '没有匹配的浏览记录' : '还没有浏览记录') : (isFavoritesOnly ? '还没有收藏房源' : (hasFilters ? '没有找到匹配的空间' : '房源正在整理中'))}}</text>
+        <text class="state-desc">{{isRecentOnly ? '浏览过的房源会自动保存在这里，方便再次比较。' : (isFavoritesOnly ? '看到合适的项目或铺位，点收藏就能留在这里。' : (hasFilters ? '试试放宽区域、月租或面积条件。' : '可以先提交需求，让顾问协助匹配。'))}}</text>
+        <button class="btn btn-secondary" wx:if="{{hasFilters && !isFavoritesOnly}}" bindtap="onResetFilters">放宽筛选</button>
+        <button class="btn btn-primary" wx:if="{{isFavoritesOnly || isRecentOnly}}" bindtap="onBrowseAll">查看全部房源</button>
+        <button class="btn btn-primary" wx:else bindtap="onSubmitNeed">帮我找铺</button>
       </view>
       <view class="empty-tip" wx:if="{{loadingMore}}">正在加载更多…</view>
       <button class="text-link" wx:elif="{{moreError}}" bindtap="onLoadMore">加载失败，点击重试</button>
       <view class="empty-tip" wx:elif="{{projectList.length && !hasNextPage}}">已展示全部结果</view>
+      <button class="list-need-link" wx:if="{{projectList.length}}" bindtap="onSubmitNeed">没有合适的？提交需求，让顾问帮你匹配 <text class="ui-chevron" aria-hidden="true"></text></button>
     </block>
   </view>
   <view class="filter-drawer-container" wx:if="{{activeTab}}" catchtouchmove="noop">
@@ -74,7 +74,7 @@
     <view class="filter-sheet">
       <view class="sheet-header">
         <text class="section-title">{{activeTab === 'more' ? '更多筛选' : (activeTab === 'rent' ? '基础月租' : (activeTab === 'area' ? '面积' : '区域'))}}</text>
-        <button class="sheet-close" bindtap="closeDrawer" aria-label="关闭筛选">×</button>
+        <button class="sheet-close" bindtap="closeDrawer" aria-label="关闭筛选"><text class="ui-close" aria-hidden="true"></text></button>
       </view>
       <scroll-view scroll-y class="sheet-scroll">
         <block wx:if="{{activeTab === 'more'}}">
@@ -91,7 +91,7 @@
       </scroll-view>
       <view class="sheet-actions" wx:if="{{activeTab === 'more'}}">
         <button class="btn btn-secondary" bindtap="onResetDraft">重置</button>
-        <button class="btn btn-primary" bindtap="onApplyDraft">确认筛选</button>
+        <button class="btn btn-primary" bindtap="onApplyDraft">{{draftCounting ? '正在统计…' : (draftCount === null ? '确认筛选' : '查看 ' + draftCount + ' 处')}}</button>
       </view>
     </view>
   </view>
