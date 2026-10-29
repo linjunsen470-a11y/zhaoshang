@@ -4,8 +4,7 @@ import options from '../collections/shared/commercialOptions.json'
 export const PUBLIC_COMMERCIAL_STATUSES = ['online', 'coming', 'full']
 export type CommercialRecord = Record<string, unknown>
 export function commercialScene(doc: CommercialRecord): string {
-  return typeof doc.businessScene === 'string' && doc.businessScene
-    ? doc.businessScene : options.campusTypes.includes(String(doc.projectType)) ? 'campus' : ''
+  return typeof doc.businessScene === 'string' ? doc.businessScene : ''
 }
 export function commercialId(value: unknown): string | number | undefined {
   if (typeof value === 'string' && value) return value
@@ -17,10 +16,7 @@ export function withinBusinessScope(doc: CommercialRecord): boolean {
   return options.scenes.some(scene => scene.value === commercialScene(doc)) && doc.projectType !== '校外临校铺位'
 }
 function scopeWhere(prefix = ''): Where {
-  return { or: [
-    { [`${prefix}businessScene`]: { in: options.scenes.map(scene => scene.value) } },
-    { and: [{ [`${prefix}businessScene`]: { exists: false } }, { [`${prefix}projectType`]: { in: options.campusTypes } }] },
-  ] }
+  return { [`${prefix}businessScene`]: { in: options.scenes.map(scene => scene.value) } }
 }
 export function publicCommercialWhere(): Where {
   return { and: [
@@ -69,10 +65,7 @@ export function commercialFilters(params: URLSearchParams): Where[] {
   if (groupValue && groupValue !== '全部') {
     const group = options.browseGroups.find(item => item.value === groupValue)
     if (!group) throw new Error('sceneGroup 筛选无效')
-    conditions.push(groupValue === 'campus' ? { or: [
-      { businessScene: { equals: 'campus' } },
-      { and: [{ businessScene: { exists: false } }, { projectType: { in: options.campusTypes } }] },
-    ] } : { businessScene: { in: group.scenes } })
+    conditions.push({ businessScene: { in: group.scenes } })
   }
   if (params.get('available') === 'true') conditions.push({ status: { in: ['online', 'coming'] } })
   for (const [key, values] of Object.entries({ listingKind: options.kinds.map(v => v.value), businessScene: options.scenes.map(v => v.value), district: options.districts, status: ['draft', 'online', 'coming', 'full', 'offline'], opportunityType: ['leasing', 'transfer'], projectType: [...options.campusTypes, '其他', '店铺转让'] })) {
@@ -85,10 +78,7 @@ export function commercialFilters(params: URLSearchParams): Where[] {
     if (value && value !== '全部') conditions.push({ [key]: { equals: value } })
   }
   const scene = params.get('businessScene')
-  if (scene && scene !== '全部') conditions.push(scene === 'campus' ? { or: [
-    { businessScene: { equals: scene } },
-    { and: [{ businessScene: { exists: false } }, { projectType: { in: options.campusTypes } }] },
-  ] } : { businessScene: { equals: scene } })
+  if (scene && scene !== '全部') conditions.push({ businessScene: { equals: scene } })
   if (params.get('business') && params.get('business') !== '全部') {
     if (!options.businesses.includes(params.get('business')!)) throw new Error('经营品类无效')
     conditions.push({ suitableBusiness: { in: [params.get('business')] } })

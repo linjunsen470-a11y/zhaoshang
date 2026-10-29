@@ -7,7 +7,7 @@ import {
   LEAD_STATUS_OPTIONS,
   LEAD_STATUS_HELP,
 } from './shared/fieldOptions'
-import { buildLeadSnapshot, isLeadSnapshot } from '../lib/leadSnapshot'
+import { buildLeadSnapshot } from '../lib/leadSnapshot'
 
 const EQUIPMENT_TYPES = ['equipment_sell', 'equipment_buy', 'equipment_recycle']
 
@@ -244,18 +244,7 @@ export const Leads: CollectionConfig = {
         if (operation === 'create') {
           data.customerSnapshot = buildLeadSnapshot(data as Record<string, unknown>)
         } else if (operation === 'update') {
-          const existing = originalDoc?.customerSnapshot
-          if (isLeadSnapshot(existing)) {
-            data.customerSnapshot = existing
-          } else {
-            // One-time backfill for legacy rows (best-effort original = pre-edit DB state).
-            data.customerSnapshot = buildLeadSnapshot(
-              (originalDoc || {}) as Record<string, unknown>,
-              originalDoc?.createdAt
-                ? new Date(String(originalDoc.createdAt)).toISOString()
-                : undefined,
-            )
-          }
+          data.customerSnapshot = originalDoc?.customerSnapshot
         }
 
         return data

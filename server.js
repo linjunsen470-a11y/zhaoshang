@@ -75,10 +75,9 @@ function generateId(prefix) {
     const data = readData();
     const leads = data.leads || [];
     const maxId = leads.reduce((max, l) => {
-      const cleaned = String(l.id).replace(/^l_?/, '');
-      const num = parseInt(cleaned, 10);
+      const num = Number(l.id);
       return (!isNaN(num) && num > max) ? num : max;
-    }, 26000000);
+    }, 0);
     return String(maxId + 1);
   }
   return prefix + Math.random().toString(36).substring(2, 9);
@@ -119,7 +118,7 @@ function readBody(req) {
 
 
 const commercialOptions = JSON.parse(fs.readFileSync(path.join(__dirname, 'backend/collections/shared/commercialOptions.json'), 'utf8'));
-const sceneOf = p => p.businessScene || (commercialOptions.campusTypes.includes(p.projectType) ? 'campus' : '');
+const sceneOf = p => p.businessScene || '';
 const parentId = p => p.parentProject && typeof p.parentProject === 'object' ? p.parentProject.id : p.parentProject;
 function isPublic(p, all) {
   if (!p || !PUBLIC_STATUSES.has(p.status) || !commercialOptions.scenes.some(scene => scene.value === sceneOf(p)) || p.projectType === '校外临校铺位') return false;
@@ -129,7 +128,7 @@ function isPublic(p, all) {
 }
 function publicProject(p, all) {
   const parent = all.find(row => String(row.id) === String(parentId(p)));
-  const { remark, sourceLead, sourceLeadKey, seedKey, legacyUnclassified, ...publicFields } = p;
+  const { remark, sourceLead, sourceLeadKey, seedKey, ...publicFields } = p;
   return { ...publicFields, listingKind: p.listingKind || 'unit', businessScene: sceneOf(p), parentProject: parent && isPublic(parent, all) ? { id: parent.id, title: parent.title, status: parent.status } : null };
 }
 
@@ -193,10 +192,10 @@ function filterProjects(projects, query) {
   const timestamp = v => typeof v === 'number' ? v : Date.parse(v) || 0;
   result.sort((a, b) => (query.sort === 'latest' ? 0 : b.sort - a.sort) || timestamp(b.createdAt) - timestamp(a.createdAt) || String(b.id).localeCompare(String(a.id)));
   const page = Math.max(1, Math.floor(Number(query.page) || 1));
-  const limit = Math.min(100, Math.max(1, Math.floor(Number(query.limit) || (query.pagination === 'true' ? 20 : 100))));
+  const limit = Math.min(100, Math.max(1, Math.floor(Number(query.limit) || 20)));
   const totalDocs = result.length, totalPages = Math.ceil(totalDocs / limit);
   const docs = result.slice((page - 1) * limit, page * limit);
-  return query.pagination === 'true' ? { docs, page, totalDocs, totalPages, hasNextPage: page < totalPages } : docs;
+  return { docs, page, totalDocs, totalPages, hasNextPage: page < totalPages };
 }
 
 const server = http.createServer(async (req, res) => {

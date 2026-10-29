@@ -35,7 +35,7 @@ fs.copyFileSync('scripts/mp-preview.html', path.join(output, 'index.html'));
 console.log('Built source-based design previews: ' + output);
 if (process.argv.includes('--serve')) http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
-  if (url.pathname === '/api/projects') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(projects)); return; }
+  if (url.pathname === '/api/projects') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ docs: projects, page: 1, totalDocs: projects.length, totalPages: 1, hasNextPage: false })); return; }
   let base = output;
   let pathname = url.pathname;
   if (pathname.startsWith('/images/')) base = root;

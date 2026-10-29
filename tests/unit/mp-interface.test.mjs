@@ -130,7 +130,7 @@ test('resetting draft filters preserves primary filters and does not fetch until
   assert.equal(requests.length, 0);
 });
 
-test('legacy scene links select the merged group; group changes preserve primary filters and clear subtypes', () => {
+test('precise scene filters select their containing group; group changes preserve primary filters and clear subtypes', () => {
   const { page } = listPage();
   page.setFilters({ businessScene: 'office', district: '天河', rent: 'under5000', q: '咖啡' });
   assert.equal(page.data.scopeNotice, false);

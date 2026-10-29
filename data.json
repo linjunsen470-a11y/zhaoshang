@@ -20,16 +20,15 @@
       "cooperationMode": "纯租金模式，按年缴纳，押二付一。",
       "viewingTimeText": "工作日 14:00-17:00，需提前一天预约。",
       "coverImage": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=400&q=80",
-      "images": [
-        "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80"
-      ],
+      "images": ["https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=800&q=80"],
       "status": "online",
       "isRecommended": true,
       "sort": 100,
       "remark": "黄金位置，优先推荐。",
       "createdAt": 1781845600000,
-      "updatedAt": 1781845600000
+      "updatedAt": 1781845600000,
+      "businessScene": "campus",
+      "listingKind": "unit"
     },
     {
       "id": "p2",
@@ -51,16 +50,15 @@
       "cooperationMode": "固定租金，三年起签，无历史转让费。",
       "viewingTimeText": "周一至周日均可预约看铺。",
       "coverImage": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=400&q=80",
-      "images": [
-        "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80",
-        "https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=800&q=80"
-      ],
+      "images": ["https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=800&q=80", "https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=800&q=80"],
       "status": "online",
       "isRecommended": true,
       "sort": 90,
       "remark": "学校核心街铺，人流量大。",
       "createdAt": 1781846600000,
-      "updatedAt": 1781846600000
+      "updatedAt": 1781846600000,
+      "businessScene": "campus",
+      "listingKind": "unit"
     },
     {
       "id": "p3",
@@ -82,15 +80,15 @@
       "cooperationMode": "固定租金，押三付一，两年一签。",
       "viewingTimeText": "提前半天预约，由招商经理带入校。",
       "coverImage": "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=400&q=80",
-      "images": [
-        "https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=800&q=80"
-      ],
+      "images": ["https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&w=800&q=80"],
       "status": "online",
       "isRecommended": false,
       "sort": 80,
       "remark": "适合校园服务类项目。",
       "createdAt": 1781847600000,
-      "updatedAt": 1781847600000
+      "updatedAt": 1781847600000,
+      "businessScene": "campus",
+      "listingKind": "unit"
     },
     {
       "id": "t1",
@@ -112,9 +110,7 @@
       "cooperationMode": "店主委托转让，平台协助约看与资料核验。",
       "viewingTimeText": "需提前预约，避免影响原店经营。",
       "coverImage": "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=400&q=80",
-      "images": [
-        "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80"
-      ],
+      "images": ["https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=800&q=80"],
       "transferInfo": {
         "currentBusiness": "轻食简餐",
         "monthlyRent": "7800 元/月",
@@ -128,7 +124,9 @@
       "sort": 75,
       "remark": "委托转让示例。",
       "createdAt": 1781850600000,
-      "updatedAt": 1781850600000
+      "updatedAt": 1781850600000,
+      "businessScene": "campus",
+      "listingKind": "unit"
     }
   ],
   "leads": [

@@ -22,7 +22,7 @@ export function contentHash(value: unknown) {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex')
 }
 
-export function mapProperty(record: SheetRecord, allowLegacyScene = true) {
+export function mapProperty(record: SheetRecord) {
   const value = (field: string) => cellValue(record, field).trim()
   const numeric = (field: string) => value(field) === '' ? undefined : Number(value(field))
   const number = (field: string) => {
@@ -37,12 +37,12 @@ export function mapProperty(record: SheetRecord, allowLegacyScene = true) {
   const district = regions.find(name => name === rawDistrict || [name + '区', name + '镇', name + '街道'].includes(rawDistrict) || name.replace(/(?:市|县)$/, '') === rawDistrict)
   if (!district) throw new Error(`行政区：${rawDistrict} 不属于 ${city} 或尚未配置`)
 
-  const venue = value('场所名称') || value('学校名称')
-  const location = value('校区/位置') || value('位置')
+  const venue = value('场所名称')
+  const location = value('校区/位置')
   if (!venue || !location) throw new Error('缺少场所名称或位置')
   const sceneInput = value('场景')
   if (sceneInput && !['学校', '校园', '校园商铺', '工业园区', '写字楼'].includes(sceneInput)) throw new Error('场景应为学校、工业园区或写字楼')
-  if (!sceneInput && !(allowLegacyScene && value('学校名称'))) throw new Error('场景：必须明确选择学校、工业园区或写字楼')
+  if (!sceneInput) throw new Error('场景：必须明确选择学校、工业园区或写字楼')
   const businessScene = sceneInput === '工业园区' ? 'industrial_park' : sceneInput === '写字楼' ? 'office' : 'campus'
   const area = number('商铺面积（㎡）')
   const rent = number('租金')

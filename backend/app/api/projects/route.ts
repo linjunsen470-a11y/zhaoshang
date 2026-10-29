@@ -16,12 +16,11 @@ export async function GET(request: Request) {
   try {
     const conditions = commercialFilters(searchParams)
     if (showPublicOnly) conditions.push(publicCommercialWhere())
-    const paginated = searchParams.get('pagination') === 'true'
     const result = await payload.find({
       collection: 'projects',
       where: conditions.length ? { and: conditions } : undefined,
       page: pageNumber(searchParams.get('page'), 1, 100000),
-      limit: pageNumber(searchParams.get('limit'), paginated ? 20 : 100, 100),
+      limit: pageNumber(searchParams.get('limit'), 20, 100),
       sort: searchParams.get('sort') === 'latest' ? ['-createdAt', '-id'] : ['-sort', '-createdAt', '-id'],
       ...(searchParams.get('view') === 'card' ? { select: {
         introduction: false, operatingRequirements: false, premisesConditions: false,
@@ -37,7 +36,7 @@ export async function GET(request: Request) {
       for (const key of ['introduction', 'operatingRequirements', 'premisesConditions', 'customerInfo', 'cooperationMode', 'viewingTimeText', 'transferInfo', 'remark', 'images']) delete card[key]
       return card
     }) : docs
-    return json(paginated ? { docs: output, page: result.page, totalPages: result.totalPages, totalDocs: result.totalDocs, hasNextPage: result.hasNextPage } : output)
+    return json({ docs: output, page: result.page, totalPages: result.totalPages, totalDocs: result.totalDocs, hasNextPage: result.hasNextPage })
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : '查询失败' }, 400)
   }

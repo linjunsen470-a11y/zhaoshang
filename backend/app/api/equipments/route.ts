@@ -5,7 +5,6 @@ import {
   maskPublicRegion,
   truncatePublicText,
   absoluteUrl,
-  LEAD_ID_OFFSET,
 } from '../_shared/payloadApi'
 
 
@@ -53,11 +52,7 @@ export async function GET(request: Request) {
       equipmentPublication?: Record<string, unknown>
     }
     const details = raw.equipmentDetails || {}
-    const publicLeadId = (() => {
-      const num = Number(raw.id)
-      if (!isNaN(num) && num < 10000000) return String(LEAD_ID_OFFSET + num)
-      return String(raw.id)
-    })()
+    const publicLeadId = String(raw.id)
     return {
       id: publicLeadId,
       leadType: raw.leadType,

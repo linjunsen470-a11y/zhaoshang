@@ -2,7 +2,7 @@ const options = require('../config/commercial.js');
 const { projectText } = require('./publicText.js');
 const PUBLIC = ['online', 'coming', 'full'];
 function sceneOf(p) {
-  return p.businessScene || (options.campusTypes.includes(p.projectType) ? 'campus' : '');
+  return p.businessScene || '';
 }
 function withinScope(p) {
   return options.scenes.some(scene => scene.value === sceneOf(p)) && p.projectType !== '校外临校铺位';
@@ -150,12 +150,11 @@ function queryLocal(all, params) {
   const timestamp = value => typeof value === 'number' ? value : Date.parse(value) || 0;
   docs.sort((a, b) => (params.sort === 'latest' ? 0 : (b.sort || 0) - (a.sort || 0)) || timestamp(b.createdAt) - timestamp(a.createdAt) || String(b.id).localeCompare(String(a.id)));
   const page = Math.max(1, Math.floor(Number(params.page) || 1));
-  const paginated = params.pagination === true || params.pagination === 'true';
-  const limit = Math.min(100, Math.max(1, Math.floor(Number(params.limit) || (paginated ? 20 : 100))));
+  const limit = Math.min(100, Math.max(1, Math.floor(Number(params.limit) || 20)));
   const totalDocs = docs.length;
   const totalPages = Math.ceil(totalDocs / limit);
   docs = docs.slice((page - 1) * limit, page * limit);
-  return paginated ? { docs, page, totalDocs, totalPages, hasNextPage: page < totalPages } : docs;
+  return { docs, page, totalDocs, totalPages, hasNextPage: page < totalPages };
 }
 function scrubKnownText(value, project) {
   if (!project) return String(value || '');

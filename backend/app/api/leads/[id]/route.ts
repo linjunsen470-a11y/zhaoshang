@@ -6,21 +6,12 @@ import {
   validateLeadUserInput,
   validateAttachmentOwnership,
   deleteOwnedOrphanAttachments,
-  LEAD_ID_OFFSET,
 } from '../../_shared/payloadApi'
 import { requireAuth } from '../../_shared/auth'
 import { readJsonObject, jsonInputError } from '../../_shared/requestInput'
 
 type Args = {
   params: Promise<{ id: string }>
-}
-
-function parseLeadId(rawId: string): string {
-  const idNum = parseInt(rawId, 10)
-  if (!isNaN(idNum) && idNum > LEAD_ID_OFFSET) {
-    return String(idNum - LEAD_ID_OFFSET)
-  }
-  return rawId
 }
 
 function attachmentIds(value: unknown): (string | number)[] {
@@ -41,7 +32,7 @@ export async function GET(request: Request, { params }: Args) {
   }
 
   const { id: rawId } = await params
-  const id = parseLeadId(rawId)
+  const id = rawId
   const payload = await getPayloadInstance()
 
   try {
@@ -75,7 +66,7 @@ export async function PUT(request: Request, { params }: Args) {
   }
 
   const { id: rawId } = await params
-  const id = parseLeadId(rawId)
+  const id = rawId
   let input: Record<string, unknown>
   try {
     input = await readJsonObject(request)
@@ -138,7 +129,7 @@ export async function DELETE(request: Request, { params }: Args) {
   }
 
   const { id: rawId } = await params
-  const id = parseLeadId(rawId)
+  const id = rawId
   const payload = await getPayloadInstance()
 
   try {

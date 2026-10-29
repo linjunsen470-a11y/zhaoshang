@@ -52,7 +52,7 @@ test('prelaunch HTTP security and attachment lifecycle', { timeout: 240_000 }, a
       }, overrideAccess: true })
       projects.push(project.id)
     }
-    const query = `/projects?public=true&pagination=true&q=${prefix}&sceneGroup=workplace&limit=20`
+    const query = `/projects?public=true&q=${prefix}&sceneGroup=workplace&limit=20`
     const firstResponse = await call(query)
     assert.equal(firstResponse.status, 200)
     const first = await firstResponse.json() as Page
@@ -69,7 +69,7 @@ test('prelaunch HTTP security and attachment lifecycle', { timeout: 240_000 }, a
     const office = await (await call(query + '&businessScene=office')).json() as Page
     assert.equal(office.totalDocs, 12)
     assert.ok(office.docs.every(row => row.businessScene === 'office'))
-    const campus = await (await call(`/projects?public=true&pagination=true&q=${prefix}&sceneGroup=campus`)).json()
+    const campus = await (await call(`/projects?public=true&q=${prefix}&sceneGroup=campus`)).json()
     assert.equal(campus.totalDocs, 12)
     assert.equal((await (await call(query + '&businessScene=campus')).json()).totalDocs, 0)
     assert.equal((await call('/projects?sceneGroup=invalid')).status, 400)

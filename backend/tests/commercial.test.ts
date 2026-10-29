@@ -14,8 +14,8 @@ test('public copy names only the city and district school', () => {
   assert.equal(material.copyText.includes('白云学院'), false)
   assert.equal(material.headline, '广州白云某学校档口')
 })
-test('legacy classification does not guess transfer or other scenes', () => {
-  assert.equal(commercialScene({ projectType: '校园商业街' }), 'campus')
+test('scene classification requires an explicit scene', () => {
+  assert.equal(commercialScene({ projectType: '校园商业街' }), '')
   assert.equal(commercialScene({ projectType: '店铺转让' }), '')
   assert.equal(commercialScene({ projectType: '其他' }), '')
 })
@@ -72,13 +72,13 @@ test('database filters use numeric ranges before pagination; no text amount gues
   assert.throws(() => commercialFilters(new URLSearchParams('rent=invalid')))
 })
 
-test('browse group database filters preserve precise scenes as an intersection and include legacy campus records', () => {
+test('browse group database filters preserve precise scenes as an intersection and require explicit campus scenes', () => {
   assert.deepEqual(commercialFilters(new URLSearchParams('sceneGroup=workplace&businessScene=office')), [
     { businessScene: { in: ['industrial_park', 'office'] } }, { businessScene: { equals: 'office' } },
   ])
   const campus = JSON.stringify(commercialFilters(new URLSearchParams('sceneGroup=campus')))
-  assert.ok(campus.includes('exists'))
-  assert.ok(campus.includes('projectType'))
+  assert.equal(campus.includes('exists'), false)
+  assert.equal(campus.includes('projectType'), false)
   assert.throws(() => commercialFilters(new URLSearchParams('sceneGroup=unknown')), /sceneGroup/)
 })
 test('lead edits retain original project and scene, including unsolicited project changes', () => {

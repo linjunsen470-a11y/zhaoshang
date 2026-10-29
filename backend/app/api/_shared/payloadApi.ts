@@ -16,7 +16,6 @@ export {
 export const ALL = '全部'
 export const PUBLIC_STATUSES = ['online', 'coming', 'full']
 export const PUBLIC_EQUIPMENT_LEAD_TYPES = ['equipment_sell', 'equipment_buy', 'equipment_recycle']
-export const LEAD_ID_OFFSET = 26000000
 
 
 type Doc = Record<string, unknown> & {
@@ -51,16 +50,7 @@ export function toTimestamp(value: unknown) {
 
 export function toArrayItems(value: unknown) {
   if (!Array.isArray(value)) return []
-  return value
-    .map(item => {
-      if (typeof item === 'string') return item
-      if (item && typeof item === 'object' && 'item' in item) {
-        const nested = (item as { item?: unknown }).item
-        return typeof nested === 'string' ? nested : ''
-      }
-      return ''
-    })
-    .filter(Boolean)
+  return value.filter((item): item is string => typeof item === 'string' && item.length > 0)
 }
 
 export function fromArrayItems(value: unknown) {
@@ -243,13 +233,7 @@ export function isPublicProject(doc: Record<string, unknown>) {
 
 export async function mapLeads(docs: Doc[]) {
   return docs.map(doc => ({
-      id: (() => {
-        const num = Number(doc.id)
-        if (!isNaN(num) && num < 10000000) {
-          return String(LEAD_ID_OFFSET + num)
-        }
-        return String(doc.id)
-      })(),
+      id: String(doc.id),
 
       leadType: stringValue(doc.leadType) || 'leasing',
       sourceChannel: stringValue(doc.sourceChannel) || 'mini_program',

@@ -9,6 +9,8 @@ const now = Date.now();
 const SEED_PROJECTS = [
   {
     id: 'p1',
+    listingKind: 'unit',
+    businessScene: 'campus',
     opportunityType: 'leasing',
     title: '广州华商学院第一食堂二楼小吃档口',
     city: '广州',
@@ -36,6 +38,8 @@ const SEED_PROJECTS = [
   },
   {
     id: 'p2',
+    listingKind: 'unit',
+    businessScene: 'campus',
     opportunityType: 'transfer',
     title: '华南师范大学石牌校区商业街茶饮店转让',
     city: '广州',
@@ -75,41 +79,9 @@ const commercialSeeds = [
   { id: 'demo-office', businessScene: 'office', venueName: '天河某写字楼', title: '办公楼内咖啡轻餐铺', areaMin: 35, areaMax: 35, monthlyRentMin: 6500, monthlyRentMax: 6500, feeText: '基础租金 6500元/月；其他费用待确认', suitableBusiness: ['咖啡', '烘焙甜品'], customerInfo: '服务楼内办公人群；工作日早餐、午餐时段为主，实际人数待核实。' },
 ].map((item, index) => ({ ...SEED_PROJECTS[0], listingKind: 'unit', businessScene: item.businessScene, schoolName: '', schoolAlias: '', projectType: '其他', city: '广州', district: '天河', customerInfo: '实际客群与营业时段待核实。', introduction: '饭堂与配套商铺招商，具体经营条件以现场确认为准。', operatingRequirements: '餐饮资质、营业时段与进场条件需进一步确认。', premisesConditions: '排烟、燃气与电力条件待核实。', cooperationMode: '费用和合同条款以顾问确认的资料为准。', viewingTimeText: '可先登记看铺意向，时间由顾问确认。', highlights: [], feeText: '费用面议，待进一步核实', areaText: '以实测为准', isRecommended: index === 1, sort: 50 - index, coverImage: '/images/demo/campus.jpg', images: ['/images/demo/campus.jpg'], ...item }));
 
-const retiredDemoIds = ['demo-community', 'demo-community-unit1', 'demo-community-unit2', 'demo-tourism', 'demo-mall', 'demo-independent'];
-
 function initLocalStorage() {
   if (!wx.getStorageSync('local_projects')) wx.setStorageSync('local_projects', [...SEED_PROJECTS, ...commercialSeeds]);
-  const projects = wx.getStorageSync('local_projects');
-  if (Array.isArray(projects)) {
-    let changed = false;
-    const hasRetiredSeeds = projects.some(project => retiredDemoIds.includes(project.id));
-    const current = hasRetiredSeeds ? projects.filter(project => !retiredDemoIds.includes(project.id)) : projects;
-    if (hasRetiredSeeds) {
-      changed = true;
-      commercialSeeds.forEach(seed => { if (!current.some(project => project.id === seed.id)) current.push(seed); });
-    }
-    const migrated = current.map(project => {
-      const demoImage = '/images/demo/campus.jpg';
-      const replaceLegacyImage = url => {
-        if (typeof url === 'string' && (/^https:\/\/images\.unsplash\.com\//i.test(url) || /^\/images\/shop-demo-/.test(url) || /^\/images\/demo\/(community|mall|tourism)\.jpg$/.test(url))) {
-          changed = true;
-          return demoImage;
-        }
-        return url;
-      };
-      const coverImage = replaceLegacyImage(project.coverImage);
-      const images = Array.isArray(project.images) ? [...new Set(project.images.map(replaceLegacyImage))] : project.images;
-      return { ...project, coverImage, images };
-    });
-    if (changed) wx.setStorageSync('local_projects', migrated);
-  }
   if (!wx.getStorageSync('local_leads')) wx.setStorageSync('local_leads', []);
-}
-
-function ensureProjectList(data) {
-  if (Array.isArray(data)) return data;
-  if (data && Array.isArray(data.docs)) return data.docs;
-  return [];
 }
 
 function createApiError(statusCode, payload) {
@@ -132,7 +104,7 @@ function wxRequest(options) {
 }
 
 function normalizeResponse(urlPath, payload, method = 'GET') {
-  if (urlPath === '/projects') return payload && !Array.isArray(payload) && Array.isArray(payload.docs) ? { ...payload, docs: payload.docs.map(commercial.decorate) } : ensureProjectList(payload).map(commercial.decorate);
+  if (urlPath === '/projects') return { ...payload, docs: payload.docs.map(commercial.decorate) };
   if (urlPath.startsWith('/projects/')) return payload ? commercial.decorate(payload) : payload;
   if ((urlPath === '/leads' || urlPath === '/equipments') && method === 'GET') {
     return (Array.isArray(payload) ? payload : []).map(item => ({
@@ -225,7 +197,7 @@ function localFallback(urlPath, method, requestData = {}) {
 
   if (urlPath.startsWith('/projects/') && method === 'GET') {
     const id = urlPath.substring('/projects/'.length);
-    return commercial.queryLocal(wx.getStorageSync('local_projects') || [], { ids: id })[0] || null;
+    return commercial.queryLocal(wx.getStorageSync('local_projects') || [], { ids: id }).docs[0] || null;
   }
 
   if (urlPath === '/leads' && method === 'GET') {
@@ -249,10 +221,9 @@ function localFallback(urlPath, method, requestData = {}) {
     const leads = wx.getStorageSync('local_leads') || [];
     const projects = wx.getStorageSync('local_projects') || [];
     const maxId = leads.reduce((max, l) => {
-      const cleaned = String(l.id).replace(/^l_?/, '');
-      const num = parseInt(cleaned, 10);
+      const num = Number(l.id);
       return (!isNaN(num) && num > max) ? num : max;
-    }, 26000000);
+    }, 0);
     const nextId = String(maxId + 1);
 
     const newLead = {
@@ -378,8 +349,8 @@ function localFallback(urlPath, method, requestData = {}) {
 
 module.exports = {
   getWechatPhone: code => request({ url: '/auth/wechat-phone', method: 'POST', data: { code }, auth: true, forceRemote: true }),
-  getProjects: params => request({ url: '/projects', data: params }).then(ensureProjectList),
-  getProjectPage: params => request({ url: '/projects', data: { ...params, pagination: 'true', view: 'card' } }).then(data => Array.isArray(data) ? { docs: data, page: 1, totalDocs: data.length, totalPages: 1, hasNextPage: false } : data),
+  getProjects: params => request({ url: '/projects', data: { limit: 100, ...params } }).then(data => data.docs),
+  getProjectPage: params => request({ url: '/projects', data: { ...params, view: 'card' } }),
   getProjectDetail: id => request({ url: `/projects/${id}` }),
   getLeads: () => request({ url: '/leads', auth: true }),
   getLead: id => request({ url: `/leads/${id}`, auth: true }),

@@ -14,7 +14,7 @@ function hasValue(value) {
 
 export function getProjectMissingFields(data) {
   const missing = REQUIRED_PROJECT_FIELDS.filter(field => !hasValue(data[field.key])).map(field => field.label)
-  if (data.listingKind && !data.businessScene && !data.legacyUnclassified) missing.push('商业场景')
+  if (!data.businessScene) missing.push('商业场景')
   return missing
 }
 
@@ -27,24 +27,12 @@ export function projectQualityWhere(quality) {
   const absent = key => textFields.has(key)
     ? { or: [{ [key]: { exists: false } }, { [key]: { equals: '' } }] }
     : { [key]: { exists: false } }
-  const sceneOptional = [{ listingKind: { exists: false } }, { legacyUnclassified: { equals: true } }]
   const scenePresent = { businessScene: { exists: true } }
   if (quality === 'ready') {
-    return { and: [...REQUIRED_PROJECT_FIELDS.map(field => present(field.key)), { or: [...sceneOptional, scenePresent] }] }
+    return { and: [...REQUIRED_PROJECT_FIELDS.map(field => present(field.key)), scenePresent] }
   }
   if (quality === 'blocked') {
-    return { or: [...REQUIRED_PROJECT_FIELDS.map(field => absent(field.key)), {
-      and: [
-        { listingKind: { exists: true } }, { legacyUnclassified: { not_equals: true } },
-        { businessScene: { exists: false } },
-      ],
-    }] }
+    return { or: [...REQUIRED_PROJECT_FIELDS.map(field => absent(field.key)), { businessScene: { exists: false } }] }
   }
   return null
-}
-
-export function simplifyInquiryStatus(status) {
-  if (status === 'new') return 'new'
-  if (['contacted', 'interested', 'viewing_scheduled', 'viewed', 'negotiating'].includes(status)) return 'contacted'
-  return 'closed'
 }

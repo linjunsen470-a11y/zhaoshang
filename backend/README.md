@@ -4,7 +4,7 @@ Payload CMS 3 + Next.js 16 + PostgreSQL backend for campus and commercial listin
 
 当前文档入口见 [文档索引](../docs/README.md)。命令均在仓库根目录执行。
 
-2026-10-29 同步修复新增紧急停显、来源元数据和地区枚举。数据库迁移尚未执行，升级前先备份并显式更新 Schema；腾讯视图筛选仍待完成。详见 [同步修复与迁移记录](../docs/tencent-sync-fixes-2026-10-29.md)。
+2026-10-29 同步修复新增紧急停显、来源元数据和地区枚举；2026-10-30 已移除历史分类标记及旧格式转换。数据库结构尚未同步，运行前按 [初始化说明](../docs/schema-setup.md) 准备环境；腾讯视图筛选仍待完成。详见 [同步修复记录](../docs/tencent-sync-fixes-2026-10-29.md)。
 
 ## Admin
 
@@ -55,32 +55,9 @@ pnpm backend:seed
 
 ## Schema maintenance
 
-Payload `db push` can hang on interactive enum rename prompts leftover from the old CRM. For lead dual-view fields use the non-interactive helper:
+只维护当前 Schema，数据库初始化统一使用 `pnpm --dir backend schema:push`。不再提供旧 CRM、账号字段或商业字段转换脚本。已有本机数据先备份，正常启动保持 `PAYLOAD_DB_PUSH=false`。
 
-```bash
-pnpm --dir backend schema:ensure-leads
-```
-
-Full Payload push (choose **create** for new enums, not rename). Back up the target database first and run explicitly from the maintenance environment:
-
-```bash
-pnpm --dir backend schema:push
-```
-
-Compose 仅提供后端，没有 `db`、`migrate` 服务或 `schema` profile；数据库由 `DATABASE_URI` 指向外部 PostgreSQL。正常启动及镜像构建保持 `PAYLOAD_DB_PUSH=false`。
-
-Schema 入口统一为 `scripts/push-schema.ts`。`public/.gitkeep` 保留静态资源目录，供新检出和 Docker 构建使用；默认 Next 示例图已清理。临时验证文件与本机配置遵循根目录 `.gitignore`。
-
-商业字段与 Payload 认证字段升级分别见 [商业迁移说明](../docs/商业项目接入-迁移与发布说明.md) 和根目录 [README](../README.md#验证)。
-
-## Migration from the retired CRM admin
-
-```bash
-pnpm --dir backend migrate:property-cms
-pnpm --dir backend schema:ensure-leads
-```
-
-The migrate command creates timestamped backup tables and maps legacy states. Prefer `schema:ensure-leads` over interactive `push-schema` when only lead columns are missing.
+Compose 仅提供后端，连接外部 PostgreSQL；详细步骤见 [数据库初始化](../docs/schema-setup.md)。
 
 ## Security
 

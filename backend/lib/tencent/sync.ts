@@ -66,7 +66,7 @@ async function importProperty(payload: Payload, config: SyncConfig, record: Shee
     existing.status = 'offline'
   }
   if (sourceStatus === '暂停招租') return 'unchanged' as const
-  const mapped = mapProperty(record, Boolean(existing))
+  const mapped = mapProperty(record)
   const hash = contentHash({ data: mapped.data, images: mapped.images.map(image => image.image_id || image.image_url) })
   const mediaIds: (string | number)[] = []
   for (const image of mapped.images.slice(0, 6)) {

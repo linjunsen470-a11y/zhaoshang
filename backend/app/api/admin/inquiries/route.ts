@@ -93,7 +93,7 @@ export async function GET(request: Request) {
     // Surface schema drift clearly for local ops
     if (/column .* does not exist|relation .* does not exist/i.test(message)) {
       return json({
-        error: '数据库结构未同步（缺少字段）。请在 backend 执行：pnpm exec node scripts/ensure-leads-schema.mjs',
+        error: '数据库结构未同步（缺少字段）。请在 backend 执行：pnpm schema:push',
         detail: message,
       }, 500)
     }

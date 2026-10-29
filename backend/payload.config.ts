@@ -79,7 +79,7 @@ export default buildConfig({
   editor: lexicalEditor({}),
   secret: secret || 'your-fallback-dev-secret-for-local-demo',
   typescript: {
-    // Export explicit collection types without retroactively changing legacy Local API generics.
+    // Export explicit collection types for application code.
     declare: false,
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },

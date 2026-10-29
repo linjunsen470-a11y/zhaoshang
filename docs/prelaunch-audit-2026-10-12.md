@@ -24,7 +24,6 @@
 | 登录与资源限制 | 微信外部请求增加 10 秒超时；限制速率桶数量，Token 严格验证格式、签名、过期时间及用途 | Token 单元测试；HTTP 鉴权回归 |
 | 版本迁移 | 新版 Payload 需要 `users.reset_password_requested_at`；提供幂等、默认只预览的增量迁移，避免旧库账号操作失败 | 仅在隔离库应用后，editor 登录和角色限制测试通过 |
 | Docker | 构建禁用 DB push，预建并授权 media 目录供 UID 1001 写入；修复 Sharp 新版类型引用及 libvips 通配复制冲突 | 本地及 Docker 生产构建通过；容器验证见下表 |
-| 验收工具与文档 | 修复 Windows Node 不能直接 spawn `.bat` 的兼容问题，共享 DevTools 测试串行执行，调整冷启动等待；纠正旧文档中域名已配置及不存在的 schema profile 描述 | 小程序完整回归通过；新增 `pnpm launch:check` |
 
 依赖扫描数量是审计工具返回的版本匹配结果，不代表每项均在本项目中可被实际利用，也不代表未来不存在新漏洞。生产依赖为 0 条，未宣称开发依赖全部为 0 条。
 
@@ -75,7 +74,6 @@ P2：本地 Mock 的连续导航。商业专项及本地专项均在校园提交
 
 补齐配置后重新运行 `pnpm launch:check`。它只验证静态配置，还需在目标环境完成：HTTPS 和微信公众平台 request/uploadFile/downloadFile 合法域名、真实微信登录与双账号隔离、实际小程序码、隐私授权、真机图片展示与上传、实际运营内容和顾问电话。
 
-数据库升级必须先备份。在与目标库一致的维护环境预览 `pnpm --dir backend migrate:payload-auth`，确认后执行 `pnpm --dir backend migrate:payload-auth -- --apply`，再切换新版镜像。商业字段迁移按已有商业项目迁移说明执行；本轮仅验证隔离库，未证明目标库已完成商业字段迁移。正常部署保持 `PAYLOAD_DB_PUSH=false`，不要在构建镜像时自动推送业务数据库结构。
 
 当前 Compose 仅包含后端，连接由 `DATABASE_URI` 指向的 PostgreSQL。生产反向代理必须覆盖不可信的转发 IP 请求头。当前限流是单实例内存实现，多副本部署需要共享限流存储。
 

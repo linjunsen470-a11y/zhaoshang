@@ -40,7 +40,7 @@ test('commercial scenes, pagination, retry, login refresh and local demo journey
       console.log(`[commercial] ${scene}: list/detail/share/consultation form passed`);
     }
 
-    const latest = await (await fetch(`${apiUrl}/projects?pagination=true&q=-paged-&sort=latest&limit=1`)).json();
+    const latest = await (await fetch(`${apiUrl}/projects?q=-paged-&sort=latest&limit=1`)).json();
     const prefix = latest.docs[0].title.split('-paged-')[0];
     list = await loaded(await open(`/pages/list/list?q=${prefix}-paged`));
     for (let page = 2; page <= 6; page++) {

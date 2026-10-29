@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { getProjectMissingFields, projectQualityWhere, REQUIRED_PROJECT_FIELDS, simplifyInquiryStatus } from '../lib/cmsRules.mjs'
+import { getProjectMissingFields, projectQualityWhere, REQUIRED_PROJECT_FIELDS } from '../lib/cmsRules.mjs'
 
 test('property publish checklist reports only missing public fields', () => {
   assert.deepEqual(getProjectMissingFields({
     title: '一号房源',
     coverImage: 1,
     projectType: '食堂档口',
+    businessScene: 'campus',
     district: '天河',
     feeText: '3 万元/年',
     customerInfo: '',
@@ -14,14 +15,9 @@ test('property publish checklist reports only missing public fields', () => {
   }), ['客群说明', '详情图片'])
 })
 
-test('legacy inquiry statuses collapse into three practical states', () => {
-  assert.equal(simplifyInquiryStatus('new'), 'new')
-  assert.equal(simplifyInquiryStatus('negotiating'), 'contacted')
-  assert.equal(simplifyInquiryStatus('invalid'), 'closed')
-})
 
 // Evaluate the supported Payload predicates against fixtures to check that the
-// database filter and the publication/editor rule agree, including legacy data.
+// database filter and the publication/editor rule agree, including missing fields.
 function matches(doc, where) {
   if (where.and) return where.and.every(condition => matches(doc, condition))
   if (where.or) return where.or.some(condition => matches(doc, condition))
@@ -34,13 +30,13 @@ function matches(doc, where) {
   }))
 }
 
-test('completeness filters agree with publication checks for every missing field and legacy scene', () => {
-  const ready = { title: '测试铺位', coverImage: 1, district: '天河', feeText: '面议', customerInfo: '社区居民', images: [1], listingKind: 'unit', businessScene: 'community', legacyUnclassified: false }
+test('completeness filters agree with publication checks for every missing field and missing scene', () => {
+  const ready = { title: '测试铺位', coverImage: 1, district: '天河', feeText: '面议', customerInfo: '社区居民', images: [1], listingKind: 'unit', businessScene: 'campus' }
   const cases = [ready, ...REQUIRED_PROJECT_FIELDS.flatMap(({ key }) => [
     { ...ready, [key]: undefined }, { ...ready, [key]: key === 'images' ? [] : null },
     ...(['title', 'feeText', 'customerInfo'].includes(key) ? [{ ...ready, [key]: '' }] : []),
   ]), { ...ready, businessScene: undefined },
-  { ...ready, businessScene: null, legacyUnclassified: true },
+  { ...ready, businessScene: null },
   { ...ready, businessScene: undefined, listingKind: undefined }]
   for (const record of cases) {
     const complete = getProjectMissingFields(record).length === 0
@@ -50,7 +46,7 @@ test('completeness filters agree with publication checks for every missing field
 })
 
 test('filtering before pagination includes matching records beyond the first unfiltered page', () => {
-  const records = Array.from({ length: 40 }, (_, index) => ({ id: index + 1, title: '铺位', coverImage: 1, district: '天河', feeText: '面议', customerInfo: index < 30 ? '' : '居民', images: [1] }))
+  const records = Array.from({ length: 40 }, (_, index) => ({ id: index + 1, businessScene: 'campus', title: '铺位', coverImage: 1, district: '天河', feeText: '面议', customerInfo: index < 30 ? '' : '居民', images: [1] }))
   const filtered = records.filter(record => matches(record, projectQualityWhere('ready')))
   assert.equal(filtered.length, 10)
   assert.deepEqual(filtered.slice(0, 5).map(record => record.id), [31, 32, 33, 34, 35])

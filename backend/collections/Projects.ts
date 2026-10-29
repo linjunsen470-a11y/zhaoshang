@@ -67,19 +67,15 @@ export const Projects: CollectionConfig = {
     }],
     beforeChange: [
       async ({ data, originalDoc, operation, req }) => {
-        assertSourceWrite(data, originalDoc, req.context?.tencentSync === true || req.context?.commercialMigration === true)
-        data.legacyUnclassified = req.context?.commercialMigration ? Boolean(data.legacyUnclassified) : Boolean(originalDoc?.legacyUnclassified)
+        assertSourceWrite(data, originalDoc, req.context?.tencentSync === true)
         data.listingKind = data.listingKind || originalDoc?.listingKind || 'unit'
-        if (data.businessScene === undefined && !originalDoc?.businessScene) {
-          data.businessScene = commercialScene({ ...(originalDoc || {}), ...data }) || null
-        }
         if (data.listingKind === 'unit' && !data.parentProject && operation === 'create' && req.query?.parentProject) {
           const parent = await req.payload.findByID({ collection: 'projects', id: String(req.query.parentProject), depth: 0, req })
           Object.assign(data, { parentProject: parent.id, businessScene: parent.businessScene, city: parent.city, district: parent.district })
         }
         const merged = { ...(originalDoc || {}), ...(data || {}) } as Record<string, unknown>
         const problem = validateCommercial(merged)
-        const stopping = req.context?.tencentSync === true && originalDoc && data.status === 'offline' && Object.keys(data).every(key => ['status', 'tencentSync', 'legacyUnclassified', 'listingKind'].includes(key))
+        const stopping = req.context?.tencentSync === true && originalDoc && data.status === 'offline' && Object.keys(data).every(key => ['status', 'tencentSync', 'listingKind'].includes(key))
         if (problem && !stopping) throw new Error(problem)
         const parentId = commercialId(merged.parentProject)
         if (parentId) {
@@ -94,7 +90,7 @@ export const Projects: CollectionConfig = {
           const children = await req.payload.count({ collection: 'projects', where: { parentProject: { equals: originalDoc.id } }, overrideAccess: true, req })
           if (children.totalDocs) throw new Error('存在所属铺位，请先处理关联，再修改项目类型、场景或地区')
         }
-        if (PUBLIC_PROJECT_STATUSES.includes(merged.status as (typeof PUBLIC_PROJECT_STATUSES)[number]) && !merged.businessScene && !merged.legacyUnclassified) {
+        if (PUBLIC_PROJECT_STATUSES.includes(merged.status as (typeof PUBLIC_PROJECT_STATUSES)[number]) && !merged.businessScene) {
           throw new Error('新记录上架必须选择商业场景')
         }
         if (PUBLIC_PROJECT_STATUSES.includes(merged.status as (typeof PUBLIC_PROJECT_STATUSES)[number])) {
@@ -124,7 +120,6 @@ export const Projects: CollectionConfig = {
     { name: 'sourceRemark', type: 'textarea', label: '腾讯文档原备注', admin: { readOnly: true }, access: { read: ({ req }) => isStaffUser(req.user) } },
     { name: 'sourcePropertyType', type: 'text', label: '来源空间类型', admin: { readOnly: true } },
     { name: 'sourceBusinessText', type: 'text', label: '来源业态描述', admin: { readOnly: true } },
-    { name: 'legacyUnclassified', access: { read: ({ req: { user } }) => isStaffUser(user) }, type: 'checkbox', defaultValue: false, admin: { hidden: true, readOnly: true } },
     {
       name: 'seedKey', access: { read: ({ req: { user } }) => isStaffUser(user) },
       type: 'text',

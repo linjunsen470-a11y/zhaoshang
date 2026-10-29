@@ -14,7 +14,7 @@ export function unwrapToolResult(result: Record<string, unknown>): Record<string
   if (!data) {
     const content = result.content as { type?: string; text?: string }[] | undefined
     const text = content?.filter(item => item.type === 'text').map(item => item.text || '').join('\n')
-    if (text) { try { data = JSON.parse(text) } catch { throw new Error('腾讯文档返回了非 JSON 结果，请检查服务工具兼容性') } }
+    if (text) { try { data = JSON.parse(text) } catch { throw new Error('腾讯文档返回了非 JSON 结果，请检查服务工具响应格式') } }
   }
   if (result.isError || data?.error) throw new Error('腾讯文档操作失败，请检查文档权限、工作表 ID 和字段配置')
   if (!data) throw new Error('腾讯文档未返回可读取的结果')

@@ -33,7 +33,7 @@ async function submitWebsiteLead(_: LeadFormState, formData: FormData): Promise<
       if (!/^[1-9]\d*$/.test(projectId) || !Number.isSafeInteger(Number(projectId))) return { status: 'error', message: '房源信息无效，请重新选择。' }
       const project = await payload.findByID({ collection: 'projects', id: projectId, depth: 1, overrideAccess: true }).catch(() => null)
       if (!project || !commercialIsPublic(project) || project.status === 'full') return { status: 'error', message: '该房源暂不接受咨询，请重新选择或提交通用需求。' }
-      businessScene = String(project.businessScene || 'campus')
+      businessScene = String(project.businessScene || '')
       leadType = 'leasing'
     }
     await payload.create({ collection: 'leads', data: {

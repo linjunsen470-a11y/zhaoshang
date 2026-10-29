@@ -1,14 +1,9 @@
 import { basename, join } from 'path'
 import { readFile } from 'fs/promises'
-import { getPayloadInstance, LEAD_ID_OFFSET } from '../../../../_shared/payloadApi'
+import { getPayloadInstance } from '../../../../_shared/payloadApi'
 import { getClientIp, takeRateLimit } from '../../../../_shared/rateLimit'
 
 type Args = { params: Promise<{ id: string; mediaId: string }> }
-
-function parseLeadId(rawId: string) {
-  const idNum = Number.parseInt(rawId, 10)
-  return Number.isFinite(idNum) && idNum > LEAD_ID_OFFSET ? String(idNum - LEAD_ID_OFFSET) : rawId
-}
 
 function relationId(value: unknown) {
   if (typeof value === 'string' || typeof value === 'number') return String(value)
@@ -28,7 +23,7 @@ export async function GET(request: Request, { params }: Args) {
   try {
     const lead = await payload.findByID({
       collection: 'leads',
-      id: parseLeadId(publicId),
+      id: publicId,
       depth: 0,
       overrideAccess: true,
     })

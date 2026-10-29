@@ -9,16 +9,7 @@ function formatDateTime(value) {
 }
 
 function formatLeadId(id) {
-  if (!id) return '';
-  const cleaned = String(id).replace(/^l_?/, '');
-  const num = parseInt(cleaned, 10);
-  if (!isNaN(num)) {
-    if (num < 10000000) {
-      return String(26000000 + num);
-    }
-    return String(num);
-  }
-  return id;
+  return id == null ? '' : String(id);
 }
 
 Page({

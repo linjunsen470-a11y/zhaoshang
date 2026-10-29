@@ -122,7 +122,7 @@ export async function GET() {
         blockedCount: blocked.length,
         readyToPublishCount: readyDrafts.length,
         publicIncompleteCount: publicIncomplete.length,
-        requiredFields: [...REQUIRED_PROJECT_FIELDS.map(field => field.label), '商业场景（旧待分类记录除外）'],
+        requiredFields: [...REQUIRED_PROJECT_FIELDS.map(field => field.label), '商业场景'],
         blocked: blocked.slice(0, 20),
         publicIncomplete: publicIncomplete.slice(0, 10),
       },

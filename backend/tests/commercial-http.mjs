@@ -15,12 +15,12 @@ const login = async suffix => {
   return result.data.token
 }
 const token = await login('owner'), foreign = await login('foreign')
-const projects = await request('/projects?pagination=true&businessScene=community&listingKind=project')
+const projects = await request('/projects?businessScene=industrial_park&listingKind=project')
 assert.equal(projects.status, 200)
 const project = projects.data.docs.find(p => p.status === 'online')
 assert.ok(project)
-for (const scene of ['campus', 'community', 'tourism', 'mall']) {
-  const result = await request(`/projects?pagination=true&businessScene=${scene}`)
+for (const scene of ['campus', 'industrial_park', 'office']) {
+  const result = await request(`/projects?businessScene=${scene}`)
   assert.equal(result.status, 200)
   assert.ok(result.data.totalDocs > 0)
   assert.ok(result.data.docs.every(p => p.businessScene === scene))
@@ -31,7 +31,7 @@ form.set('file', new Blob([image], { type: 'image/png' }), 'commercial-test.png'
 const upload = await fetch(base + '/uploads/lead-image', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form })
 assert.equal(upload.status, 201)
 const attachment = await upload.json()
-const created = await request('/leads', 'POST', { name: '商业接口测试', phone: '13812345678', projectId: project.id, businessScene: 'mall', remark: 'HTTP联调', attachments: [attachment.id], assignedTo: 1, status: 'closed' }, token)
+const created = await request('/leads', 'POST', { name: '商业接口测试', phone: '13812345678', projectId: project.id, businessScene: 'office', remark: 'HTTP联调', attachments: [attachment.id], assignedTo: 1, status: 'closed' }, token)
 assert.equal(created.status, 201)
 const id = created.data.id
 try {
@@ -41,15 +41,15 @@ try {
   assert.equal(rawProject.status, 200)
   assert.equal('remark' in rawProject.data, false)
   assert.equal((await request('/leads', 'POST', { name: '公开图拒绝', phone: '13812345678', attachments: [rawProject.data.coverImage.id] }, token)).status, 403)
-  assert.equal(created.data.businessScene, 'community')
+  assert.equal(created.data.businessScene, 'industrial_park')
   assert.equal(String(created.data.projectId), project.id)
   assert.equal(created.data.status, 'new')
   assert.equal('submitterOpenId' in created.data, false)
   assert.equal('assignedTo' in created.data, false)
-  const updated = await request(`/leads/${id}`, 'PUT', { name: '修改咨询', phone: '13812345678', projectId: '999999999', businessScene: 'mall', remark: '补充面积要求' }, token)
+  const updated = await request(`/leads/${id}`, 'PUT', { name: '修改咨询', phone: '13812345678', projectId: '999999999', businessScene: 'office', remark: '补充面积要求' }, token)
   assert.equal(updated.status, 200)
   assert.equal(String(updated.data.projectId), project.id)
-  assert.equal(updated.data.businessScene, 'community')
+  assert.equal(updated.data.businessScene, 'industrial_park')
   for (const method of ['GET', 'PUT', 'DELETE']) assert.equal((await request(`/leads/${id}`, method, method === 'PUT' ? { remark: '越权' } : undefined, foreign)).status, 403)
   assert.equal((await request('/leads')).status, 401)
   assert.equal((await request('/leads', 'POST', { name: '附件测试', phone: '13812345678', attachments: ['999999999'] }, token)).status, 400)

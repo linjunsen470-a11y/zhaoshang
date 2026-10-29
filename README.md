@@ -4,7 +4,9 @@
 
 当前资料入口见 [文档索引](docs/README.md)。本地演示默认使用小程序 Storage；体验版/正式版仍需补齐发布配置与真机验收。
 
-2026-10-29 房源同步修复已写入代码，但数据库备份与 Schema 迁移尚未完成，腾讯视图筛选也未修复。升级运行前须先完成迁移，具体状态见 [同步修复记录](docs/tencent-sync-fixes-2026-10-29.md)，不能将构建通过视为已上线。
+项目尚未上线，只维护当前版本：房源必须明确场景，列表 API 固定返回分页对象，咨询及设备直接使用数据库 ID。旧 CRM 转换、旧字段推断、旧数组响应、本地旧数据修补均已移除。初始化步骤见 [数据库与数据格式](docs/schema-setup.md)。
+
+截至 2026-10-30，房源同步修复和历史适配清理已写入代码；当前数据库结构尚未同步，腾讯视图筛选也未修复。运行前先按 [数据库初始化](docs/schema-setup.md) 准备环境。外部验收阻碍见 [同步修复记录](docs/tencent-sync-fixes-2026-10-29.md)，构建通过不代表已上线。
 
 腾讯文档联调：运行 `pnpm demo:connected`，进入 `/admin/workspace/sync`。支持房源导入、客户咨询定期回写和处理状态回读；在小程序“我的”可切换“连接本地后台”。连接配置、实际演示与限制见 [腾讯文档同步 Demo 操作说明](docs/腾讯文档同步-demo操作说明.md)。
 
@@ -14,7 +16,7 @@
 backend/               Payload CMS、统一房源后台、网站和生产 API
 backend/app/admin/     房源工作台、咨询收件箱、设备供需等自定义后台界面
 backend/collections/   房源、咨询、媒体和后台账号数据模型
-backend/scripts/       数据迁移、Schema push 和演示数据脚本
+backend/scripts/       Schema 初始化、同步、备份和演示数据脚本
 mp/                    微信小程序客户端
 docs/                  产品、上线和体验文档
 server.js              仅供小程序联调的轻量 Mock API
@@ -86,30 +88,9 @@ Mock API 地址为 `http://localhost:5173/api`；访问 `/admin` 返回 404。
 pnpm backend:seed
 ```
 
-## 数据迁移
+## 数据库结构
 
-从旧 CRM 后台升级时，先备份并迁移数据，再推送新 Schema：
-
-```bash
-pnpm --dir backend migrate:property-cms
-pnpm --dir backend exec tsx scripts/push-schema.ts
-```
-
-迁移脚本会：
-
-- 在独立 `cms_backup` schema 中备份房源、咨询、账号、媒体及旧 CRM 表。
-- 保留房源和媒体；不完整或未审核公开房源改回草稿。
-- 将旧咨询状态映射为待联系、已联系、已结束。
-- 将设备审核状态映射为待整理、已发布、已下架。
-- 将旧 `advisor` 账号改为 `editor`。
-
-Schema push 会删除已退出配置的商户档案、跟进记录和高级 CRM 字段。生产执行前请另做数据库快照。
-
-生产 Compose 不会自动 push schema。需变更结构时，先备份数据库，再显式执行：
-
-在维护环境中使用与目标数据库一致的 `DATABASE_URI`，执行 `pnpm --dir backend schema:push`。
-当前 Compose 仅包含后端服务，数据库由 `DATABASE_URI` 指向外部 PostgreSQL。
-不要在镜像构建期间推送业务数据库结构。
+项目尚未上线，只维护当前数据模型，不提供旧 CRM、旧状态或旧客户端升级路径。开发联调应使用按当前 Schema 初始化的独立数据库。已有本机数据先备份，结构变更显式执行 `pnpm --dir backend schema:push`；正常启动保持 `PAYLOAD_DB_PUSH=false`。详见 [数据库初始化](docs/schema-setup.md)。
 
 ## 主要 API
 
@@ -147,15 +128,6 @@ pnpm launch:check
 历史安全与容器验收见 [2026-10-12 审计](docs/prelaunch-audit-2026-10-12.md)。
 `launch:check` 检查发布配置，不输出密钥；开发环境配置未补齐时会返回非零退出码。
 
-Payload 升级至 3.90.2 时，已有数据库需补充账号重置密码时间字段。先备份目标数据库，再预览和执行非破坏性迁移：
-
-```bash
-pnpm --dir backend migrate:payload-auth
-pnpm --dir backend migrate:payload-auth -- --apply
-```
-
-确保维护环境的 `DATABASE_URI` 指向目标数据库，并在切换新版后端前完成迁移。
-
 微信开发者工具中应验证房源浏览、咨询提交与编辑、图片上传、设备列表、Token 刷新和隐私政策页面。
 
 ## 生产配置
@@ -178,8 +150,8 @@ pnpm --dir backend migrate:payload-auth -- --apply
 
 2026-10-29 清理旧隔离构建目录 `.next-audit-build/`、`.next-scene-test/`、`.next-sync-build/`，统一忽略 `.next-*/`。保留正在使用的 `.next/`、本机配置、数据库备份、同步状态和上传素材。同名的单元测试与微信 E2E 测试职责不同，均保留；历史文档按 [文档索引](docs/README.md) 区分用途。
 
-2026-10-16 清理了无引用的旧组件别名、重复 Schema 入口、5 张 Next 示例图、4 个闲置图标和 2 张旧演示 PNG。演示数据直接使用 `mp/images/demo/` 的四类摄影示意图；已有本地数据的旧图片地址仍会自动迁移。Schema 维护统一使用 `pnpm --dir backend schema:push`。
+2026-10-16 清理了无引用的旧组件别名、重复 Schema 入口、5 张 Next 示例图、4 个闲置图标和 2 张旧演示 PNG。演示数据直接使用 `mp/images/demo/` 的四类摄影示意图。Schema 维护统一使用 `pnpm --dir backend schema:push`。
 
-微信 `project.private.config.json` 保留在本机并停止跟踪；项目公共配置 `project.config.json`、`mp/project.config.json` 继续提交。`.gitignore` 排除环境文件、私钥、上传数据、编译缓存、测试报告、临时预览和编辑器备份；`.env.example`、API 上传路由、迁移脚本和测试源码继续纳入版本控制。
+微信 `project.private.config.json` 保留在本机并停止跟踪；项目公共配置 `project.config.json`、`mp/project.config.json` 继续提交。`.gitignore` 排除环境文件、私钥、上传数据、编译缓存、测试报告、临时预览和编辑器备份；`.env.example`、API 上传路由、Schema 工具和测试源码继续纳入版本控制。
 
 本机临时脚本放 `scratch/`，验证输出放 `test-results/`。这两个目录不提交；清理运行产物前确认不含仍需保留的验收证据。迁移文件、依赖锁文件及各层测试按用途保留。

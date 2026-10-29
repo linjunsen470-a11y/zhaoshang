@@ -64,7 +64,7 @@ test('customer export whitelists business data and omits identity, snapshot and 
 })
 
 test('property import preserves rental units and separates base rent from commission', () => {
-  const record = { record_id: 'p1', field_values: [textCell('城市', '东莞市'), textCell('行政区', '松山湖'), textCell('学校名称', '示例学校'), textCell('校区/位置', 'A01'), textCell('招租状态', '招租中'), textCell('租金单位', '元/㎡/月'), { field: '租金', number_value: 350 }, { field: '商铺面积（㎡）', number_value: 68.8 }, { field: '抽成比例（%）', number_value: 5 }, { field: '商铺图片', image_value: { items: [{ image_url: 'https://docimg3.docs.qq.com/image/example.jpg' }] } }] }
+  const record = { record_id: 'p1', field_values: [textCell('城市', '东莞市'), textCell('行政区', '松山湖'), textCell('场所名称', '示例学校'), textCell('场景', '学校'), textCell('校区/位置', 'A01'), textCell('招租状态', '招租中'), textCell('租金单位', '元/㎡/月'), { field: '租金', number_value: 350 }, { field: '商铺面积（㎡）', number_value: 68.8 }, { field: '抽成比例（%）', number_value: 5 }, { field: '商铺图片', image_value: { items: [{ image_url: 'https://docimg3.docs.qq.com/image/example.jpg' }] } }] }
   const mapped = mapProperty(record)
   assert.equal(mapped.data.monthlyRentMin, 24080)
   assert.ok(mapped.data.feeText.includes('5%'))
@@ -73,7 +73,7 @@ test('property import preserves rental units and separates base rent from commis
   assert.equal(mapped.data.title.startsWith('【演示】'), true)
 })
 
-test('workplace rows use the explicit source scene and venue without changing legacy school fallback', () => {
+test('workplace rows use the explicit source scene and venue with a required source scene', () => {
   for (const [label, expected] of [['工业园区', 'industrial_park'], ['写字楼', 'office']]) {
     const mapped = mapProperty({ record_id: 'workplace', field_values: [
       textCell('城市', '广州市'), textCell('行政区', '天河区'), textCell('场所名称', '示例工作场所'), textCell('场景', label),
@@ -236,8 +236,8 @@ test('actual property sync stops malformed rows and persists missing confirmatio
 })
 
 test('unknown types and cross-city districts are rejected instead of silently defaulting', () => {
-  const source: SheetRecord = { record_id: 'p', field_values: [textCell('城市', '佛山市'), textCell('行政区', '顺德区'), textCell('场景', '学校'), textCell('学校名称', '某学校'), textCell('校区/位置', 'A1'), textCell('招租状态', '招租中'), textCell('商铺类型', '独立商铺'), textCell('招租业态', '零售、烘焙'), { field: '商铺图片', image_value: { items: [{ image_id: '1' }] } }] }
-  const mapped = mapProperty(source, false)
+  const source: SheetRecord = { record_id: 'p', field_values: [textCell('城市', '佛山市'), textCell('行政区', '顺德区'), textCell('场景', '学校'), textCell('场所名称', '某学校'), textCell('校区/位置', 'A1'), textCell('招租状态', '招租中'), textCell('商铺类型', '独立商铺'), textCell('招租业态', '零售、烘焙'), { field: '商铺图片', image_value: { items: [{ image_id: '1' }] } }] }
+  const mapped = mapProperty(source)
   assert.equal(mapped.data.district, '顺德')
   assert.equal(mapped.data.projectType, '校内铺位')
   assert.deepEqual(mapped.data.suitableBusiness, ['烘焙甜品'])
@@ -246,5 +246,5 @@ test('unknown types and cross-city districts are rejected instead of silently de
   assert.throws(() => mapProperty(changed('行政区', '天河区')), /行政区/)
   assert.throws(() => mapProperty(changed('商铺类型', '未知')), /商铺类型/)
   assert.throws(() => mapProperty(changed('招租业态', '未知')), /招租业态/)
-  assert.throws(() => mapProperty(changed('场景', ''), false), /场景/)
+  assert.throws(() => mapProperty(changed('场景', '')), /场景/)
 })

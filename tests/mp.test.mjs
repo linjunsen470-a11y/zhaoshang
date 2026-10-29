@@ -16,7 +16,7 @@ test('mini-program leasing smoke journey', { timeout: 120_000 }, async () => {
   let authToken = '';
   try {
     const projectsResponse = await fetch(`${apiUrl}/projects?public=true`);
-    const onlineProject = (await projectsResponse.json()).find(project => project.status === 'online');
+    const onlineProject = (await projectsResponse.json()).docs.find(project => project.status === 'online');
     assert.ok(onlineProject, 'backend must provide an online project');
     const projectId = String(onlineProject.id);
     context = await startE2E({ initialPath: `/pages/apply/apply?projectId=${projectId}` });

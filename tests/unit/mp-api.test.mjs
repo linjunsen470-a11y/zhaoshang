@@ -27,21 +27,6 @@ function makeLocalApi(initialStorage = { local_projects: [], local_leads: [] }) 
   return { api, storage };
 }
 
-test('local mock replaces old remote demo photos without changing project data', async () => {
-  const original = {
-    id: 'legacy', title: '旧演示铺位', status: 'online', businessScene: 'office', opportunityType: 'leasing',
-    coverImage: 'https://images.unsplash.com/photo-demo?w=400',
-    images: ['https://images.unsplash.com/photo-demo?w=900', 'https://images.unsplash.com/photo-other?w=900'],
-  };
-  const { api, storage } = makeLocalApi({ local_projects: [original], local_leads: [] });
-  const [project] = await api.getProjects({ public: true });
-  assert.equal(project.coverImage, '/images/demo/campus.jpg');
-  assert.equal(project.isDemoImage, true);
-  assert.deepEqual(Array.from(project.images), ['/images/demo/campus.jpg']);
-  assert.equal(project.title, '旧铺位');
-  assert.equal(storage.getStorageSync('local_projects')[0].title, original.title);
-  assert.equal(storage.getStorageSync('local_projects')[0].coverImage, '/images/demo/campus.jpg');
-});
 
 test('local mock lead CRUD is isolated by current openid', async () => {
   const { api, storage } = makeLocalApi();

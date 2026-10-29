@@ -17,16 +17,11 @@
     "test:cms": "node --test --test-isolation=none tests/cms.test.mjs",
     "test:api": "tsx --test --test-isolation=none tests/lead-policy.test.ts tests/commercial.test.ts tests/request-input.test.ts tests/tokens.test.ts tests/tencent-sync.test.ts tests/wechat-phone.test.ts",
     "seed:demo": "tsx scripts/seed-demo.ts",
-    "migrate:property-cms": "tsx scripts/migrate-property-cms.ts",
-    "schema:ensure-leads": "node scripts/ensure-leads-schema.mjs",
     "schema:push": "tsx scripts/push-schema.ts",
-    "migrate:commercial": "node scripts/migrate-commercial.mjs",
     "test:commercial:db": "node tests/with-commercial-db.mjs --import tsx tests/commercial.integration.ts",
     "sync:commercial-options": "node scripts/sync-commercial-options.mjs",
-    "test:commercial:migration": "node tests/with-commercial-db.mjs tests/commercial-migration.mjs",
     "test:commercial:http": "node tests/commercial-http.mjs",
     "generate:types": "tsx scripts/generate-commercial-types.ts",
-    "migrate:payload-auth": "node scripts/migrate-payload-auth.mjs",
     "test:prelaunch:http": "node tests/with-commercial-db.mjs --import tsx --test --test-force-exit --test-isolation=none tests/prelaunch-http.test.ts"
   },
   "dependencies": {
