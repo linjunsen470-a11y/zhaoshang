@@ -199,8 +199,11 @@
   width: 100%;
 }
 
-.loading-state .skeleton {
-  height: 360rpx;
-  margin-bottom: 24rpx;
-  background: #fff;
+.equipment-copy {
+  min-height: 44px;
+  padding: 16rpx 0;
+  text-align: left;
+  color: var(--pine);
+  background: transparent;
+  font-size: 24rpx;
 }

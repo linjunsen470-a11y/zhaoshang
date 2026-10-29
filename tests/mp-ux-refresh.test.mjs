@@ -81,6 +81,9 @@ test('visual refresh supports discovery, favorites, history and consultation man
     await waitForData(detail, 'similarLoading', value => value === false);
     assert.ok((await detail.data('similarProjects')).every(item => item.id !== project.id && item.businessScene === project.businessScene));
     await capture('detail');
+    assert.equal((await detail.$$('.bottom-action-bar .icon-action')).length, 3);
+    await detail.setData({ 'project.status': 'full' });
+    assert.ok(await detail.$('.availability-notice'));
     await call(detail, 'onToggleFavorite');
     assert.equal(await detail.data('isFavorited'), true);
     const recent = await open('/pages/list/list?recent=true');
@@ -88,8 +91,14 @@ test('visual refresh supports discovery, favorites, history and consultation man
     await capture('recent');
     const favorites = await open('/pages/list/list?favs=true');
     assert.equal((await favorites.data('projectList'))[0].id, project.id);
+    assert.ok(await favorites.$('.collection-header'));
+    assert.equal(await favorites.$('.sticky-header'), null);
     const apply = await open('/pages/apply/apply?projectId=' + project.id);
     await waitForData(apply, 'projectTitle', Boolean);
+    await call(apply, 'onChooseRegion', { detail: { value: '1' } });
+    assert.equal(await apply.data('regionPreference'), (await apply.data('regionOptions'))[1]);
+    await call(apply, 'onInputRemark', { detail: { value: '希望周末看铺' } });
+    assert.match(await (await apply.$('.character-count')).text(), /6\s*\/\s*500/);
     await capture('apply');
     // Keep form submission at the end of its own session: DevTools cannot
     // reliably reLaunch another page immediately after a submitted form.

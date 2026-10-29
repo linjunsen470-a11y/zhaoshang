@@ -5,6 +5,52 @@ import { createStorage, loadMiniProgramModule } from '../helpers/load-cjs.mjs';
 
 const load = (file, options = {}) => loadMiniProgramModule(path.resolve('mp', file), options);
 
+test('removing a favorite restarts pagination and returning from detail refreshes the count', async () => {
+  const storage = createStorage({ favorites: ['first', 'second', 'third'] });
+  const calls = [];
+  let definition;
+  load('pages/list/list.js', {
+    globals: { Page: value => { definition = value; }, wx: { ...storage, showToast() {} } },
+    stubs: { '../../services/api.js': { getProjectPage: async params => {
+      calls.push(params);
+      const ids = params.ids.split(',').filter(Boolean);
+      return { docs: ids.map(id => ({ id })), totalDocs: ids.length, page: 1, hasNextPage: false };
+    } } }
+  });
+  const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } };
+  page.setFilters({ favs: true });
+  Object.assign(page.data, { page: 2, projectList: [{ id: 'first' }, { id: 'second' }], totalDocs: 3 });
+  await page.onToggleFavInList({ currentTarget: { dataset: { id: 'first' } } });
+  assert.equal(calls[0].page, 1);
+  assert.equal(page.data.totalDocs, 2);
+  assert.equal(page.data.projectList[1].id, 'third');
+  storage.setStorageSync('favorites', ['third']);
+  page.onShow();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(page.data.totalDocs, 1);
+  assert.equal(page.data.projectList[0].id, 'third');
+});
+
+test('equipment copy identifies the selected listing without including submitter contact data', () => {
+  let definition;
+  const copied = [];
+  load('pages/equipment-list/equipment-list.js', {
+    globals: { Page: value => { definition = value; }, wx: { setClipboardData: value => copied.push(value.data) } },
+    stubs: { '../../services/api.js': {} }
+  });
+  const page = { ...definition, data: { equipmentList: [
+    { id: 1, businessType: '其他设备' },
+    { id: 2, tagText: '出售', businessType: '展示柜', budgetRange: '1200元', phone: '13812345678', name: '隐私姓名', equipmentDetails: { specText: '双门' } }
+  ] } };
+  page.onCopyEquipment({ currentTarget: { dataset: { id: '2' } } });
+  assert.match(copied[0], /展示柜/);
+  assert.match(copied[0], /信息编号：2/);
+  assert.match(copied[0], /1200元/);
+  assert.doesNotMatch(copied[0], /其他设备|13812345678|隐私姓名|undefined/);
+  page.onCopyEquipment({ currentTarget: { dataset: { id: 'missing' } } });
+  assert.equal(copied.length, 1);
+});
+
 test('public property copy removes internal visual labels', () => {
   const { projectText } = load('utils/publicText.js');
   assert.equal(projectText('【演示】园区食堂'), '园区食堂');

@@ -1,6 +1,15 @@
+<import src="../../templates/loading.wxml" />
 <import src="../../templates/property.wxml" />
 <view class="container">
-  <view class="sticky-header">
+  <view class="collection-header" wx:if="{{isFavoritesOnly || isRecentOnly}}">
+    <view class="collection-title">{{isRecentOnly ? '最近浏览' : '我的收藏'}}</view>
+    <view class="collection-desc">{{isRecentOnly ? '接着比较看过的空间' : '在这里继续比较心仪的空间'}}</view>
+    <view class="collection-actions">
+      <button class="btn btn-secondary" bindtap="onBackToMy">返回我的</button>
+      <button class="btn btn-outline" bindtap="onBrowseAll">查看全部房源</button>
+    </view>
+  </view>
+  <view class="sticky-header" wx:else>
     <view class="search-box">
       <image src="/images/icons/search.png" class="search-icon" />
       <input aria-label="搜索区域、场所或经营品类" placeholder="搜区域、场所或经营品类" value="{{keyword}}" bindinput="onSearchInput" bindconfirm="onSearch" confirm-type="search" />
@@ -33,12 +42,7 @@
     <view class="fav-local-tip" wx:if="{{isFavoritesOnly || isRecentOnly}}">{{isRecentOnly ? '按最近浏览排序，最多保留 20 处' : '收藏仅保存在本机，换设备后需重新收藏'}}</view>
     <view class="listing-note" wx:else>默认展示开放中与即将开放的房源，费用及条件请向顾问确认。</view>
     <view class="loading-state" wx:if="{{loading}}">
-      <view class="skeleton skeleton-card">
-      </view>
-      <view class="skeleton skeleton-card">
-      </view>
-      <view class="skeleton skeleton-card">
-      </view>
+      <template is="loading-cards" data="{{kind: 'property'}}" />
     </view>
     <view class="state-box error-state" wx:elif="{{loadError}}">
       <text class="state-title">暂时无法加载房源</text>

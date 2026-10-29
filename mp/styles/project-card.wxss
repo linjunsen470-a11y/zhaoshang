@@ -38,7 +38,10 @@
 .property-content {
   flex: 1;
   min-width: 0;
-  padding-right: 56rpx;
+}
+
+.property-kind, .property-title {
+  padding-right: calc(44px + 8rpx);
 }
 
 .property-kind {
@@ -100,7 +103,7 @@
 .property-favorite {
   position: absolute;
   top: 16rpx;
-  right: -12rpx;
+  right: 0;
   display: flex;
   align-items: center;
   justify-content: center;

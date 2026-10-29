@@ -42,6 +42,11 @@
     </view>
     <view class="detail-anchors"><button wx:for="{{anchors}}" wx:key="id" data-id="{{item.id}}" bindtap="onAnchorTap">{{item.label}}</button></view>
     <view class="detail-body">
+      <view class="availability-notice" wx:if="{{project.status === 'full'}}">
+        <view class="availability-title">该房源已租满 / 已转出</view>
+        <view>当前不再接受该房源的咨询，可继续查看同类空间。</view>
+        <button class="text-link" bindtap="onFindSimilar">查看同类可咨询房源 <text class="ui-chevron" aria-hidden="true"></text></button>
+      </view>
       <view class="title-tools">
         <view class="kicker e2e-project-status" data-test="project-status">
           <text>{{project.sceneLabel}} · {{project.kindLabel}}</text>
@@ -192,6 +197,10 @@
       <button class="icon-action" bindtap="onCallAdvisor">
         <image class="action-glyph" src="/images/icons/phone.png" />
         <text>电话</text>
+      </button>
+      <button class="icon-action" open-type="share" aria-label="分享房源给合伙人">
+        <image class="action-glyph" src="/images/icons/share.png" />
+        <text>分享</text>
       </button>
       <button class="btn btn-primary action-btn" wx:if="{{project.status === 'full'}}" bindtap="onFindSimilar">找相似房源</button>
       <button class="btn btn-primary action-btn e2e-consult-button" data-test="consult-project" wx:else bindtap="onGoToConsult">{{project.listingKind === 'project' ? '咨询该项目' : '咨询该铺位'}}</button>

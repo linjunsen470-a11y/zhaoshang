@@ -192,10 +192,6 @@
   padding: 32rpx 0;
 }
 
-.skeleton-card {
-  height: 232rpx;
-  margin: 24rpx 0;
-}
 
 .filter-drawer-container {
   position: fixed;
@@ -289,3 +285,9 @@
 
 .filter-sheet { animation: sheet-in 200ms ease-out; }
 .drawer-backdrop { animation: fade-in 200ms ease-out; }
+
+.collection-header { padding: 32rpx; background: var(--pine-soft); }
+.collection-title { font-size: 36rpx; font-weight: 600; }
+.collection-desc { margin-top: 8rpx; color: var(--muted); font-size: 26rpx; }
+.collection-actions { display: flex; gap: 16rpx; margin-top: 24rpx; }
+.collection-actions .btn { flex: 1; padding: 16rpx; font-size: 26rpx; }

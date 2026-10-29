@@ -1,3 +1,4 @@
+<import src="../../templates/loading.wxml" />
 <view class="container">
   <view class="leads-header" wx:if="{{phone}}">
     <view class="phone-tip">
@@ -8,10 +9,7 @@
   <view class="top-notice-bar" wx:if="{{phone && leadsList.length > 0}}">后续沟通以微信或电话为准，请保持联系方式畅通。</view>
   <view class="leads-body">
     <view class="loading-state" wx:if="{{loading}}">
-      <view class="skeleton">
-      </view>
-      <view class="skeleton">
-      </view>
+      <template is="loading-cards" data="{{kind: 'fields'}}" />
     </view>
     <view class="state-box" wx:elif="{{loadError}}">
       <text class="state-title">咨询记录加载失败</text>

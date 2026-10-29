@@ -35,7 +35,7 @@ Page({
       this.loadProjects();
       return;
     }
-    if (this.data.isRecentOnly) { this.loadProjects(); return; }
+    if (this.data.isRecentOnly || this.data.isFavoritesOnly) { this.loadProjects(); return; }
     const favorites = wx.getStorageSync('favorites') || [];
     this.setData({ projectList: this.data.projectList.map(p => ({ ...p, isFav: favorites.includes(p.id) })).filter(p => !this.data.isFavoritesOnly || p.isFav) });
   },
@@ -172,6 +172,7 @@ Page({
   },
   onResetFilters() { this.setFilters({ favs: this.data.isFavoritesOnly, recent: this.data.isRecentOnly }); this.loadProjects(); },
   onBrowseAll() { this.setFilters({}); wx.setNavigationBarTitle({ title: '找饭堂与商铺' }); this.loadProjects(); },
+  onBackToMy() { wx.switchTab({ url: '/pages/my/my' }); },
   onCoverError(e) {
     const index = this.data.projectList.findIndex(p => String(p.id) === String(e.currentTarget.dataset.id));
     if (index >= 0 && !this.data.projectList[index].coverImageError) this.setData({ ['projectList[' + index + '].coverImageError']: true });
@@ -193,6 +194,8 @@ Page({
   onToggleFavInList(e) {
     const id = e.currentTarget.dataset.id;
     const isFav = toggleFavorite(id);
-    this.setData({ totalDocs: this.data.isFavoritesOnly && !isFav ? Math.max(0, this.data.totalDocs - 1) : this.data.totalDocs, projectList: this.data.projectList.map(p => p.id === id ? { ...p, isFav } : p).filter(p => !this.data.isFavoritesOnly || p.isFav) });
+    // Removing an item shifts server pagination; restart to avoid skipping the next item.
+    if (this.data.isFavoritesOnly) return this.loadProjects();
+    this.setData({ projectList: this.data.projectList.map(p => String(p.id) === String(id) ? { ...p, isFav } : p) });
   }
 });

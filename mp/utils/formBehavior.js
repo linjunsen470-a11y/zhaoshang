@@ -1,5 +1,6 @@
 const api = require('../services/api.js');
 const upload = require('../services/upload.js');
+const { districts } = require('../config/commercial.js');
 const { authorizeWechatPhone, rememberContact } = require('./wechatContact.js');
 const { normalizeAttachments, previewUrls } = require('./attachment.js');
 const {
@@ -15,6 +16,8 @@ const {
 
 module.exports = Behavior({
   data: {
+    regionOptions: districts,
+    maxRemarkLength: config.MAX_REMARK_LENGTH,
     name: '',
     phone: '',
     phoneAuthorizing: false,
@@ -31,6 +34,13 @@ module.exports = Behavior({
     formLoadError: false
   },
   methods: {
+    onChooseRegion(e) {
+      const region = this.data.regionOptions[Number(e.detail.value)];
+      if (!region) return;
+      this.clearFieldError('regionPreference');
+      this.setData({ regionPreference: region });
+    },
+
     initCommonData(options, onLeadLoaded) {
       this.setData({ privacyAccepted: hasPrivacyConsent() });
       const userInfo = wx.getStorageSync('userInfo') || (getApp().globalData && getApp().globalData.userInfo);

@@ -1,13 +1,11 @@
+<import src="../../templates/loading.wxml" />
 <view class="container form-page">
   <view class="form-header">
     <view class="form-title">{{isEditMode ? '修改咨询信息' : (projectTitle ? '咨询该项目或铺位' : '提交找铺需求')}}</view>
     <view class="form-desc" wx:if="{{!projectTitle}}">填写你的经营品类、预算和区域偏好，招商顾问会协助匹配合适铺位。</view>
   </view>
   <view class="form-loading" wx:if="{{formLoading || projectLoading}}">
-    <view class="skeleton">
-    </view>
-    <view class="skeleton">
-    </view>
+    <template is="loading-cards" data="{{kind: 'fields'}}" />
   </view>
   <view class="state-box" wx:elif="{{formLoadError || projectLoadError}}">
     <text class="state-title">咨询信息加载失败</text>
@@ -50,6 +48,9 @@
         <view id="field-regionPreference" class="form-item">
           <label for="input-regionPreference" class="item-label">意向区域</label>
           <input aria-label="意向区域" id="input-regionPreference" focus="{{focusField === 'regionPreference'}}" class="item-input e2e-region-input" data-test="lead-region" type="text" maxlength="50" placeholder="例如：天河、番禺、增城" bindinput="onInputRegion" value="{{regionPreference}}" />
+          <picker mode="selector" range="{{regionOptions}}" bindchange="onChooseRegion" aria-label="快捷选择区域">
+            <view class="region-shortcut">快捷选择区域<text class="ui-chevron ui-chevron-down" aria-hidden="true"></text></view>
+          </picker>
           <view class="field-error" wx:if="{{fieldErrors.regionPreference}}">{{fieldErrors.regionPreference}}</view>
         </view>
         <view class="form-item">
@@ -102,7 +103,8 @@
       <view class="form-card">
         <view class="form-item">
           <view class="item-label">补充说明</view>
-          <textarea aria-label="补充说明" class="item-textarea e2e-remark-input" data-test="lead-remark-input" maxlength="500" placeholder="可补充面积、月租承受范围、排烟要求及开业时间" bindinput="onInputRemark" value="{{remark}}" />
+          <textarea aria-label="补充说明" class="item-textarea e2e-remark-input" data-test="lead-remark-input" maxlength="{{maxRemarkLength}}" placeholder="可补充面积、月租承受范围、排烟要求及开业时间" bindinput="onInputRemark" value="{{remark}}" />
+          <view class="character-count">{{remark.length}} / {{maxRemarkLength}}</view>
         </view>
         <view class="form-item border-none">
           <view class="item-label">

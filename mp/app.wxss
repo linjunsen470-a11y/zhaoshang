@@ -295,3 +295,13 @@ button::after {
 @media (prefers-reduced-motion: reduce) {
   .skeleton, .services-sheet, .services-backdrop, .filter-sheet, .drawer-backdrop, .edit-modal-box { animation: none !important; transition: none !important; }
 }
+
+/* Structured placeholders share the same animated blocks as the home page. */
+.loading-placeholder { padding: 24rpx; margin-bottom: 24rpx; background: var(--paper); border-radius: 16rpx; }
+.loading-property { display: flex; gap: 24rpx; padding: 24rpx 0; }
+.loading-thumb { flex: 0 0 200rpx; height: 200rpx; }
+.loading-copy { flex: 1; min-width: 0; }
+.loading-line { height: 28rpx; margin-bottom: 24rpx; }
+.loading-line:last-child { margin-bottom: 0; }
+.loading-line-short { width: 40%; }
+.loading-line-medium { width: 72%; }

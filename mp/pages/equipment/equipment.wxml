@@ -1,13 +1,11 @@
+<import src="../../templates/loading.wxml" />
 <view class="container form-page e2e-equipment-form" data-test="equipment-form">
   <view class="form-header">
     <view class="form-title">{{isEditMode ? '修改供需信息' : '设备供需登记'}}</view>
     <view class="form-desc">提交餐饮设备出售、求购或回收需求；资料审核通过后可公开展示，并由运营人员协助沟通。</view>
   </view>
   <view class="form-loading" wx:if="{{formLoading || projectLoading}}">
-    <view class="skeleton">
-    </view>
-    <view class="skeleton">
-    </view>
+    <template is="loading-cards" data="{{kind: 'fields'}}" />
   </view>
   <view class="state-box" wx:elif="{{formLoadError || projectLoadError}}">
     <text class="state-title">咨询信息加载失败</text>
@@ -46,6 +44,9 @@
         <view id="field-regionPreference" class="form-item">
           <label for="input-regionPreference" class="item-label">所在区域</label>
           <input aria-label="意向区域" id="input-regionPreference" focus="{{focusField === 'regionPreference'}}" class="item-input" type="text" maxlength="50" placeholder="例如：广州大学城、天河" bindinput="onInputRegion" value="{{regionPreference}}" />
+          <picker mode="selector" range="{{regionOptions}}" bindchange="onChooseRegion" aria-label="快捷选择区域">
+            <view class="region-shortcut">快捷选择区域<text class="ui-chevron ui-chevron-down" aria-hidden="true"></text></view>
+          </picker>
           <view class="field-error" wx:if="{{fieldErrors.regionPreference}}">{{fieldErrors.regionPreference}}</view>
         </view>
       </view>
@@ -79,7 +80,8 @@
       <view class="form-card">
         <view class="form-item">
           <view class="item-label">补充说明</view>
-          <textarea aria-label="补充说明" class="item-textarea" maxlength="500" placeholder="例如：可自提、需发票、希望本周成交" bindinput="onInputRemark" value="{{remark}}" />
+          <textarea aria-label="补充说明" class="item-textarea" maxlength="{{maxRemarkLength}}" placeholder="例如：可自提、需发票、希望本周成交" bindinput="onInputRemark" value="{{remark}}" />
+          <view class="character-count">{{remark.length}} / {{maxRemarkLength}}</view>
         </view>
         <view class="form-item border-none">
           <view class="item-label">

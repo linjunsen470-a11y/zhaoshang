@@ -60,10 +60,17 @@
 
 .spec-grid {
   gap: 12rpx;
+  padding: 20rpx;
+  background: var(--wash);
+  border-radius: 12rpx;
 }
 
 .spec-cell {
-  width: 100%;
+  width: calc((100% - 12rpx) / 2);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow-wrap: anywhere;
   font-size: 26rpx;
 }
 
@@ -169,11 +176,6 @@
   margin-top: 16rpx;
 }
 
-.loading-state .skeleton {
-  height: 320rpx;
-  background: #fff;
-  margin-bottom: 24rpx;
-}
 
 .lead-progress { display: flex; gap: 12rpx; margin-top: 28rpx; }
 .progress-step { flex: 1; font-size: 22rpx; color: var(--muted); }

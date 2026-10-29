@@ -379,7 +379,7 @@ function localFallback(urlPath, method, requestData = {}) {
 module.exports = {
   getWechatPhone: code => request({ url: '/auth/wechat-phone', method: 'POST', data: { code }, auth: true, forceRemote: true }),
   getProjects: params => request({ url: '/projects', data: params }).then(ensureProjectList),
-  getProjectPage: params => request({ url: '/projects', data: { ...params, pagination: 'true' } }).then(data => Array.isArray(data) ? { docs: data, page: 1, totalDocs: data.length, totalPages: 1, hasNextPage: false } : data),
+  getProjectPage: params => request({ url: '/projects', data: { ...params, pagination: 'true', view: 'card' } }).then(data => Array.isArray(data) ? { docs: data, page: 1, totalDocs: data.length, totalPages: 1, hasNextPage: false } : data),
   getProjectDetail: id => request({ url: `/projects/${id}` }),
   getLeads: () => request({ url: '/leads', auth: true }),
   getLead: id => request({ url: `/leads/${id}`, auth: true }),

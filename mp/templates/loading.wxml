@@ -1,0 +1,13 @@
+<template name="loading-cards">
+  <view aria-label="正在加载，请稍候" role="status">
+    <view class="loading-placeholder {{kind === 'property' ? 'loading-property' : ''}}" wx:for="{{[1, 2]}}" wx:key="*this" aria-hidden="true">
+      <view wx:if="{{kind === 'property'}}" class="skeleton loading-thumb"></view>
+      <view class="loading-copy">
+        <view class="skeleton loading-line loading-line-short"></view>
+        <view class="skeleton loading-line"></view>
+        <view class="skeleton loading-line loading-line-medium"></view>
+        <view class="skeleton loading-line loading-line-short"></view>
+      </view>
+    </view>
+  </view>
+</template>
