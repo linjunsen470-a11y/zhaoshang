@@ -2,7 +2,9 @@
 
 面向学校、工业园区和写字楼等封闭或半封闭物业的饭堂档口、配套商铺招租、转让、咨询收集和设备供需的小程序与管理后台。
 
-2026-10-16 demo 审计与验证限制见 [预上线审计](docs/demo-prelaunch-audit-2026-10-16.md)。本地演示默认使用小程序 Storage；体验版/正式版仍需补齐发布配置与真机验收。
+当前资料入口见 [文档索引](docs/README.md)。本地演示默认使用小程序 Storage；体验版/正式版仍需补齐发布配置与真机验收。
+
+2026-10-29 房源同步修复已写入代码，但数据库备份与 Schema 迁移尚未完成，腾讯视图筛选也未修复。升级运行前须先完成迁移，具体状态见 [同步修复记录](docs/tencent-sync-fixes-2026-10-29.md)，不能将构建通过视为已上线。
 
 腾讯文档联调：运行 `pnpm demo:connected`，进入 `/admin/workspace/sync`。支持房源导入、客户咨询定期回写和处理状态回读；在小程序“我的”可切换“连接本地后台”。连接配置、实际演示与限制见 [腾讯文档同步 Demo 操作说明](docs/腾讯文档同步-demo操作说明.md)。
 
@@ -17,7 +19,8 @@ mp/                    微信小程序客户端
 docs/                  产品、上线和体验文档
 server.js              仅供小程序联调的轻量 Mock API
 data.json              Mock API 数据
-docker-compose.yml     Payload + PostgreSQL 容器编排
+website/               独立静态公司网站（需单独托管）
+docker-compose.yml     Payload 容器编排，连接外部 PostgreSQL
 ```
 
 Payload 是唯一管理后台。旧静态 Mock 后台已删除，`server.js` 不提供 `/admin` 页面。
@@ -169,9 +172,11 @@ pnpm --dir backend migrate:payload-auth -- --apply
 
 ## 分支约定
 
-保留 `main`（已验证的 demo 基线）和 `codex/demo-prelaunch`（本轮集成与后续小修）；新功能按需临时开分支，合入后清理。旧 CMS、后台路由和小程序开发分支的提交应先确认已包含在 `main`，再删除分支引用。
+新工作分支使用 `codex/` 前缀；分支名称不代表已上线或已验收。删除旧分支前须确认提交已合入，并保留必要的历史引用。
 
 ## 文件维护
+
+2026-10-29 清理旧隔离构建目录 `.next-audit-build/`、`.next-scene-test/`、`.next-sync-build/`，统一忽略 `.next-*/`。保留正在使用的 `.next/`、本机配置、数据库备份、同步状态和上传素材。同名的单元测试与微信 E2E 测试职责不同，均保留；历史文档按 [文档索引](docs/README.md) 区分用途。
 
 2026-10-16 清理了无引用的旧组件别名、重复 Schema 入口、5 张 Next 示例图、4 个闲置图标和 2 张旧演示 PNG。演示数据直接使用 `mp/images/demo/` 的四类摄影示意图；已有本地数据的旧图片地址仍会自动迁移。Schema 维护统一使用 `pnpm --dir backend schema:push`。
 
