@@ -11,6 +11,7 @@ export type SyncConfig = {
   leadSheetId: string
   sourceKey: string
   intervalMinutes: number
+  sourceRevision?: string
   enabled: boolean
   importProperties: boolean
   exportLeads: boolean
@@ -37,6 +38,7 @@ export async function writeSyncFile(name: string, data: unknown) {
 export async function getSyncConfig(): Promise<SyncConfig> {
   const stored = await readSyncFile<Partial<SyncConfig>>('config.json', {})
   return {
+    sourceRevision: stored.sourceRevision || 'initial',
     endpoint: process.env.TENCENT_DOCS_MCP_URL || stored.endpoint || '',
     token: process.env.TENCENT_DOCS_MCP_TOKEN || stored.token || '',
     transport: stored.transport || 'http',
@@ -44,7 +46,7 @@ export async function getSyncConfig(): Promise<SyncConfig> {
     propertySheetId: stored.propertySheetId || 'tbIrk4',
     leadSheetId: stored.leadSheetId || '8fAWWA',
     sourceKey: stored.sourceKey || 'zhaoshang-demo',
-    intervalMinutes: stored.intervalMinutes || 15,
+    intervalMinutes: stored.intervalMinutes || 30,
     enabled: stored.enabled ?? false,
     importProperties: stored.importProperties ?? true,
     exportLeads: stored.exportLeads ?? true,
@@ -86,6 +88,7 @@ export async function saveSyncConfig(input: Record<string, unknown>) {
     next.intervalMinutes = minutes
   }
   if (next.enabled && !next.endpoint) throw new Error('先填写 MCP 连接地址，再启用定时同步')
+  if (next.fileId !== current.fileId || next.propertySheetId !== current.propertySheetId) next.sourceRevision = randomUUID()
   await writeSyncFile('config.json', next)
   return publicSyncConfig(next)
 }

@@ -1,3 +1,4 @@
+import { assertSourceWrite, isTencentSource, SOURCE_FIELDS } from '../lib/tencent/propertyPolicy'
 import { commercialId, commercialScene, publicCommercialWhere, validateCommercial } from '../lib/commercial'
 import type { CollectionConfig } from 'payload'
 import { canManageProjects, isAdminUser, isStaffUser } from './shared/access'
@@ -66,6 +67,7 @@ export const Projects: CollectionConfig = {
     }],
     beforeChange: [
       async ({ data, originalDoc, operation, req }) => {
+        assertSourceWrite(data, originalDoc, req.context?.tencentSync === true || req.context?.commercialMigration === true)
         data.legacyUnclassified = req.context?.commercialMigration ? Boolean(data.legacyUnclassified) : Boolean(originalDoc?.legacyUnclassified)
         data.listingKind = data.listingKind || originalDoc?.listingKind || 'unit'
         if (data.businessScene === undefined && !originalDoc?.businessScene) {
@@ -77,7 +79,8 @@ export const Projects: CollectionConfig = {
         }
         const merged = { ...(originalDoc || {}), ...(data || {}) } as Record<string, unknown>
         const problem = validateCommercial(merged)
-        if (problem) throw new Error(problem)
+        const stopping = req.context?.tencentSync === true && originalDoc && data.status === 'offline' && Object.keys(data).every(key => ['status', 'tencentSync', 'legacyUnclassified', 'listingKind'].includes(key))
+        if (problem && !stopping) throw new Error(problem)
         const parentId = commercialId(merged.parentProject)
         if (parentId) {
           if (String(parentId) === String(originalDoc?.id)) throw new Error('不能关联自身')
@@ -116,6 +119,11 @@ export const Projects: CollectionConfig = {
     ],
   },
   fields: [
+    { name: 'emergencyHidden', type: 'checkbox', defaultValue: false, label: '紧急停止公开', admin: { position: 'sidebar', description: '腾讯文档同步不会解除；取消后按最新有效资料恢复。' }, access: { read: ({ req }) => isStaffUser(req.user) } },
+    { name: 'tencentSync', type: 'json', admin: { hidden: true }, access: { read: ({ req }) => isStaffUser(req.user) } },
+    { name: 'sourceRemark', type: 'textarea', label: '腾讯文档原备注', admin: { readOnly: true }, access: { read: ({ req }) => isStaffUser(req.user) } },
+    { name: 'sourcePropertyType', type: 'text', label: '来源空间类型', admin: { readOnly: true } },
+    { name: 'sourceBusinessText', type: 'text', label: '来源业态描述', admin: { readOnly: true } },
     { name: 'legacyUnclassified', access: { read: ({ req: { user } }) => isStaffUser(user) }, type: 'checkbox', defaultValue: false, admin: { hidden: true, readOnly: true } },
     {
       name: 'seedKey', access: { read: ({ req: { user } }) => isStaffUser(user) },
@@ -338,3 +346,14 @@ export const Projects: CollectionConfig = {
   ],
   timestamps: true,
 }
+
+// Field update access makes native Payload editors read-only for source-owned data.
+function protectSourceFields(fields: CollectionConfig['fields']) {
+  for (const field of fields) {
+    if ('fields' in field) protectSourceFields(field.fields)
+    if ('name' in field && field.type !== 'ui' && SOURCE_FIELDS.includes(field.name)) {
+      field.access = { ...field.access, update: ({ doc, req }) => req.context?.tencentSync === true || !isTencentSource(doc) }
+    }
+  }
+}
+protectSourceFields(Projects.fields)

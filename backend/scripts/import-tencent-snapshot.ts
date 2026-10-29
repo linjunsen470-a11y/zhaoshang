@@ -19,6 +19,7 @@ async function main() {
   if (!Array.isArray(snapshot.records) || snapshot.has_more) throw new Error('A complete records snapshot is required')
   const docs: DocsClient = {
     async call(method) {
+      if (method === 'smartsheet.list_views') return { views: [{ view_id: 'snapshot', view_name: '全部房源', config: JSON.stringify({ filterSpec: { '2': [] } }) }] }
       if (method !== 'smartsheet.list_records') throw new Error('Snapshot mode cannot write to Tencent Docs')
       return snapshot
     }, async close() {},

@@ -164,3 +164,87 @@ test('real MCP HTTP transport initializes and calls the service with server-side
     assert.deepEqual(await listRecords(client, 'file', 'leads'), [])
   } finally { await client?.close(); server.closeAllConnections(); await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())) }
 })
+import { nextMissing, assertSourceWrite } from '../lib/tencent/propertyPolicy'
+import { commercialIsPublic } from '../lib/commercial'
+
+test('source ownership rejects edits and keeps operational controls editable', () => {
+  const original = { seedKey: 'tencent:f:s:r', title: '原房源' }
+  assert.throws(() => assertSourceWrite({ title: '后台改写' }, original, false), /腾讯文档/)
+  assert.doesNotThrow(() => assertSourceWrite({ sort: 3, emergencyHidden: true, remark: '后台备注' }, original, false))
+  assert.doesNotThrow(() => assertSourceWrite({ title: '文档改写' }, original, true))
+  assert.throws(() => assertSourceWrite({ seedKey: '' }, original, false), /来源标识/)
+})
+
+test('deletion needs distinct complete scans at least fifteen minutes apart', () => {
+  const first = nextMissing({}, 'scope', '2026-10-29T00:00:00Z')
+  assert.equal(first.removed, false)
+  assert.equal(nextMissing(first, 'scope', '2026-10-29T00:14:59Z').removed, false)
+  assert.equal(nextMissing(first, 'scope', '2026-10-29T00:15:00Z').removed, true)
+  assert.equal(nextMissing(first, 'different-scope', '2026-10-29T00:30:00Z').removed, false)
+})
+
+test('emergency stop hides both project and children', () => {
+  const parent = { id: 1, listingKind: 'project', businessScene: 'campus', status: 'online', emergencyHidden: true }
+  assert.equal(commercialIsPublic(parent), false)
+  assert.equal(commercialIsPublic({ businessScene: 'campus', status: 'online', parentProject: parent }), false)
+})
+
+test('incomplete and duplicate record pages cannot confirm deletion', async () => {
+  const client = (page: Record<string, unknown>): DocsClient => ({ async call() { return page }, async close() {} })
+  await assert.rejects(() => listRecords(client({ records: [], total: 2, has_more: false }), 'f', 's'), /总数/)
+  await assert.rejects(() => listRecords(client({ records: [{ record_id: 'a' }, { record_id: 'a' }], has_more: false }), 'f', 's'), /重复/)
+  await assert.rejects(() => listRecords(client({ records: [] }), 'f', 's'), /完整性/)
+})
+
+test('actual property sync stops malformed rows and persists missing confirmations', async t => {
+  await isolated(t)
+  const row: Record<string, unknown> = { id: 9, seedKey: 'tencent:file:properties:bad', status: 'online', title: '保留后台记录', remark: '运营备注', sort: 7, emergencyHidden: true }
+  let remote: SheetRecord[] = [{ record_id: 'bad', field_values: [textCell('招租状态', '暂停招租')] }]
+  const payload = {
+    async find(args: { where: Record<string, unknown> }) {
+      return { docs: args.where ? [structuredClone(row)] : [], hasNextPage: false }
+    },
+    async update(args: { data: Record<string, unknown>; context?: Record<string, unknown> }) {
+      assert.equal(args.context?.tencentSync, true)
+      Object.assign(row, args.data)
+      return row
+    },
+  } as unknown as Payload
+  const docs: DocsClient = {
+    async call(method) {
+      if (method === 'smartsheet.list_views') return { views: [{ view_name: '全部房源', view_id: 'all', config: '{"filterSpec":{"2":[]}}' }] }
+      if (method === 'smartsheet.list_records') return { records: remote, total: remote.length, has_more: false }
+      throw new Error('Unexpected call')
+    }, async close() {},
+  }
+  const settings = { ...config, importProperties: true, exportLeads: false }
+  assert.equal((await runTencentSync(payload, 'test', docs, settings)).errors.length, 0)
+  assert.equal(row.status, 'offline')
+  assert.equal(row.remark, '运营备注')
+  assert.equal(row.emergencyHidden, true)
+  remote = []
+  row.status = 'online'
+  await runTencentSync(payload, 'test', docs, settings)
+  assert.equal(row.status, 'online')
+  await runTencentSync(payload, 'test', docs, settings)
+  assert.equal(row.status, 'online')
+  ;(row.tencentSync as { firstMissingAt: string }).firstMissingAt = new Date(Date.now() - 16 * 60_000).toISOString()
+  const result = await runTencentSync(payload, 'test', docs, settings)
+  assert.equal(result.properties.removed, 1)
+  assert.equal(row.status, 'offline')
+  assert.equal(row.title, '保留后台记录')
+})
+
+test('unknown types and cross-city districts are rejected instead of silently defaulting', () => {
+  const source: SheetRecord = { record_id: 'p', field_values: [textCell('城市', '佛山市'), textCell('行政区', '顺德区'), textCell('场景', '学校'), textCell('学校名称', '某学校'), textCell('校区/位置', 'A1'), textCell('招租状态', '招租中'), textCell('商铺类型', '独立商铺'), textCell('招租业态', '零售、烘焙'), { field: '商铺图片', image_value: { items: [{ image_id: '1' }] } }] }
+  const mapped = mapProperty(source, false)
+  assert.equal(mapped.data.district, '顺德')
+  assert.equal(mapped.data.projectType, '校内铺位')
+  assert.deepEqual(mapped.data.suitableBusiness, ['烘焙甜品'])
+  assert.equal(mapped.data.sourceBusinessText, '零售、烘焙')
+  const changed = (field: string, value: string) => ({ ...source, field_values: source.field_values!.map(cell => cell.field === field ? textCell(field, value) : cell) })
+  assert.throws(() => mapProperty(changed('行政区', '天河区')), /行政区/)
+  assert.throws(() => mapProperty(changed('商铺类型', '未知')), /商铺类型/)
+  assert.throws(() => mapProperty(changed('招租业态', '未知')), /招租业态/)
+  assert.throws(() => mapProperty(changed('场景', ''), false), /场景/)
+})

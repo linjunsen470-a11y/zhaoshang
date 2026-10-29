@@ -52,6 +52,7 @@ export function ProjectEditHints() {
 
   return (
     <div className="cms-editor-panel">
+      {String(values.seedKey || '').startsWith('tencent:') ? <section><h3>腾讯文档同步房源</h3><p>业务资料请在腾讯文档修改。后台保留推荐、排序、内部备注及紧急停止公开。</p><a href="https://docs.qq.com/desktop/" target="_blank" rel="noreferrer">打开腾讯文档</a></section> : null}
       <section>
         <h3>填写与保存</h3>
         <p>填完必填资料后，保留草稿或选择下方的公开状态，再点击页面的保存按钮。</p>

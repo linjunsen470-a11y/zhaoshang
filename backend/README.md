@@ -2,7 +2,9 @@
 
 Payload CMS 3 + Next.js 16 + PostgreSQL backend for campus and commercial listings.
 
-当前 demo 状态与验证限制见 [2026-10-16 审计](../docs/demo-prelaunch-audit-2026-10-16.md)。命令均在仓库根目录执行。
+当前文档入口见 [文档索引](../docs/README.md)。命令均在仓库根目录执行。
+
+2026-10-29 同步修复新增紧急停显、来源元数据和地区枚举。数据库迁移尚未执行，升级前先备份并显式更新 Schema；腾讯视图筛选仍待完成。详见 [同步修复与迁移记录](../docs/tencent-sync-fixes-2026-10-29.md)。
 
 ## Admin
 
@@ -87,7 +89,7 @@ The migrate command creates timestamped backup tables and maps legacy states. Pr
 - Public equipment images are served only when the parent equipment inquiry has been reviewed and published.
 - Transfer inquiry attachments may prefill a draft, but public properties must replace them with staff-reviewed media before publishing.
 - Public submissions and uploads use lightweight per-IP/per-openid rate limits; use a shared limiter if the service scales to multiple instances.
-- Public property reads only expose `online`, `coming`, and `full` records; child units also require a public parent project.
+- Public property reads only expose `online`, `coming`, and `full` records without emergency hiding; child units also require a public parent project without emergency hiding.
 - Admin APIs use the Payload session through `getAuthenticatedStaff()`.
 - Only `admin` can manage accounts or permanently delete content.
 - `PAYLOAD_SECRET` is mandatory in production; production WeChat auth must use `WECHAT_AUTH_MODE=wechat`.

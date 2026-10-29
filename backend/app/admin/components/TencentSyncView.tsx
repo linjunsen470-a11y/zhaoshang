@@ -5,7 +5,7 @@ import { useAuth } from '@payloadcms/ui'
 import { useCallback, useEffect, useState } from 'react'
 
 type Config = { connected: boolean; endpointHost: string; hasToken: boolean; transport: string; fileId: string; propertySheetId: string; leadSheetId: string; sourceKey: string; enabled: boolean; importProperties: boolean; exportLeads: boolean; intervalMinutes: number }
-type Report = { startedAt: string; finishedAt?: string; trigger: string; properties: { created: number; updated: number; unchanged: number }; leads: { created: number; updated: number; withdrawn: number; followups: number; unchanged: number }; errors: { area: string; recordId?: string; message: string }[] }
+type Report = { startedAt: string; finishedAt?: string; trigger: string; properties: { created: number; updated: number; unchanged: number; stopped?: number; missing?: number; removed?: number; restored?: number }; leads: { created: number; updated: number; withdrawn: number; followups: number; unchanged: number }; errors: { area: string; recordId?: string; message: string }[] }
 type Data = { config: Config; lastRun: Report | null; workerRunning: boolean; counts: { properties: number; leads: number } }
 
 async function readResponse(response: Response) {
@@ -90,7 +90,7 @@ export default function TencentSyncView() {
           <button className="cms-button" disabled={Boolean(busy) || !data.config.connected} onClick={() => void act('test')}>{busy === 'test' ? '检测中…' : '检测已保存的连接'}</button>
         </section>
         <section className="cms-panel cms-sync-report" aria-labelledby="report-heading"><h2 id="report-heading">最近一次处理结果</h2>
-          {report ? <><p className="cms-help">{new Date(report.startedAt).toLocaleString('zh-CN')} · {report.trigger === 'scheduled' ? '定时同步' : report.trigger === 'assistant-demo-import' ? '聊天连接导入演示' : report.trigger === 'assistant-demo-followup' ? '聊天连接跟进回读演示' : '手动同步'}</p><p>房源：新增 {report.properties.created} · 更新 {report.properties.updated} · 无变化 {report.properties.unchanged}</p><p>客户：新增 {report.leads.created} · 更新 {report.leads.updated} · 跟进回读 {report.leads.followups} · 标记撤回 {report.leads.withdrawn}</p>{report.errors.length ? <ul>{report.errors.map((item, index) => <li key={`${item.area}-${item.recordId}-${index}`}>{item.area} {item.recordId}：{item.message}</li>)}</ul> : <p>本次处理没有失败项。</p>}</> : <p>尚未执行同步。配置并检测连接后，点击“立即同步”。</p>}
+          {report ? <><p className="cms-help">{new Date(report.startedAt).toLocaleString('zh-CN')} · {report.trigger === 'scheduled' ? '定时同步' : report.trigger === 'assistant-demo-import' ? '聊天连接导入演示' : report.trigger === 'assistant-demo-followup' ? '聊天连接跟进回读演示' : '手动同步'}</p><p>房源：新增 {report.properties.created} · 更新 {report.properties.updated} · 无变化 {report.properties.unchanged} · 停租 {report.properties.stopped || 0} · 首次缺失 {report.properties.missing || 0} · 删行停显 {report.properties.removed || 0} · 恢复 {report.properties.restored || 0}</p><p>客户：新增 {report.leads.created} · 更新 {report.leads.updated} · 跟进回读 {report.leads.followups} · 标记撤回 {report.leads.withdrawn}</p>{report.errors.length ? <ul>{report.errors.map((item, index) => <li key={`${item.area}-${item.recordId}-${index}`}>{item.area} {item.recordId}：{item.message}</li>)}</ul> : <p>本次处理没有失败项。</p>}</> : <p>尚未执行同步。配置并检测连接后，点击“立即同步”。</p>}
         </section>
         <p className="cms-help">客户同步范围：称呼、电话、需求、关联房源、提交时间及处理状态。不包含 OpenID、登录凭证和用户附件。目标文档必须为私密或部分成员可见；客户删除咨询后，文档只标记撤回，资料清理由管理员处理。</p>
       </>}

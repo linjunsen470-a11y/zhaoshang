@@ -6,7 +6,7 @@ import { readJsonObject, jsonInputError } from '../../_shared/requestInput'
 import { getPayloadInstance, json, mapProject } from '../../_shared/payloadApi'
 import { projectQualityWhere } from '../../../../lib/cmsRules.mjs'
 
-const QUICK_FIELDS = ['title', 'district', 'areaText', 'feeText', 'status', 'isRecommended', 'sort', 'areaMin', 'areaMax', 'monthlyRentMin', 'monthlyRentMax'] as const
+const QUICK_FIELDS = ['emergencyHidden', 'title', 'district', 'areaText', 'feeText', 'status', 'isRecommended', 'sort', 'areaMin', 'areaMax', 'monthlyRentMin', 'monthlyRentMax'] as const
 const SORTS = new Set(['-updatedAt', 'updatedAt', '-sort', 'sort', 'title', '-title'])
 
 function positiveInt(value: string | null, fallback: number, max: number) {

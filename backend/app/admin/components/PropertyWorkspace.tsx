@@ -7,6 +7,8 @@ import { FormEvent, useCallback, useEffect, useState } from 'react'
 import { BUSINESS_SCENE_OPTIONS, LISTING_KIND_OPTIONS, DISTRICT_OPTIONS, OPPORTUNITY_TYPE_OPTIONS, PROPERTY_STATUS_OPTIONS, PROPERTY_STATUS_HELP, PROJECT_TYPE_OPTIONS } from '@/collections/shared/fieldOptions'
 
 type Property = {
+  sourceManaged?: boolean
+  emergencyHidden?: boolean
   id: string
   coverImage?: string
   title: string
@@ -130,6 +132,10 @@ export function PropertyWorkspace() {
     event.preventDefault()
     if (!editing || saving) return
     const form = new FormData(event.currentTarget)
+    if (editing.sourceManaged) {
+      void patchProperties([editing.id], { sort: Number(form.get('sort') || 0), isRecommended: form.get('isRecommended') === 'on', emergencyHidden: form.get('emergencyHidden') === 'on' }, '后台运营设置已保存')
+      return
+    }
     void patchProperties([editing.id], {
       title: String(form.get('title') || ''),
       district: String(form.get('district') || ''),
@@ -139,6 +145,7 @@ export function PropertyWorkspace() {
       status: String(form.get('status') || 'draft'),
       sort: Number(form.get('sort') || 0),
       isRecommended: form.get('isRecommended') === 'on',
+      emergencyHidden: form.get('emergencyHidden') === 'on',
     }, '房源已保存')
   }
 
@@ -236,19 +243,20 @@ export function PropertyWorkspace() {
               <button className="cms-icon-button" type="button" aria-label="关闭快速修改" onClick={() => setEditing(null)}>×</button>
             </header>
             <form onSubmit={submitQuickEdit} className="cms-form">
-              <label>项目/铺位标题<input name="title" defaultValue={editing.title} required autoComplete="off" /></label>
+              <p>{editing.sourceManaged ? '腾讯文档是资料主源，业务内容请在文档修改。' : ''}</p><label>项目/铺位标题<input name="title" disabled={editing.sourceManaged} defaultValue={editing.title} required autoComplete="off" /></label>
               <div className="cms-form-grid">
-                <label>区域<select name="district" defaultValue={editing.district || ''}><option value="">请选择</option>{DISTRICT_OPTIONS.map(item => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
-                <label>公开状态<select name="status" defaultValue={editing.status}>{PROPERTY_STATUS_OPTIONS.map(item => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
+                <label>区域<select name="district" disabled={editing.sourceManaged} defaultValue={editing.district || ''}><option value="">请选择</option>{DISTRICT_OPTIONS.map(item => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
+                <label>公开状态<select name="status" disabled={editing.sourceManaged} defaultValue={editing.status}>{PROPERTY_STATUS_OPTIONS.map(item => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
               </div>
               <p className="cms-help">{PROPERTY_STATUS_HELP}</p>
-              <label>面积展示文字<input name="areaText" defaultValue={editing.areaText || ''} placeholder="例如：约 15㎡" autoComplete="off" /></label>
-              <label>费用说明<input name="feeText" defaultValue={editing.feeText || ''} placeholder="例如：3 万元/年，另收管理费" autoComplete="off" /></label>
+              <label>面积展示文字<input name="areaText" disabled={editing.sourceManaged} defaultValue={editing.areaText || ''} placeholder="例如：约 15㎡" autoComplete="off" /></label>
+              <label>费用说明<input name="feeText" disabled={editing.sourceManaged} defaultValue={editing.feeText || ''} placeholder="例如：3 万元/年，另收管理费" autoComplete="off" /></label>
               <details className="cms-more-filters">
                 <summary>面积、月租与展示顺序（选填）</summary>
-                <div className="cms-form-grid">{([['areaMin', '面积最小值（㎡）'], ['areaMax', '面积最大值（㎡）'], ['monthlyRentMin', '基础月租最小值（元/月）'], ['monthlyRentMax', '基础月租最大值（元/月）']] as const).map(([key, label]) => <label key={key}>{label}<input name={key} type="number" min="0" step="0.01" defaultValue={editing[key] ?? ''} /></label>)}</div>
+                <div className="cms-form-grid">{([['areaMin', '面积最小值（㎡）'], ['areaMax', '面积最大值（㎡）'], ['monthlyRentMin', '基础月租最小值（元/月）'], ['monthlyRentMax', '基础月租最大值（元/月）']] as const).map(([key, label]) => <label key={key}>{label}<input name={key} disabled={editing.sourceManaged} type="number" min="0" step="0.01" defaultValue={editing[key] ?? ''} /></label>)}</div>
                 <p className="cms-help">数值用于筛选。固定值填相同上下限；未知时两栏都留空。月租不含附加费用，具体条款写在费用说明中。</p>
                 <label>展示顺序<input name="sort" type="number" inputMode="numeric" defaultValue={editing.sort || 0} /></label>
+                <label className="cms-checkbox"><input name="emergencyHidden" type="checkbox" defaultChecked={editing.emergencyHidden} />紧急停止公开（仅后台可解除）</label>
                 <label className="cms-checkbox"><input name="isRecommended" type="checkbox" defaultChecked={editing.isRecommended} />重点推荐</label>
               </details>
               <div className="cms-drawer__actions">

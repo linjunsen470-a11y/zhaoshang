@@ -1,3 +1,4 @@
+import { nextMissing, sameValue, type PropertySyncMeta } from './propertyPolicy'
 import { mkdir, open, stat, unlink } from 'node:fs/promises'
 import path from 'node:path'
 import sharp from 'sharp'
@@ -10,12 +11,22 @@ type Row = Record<string, unknown> & { id: string | number }
 type State = { properties: Record<string, string>; leads: Record<string, { customerHash: string; workflowHash: string }> }
 export type SyncReport = {
   startedAt: string; finishedAt?: string; trigger: string
-  properties: { created: number; updated: number; unchanged: number }
+  properties: { created: number; updated: number; unchanged: number; stopped: number; missing: number; removed: number; restored: number }
   leads: { created: number; updated: number; withdrawn: number; followups: number; unchanged: number }
   errors: { area: string; recordId?: string; message: string }[]
 }
 
-async function acquireLock() {
+async function acquireLock(payload: Payload) {
+  if (payload.db?.pool) {
+    const connection = await payload.db.pool.connect()
+    try {
+      const result = await connection.query('SELECT pg_try_advisory_lock(736211, 1) AS locked')
+      if (!result.rows[0].locked) throw new Error('已有同步正在运行，请稍后刷新')
+    } catch (error) { connection.release(); throw error }
+    return async () => { try { await connection.query('SELECT pg_advisory_unlock(736211, 1)') } finally { connection.release() } }
+  }
+  // Isolated unit-test clients have no database pool.
+
   await mkdir(syncDirectory(), { recursive: true })
   const filename = path.join(syncDirectory(), 'sync.lock')
   try { if (Date.now() - (await stat(filename)).mtimeMs > 10 * 60_000) await unlink(filename) }
@@ -46,12 +57,17 @@ async function imageFile(url: string, filename: string) {
   return { data, mimetype: 'image/jpeg', name: filename, size: data.length }
 }
 
-async function importProperty(payload: Payload, config: SyncConfig, record: SheetRecord, state: State) {
-  const mapped = mapProperty(record)
+async function importProperty(payload: Payload, config: SyncConfig, record: SheetRecord, state: State, report: SyncReport) {
   const key = `tencent:${config.fileId}:${config.propertySheetId}:${record.record_id}`
-  const hash = contentHash({ data: mapped.data, images: mapped.images.map(image => image.image_id || image.image_url) })
   const existing = (await payload.find({ collection: 'projects', where: { seedKey: { equals: key } }, limit: 1, depth: 0, overrideAccess: true })).docs[0] as Row | undefined
-  if (existing && state.properties[key] === hash) return 'unchanged' as const
+  const sourceStatus = cellValue(record, '招租状态').trim()
+  if (existing && ['暂停招租', '已出租'].includes(sourceStatus)) {
+    await payload.update({ collection: 'projects', id: existing.id, data: { status: 'offline' }, context: { tencentSync: true }, overrideAccess: true })
+    existing.status = 'offline'
+  }
+  if (sourceStatus === '暂停招租') return 'unchanged' as const
+  const mapped = mapProperty(record, Boolean(existing))
+  const hash = contentHash({ data: mapped.data, images: mapped.images.map(image => image.image_id || image.image_url) })
   const mediaIds: (string | number)[] = []
   for (const image of mapped.images.slice(0, 6)) {
     const mediaKey = `tencent-image:${contentHash({ key, image: image.image_id || image.image_url })}`
@@ -64,8 +80,10 @@ async function importProperty(payload: Payload, config: SyncConfig, record: Shee
     mediaIds.push(media.id)
   }
   const data = { ...mapped.data, coverImage: mediaIds[0], images: mediaIds }
-  if (existing) await payload.update({ collection: 'projects', id: existing.id, data, overrideAccess: true })
-  else await payload.create({ collection: 'projects', data: { seedKey: key, ...data }, overrideAccess: true })
+  if (existing && Object.entries(data).every(([field, value]) => sameValue(existing[field], value))) return 'unchanged' as const
+  if (existing) await payload.update({ collection: 'projects', id: existing.id, data, context: { tencentSync: true }, overrideAccess: true })
+  else await payload.create({ collection: 'projects', data: { seedKey: key, ...data }, context: { tencentSync: true }, overrideAccess: true })
+  if (existing && existing.status === 'offline' && data.status === 'online' && !existing.emergencyHidden) report.properties.restored++
   state.properties[key] = hash
   return existing ? 'updated' as const : 'created' as const
 }
@@ -137,9 +155,9 @@ async function syncLeads(payload: Payload, docs: DocsClient, config: SyncConfig,
 }
 
 export async function runTencentSync(payload: Payload, trigger = 'manual', suppliedClient?: DocsClient, suppliedConfig?: SyncConfig) {
-  const release = await acquireLock()
+  const release = await acquireLock(payload)
   let docs: DocsClient | undefined
-  const report: SyncReport = { startedAt: new Date().toISOString(), trigger, properties: { created: 0, updated: 0, unchanged: 0 }, leads: { created: 0, updated: 0, withdrawn: 0, followups: 0, unchanged: 0 }, errors: [] }
+  const report: SyncReport = { startedAt: new Date().toISOString(), trigger, properties: { created: 0, updated: 0, unchanged: 0, stopped: 0, missing: 0, removed: 0, restored: 0 }, leads: { created: 0, updated: 0, withdrawn: 0, followups: 0, unchanged: 0 }, errors: [] }
   let state: State = { properties: {}, leads: {} }
   let stateLoaded = false
   try {
@@ -148,9 +166,38 @@ export async function runTencentSync(payload: Payload, trigger = 'manual', suppl
     const config = suppliedConfig || await getSyncConfig()
     docs = suppliedClient || await connectDocs(config)
     if (config.importProperties) {
-      const records = await listRecords(docs, config.fileId, config.propertySheetId)
+      const views = await docs.call('smartsheet.list_views', { file_id: config.fileId, sheet_id: config.propertySheetId })
+      const all = (views.views as { view_id: string; view_name: string; config: string }[] || []).find(view => view.view_name === '全部房源')
+      if (!all) throw new Error('缺少全部房源视图，停止缺失对账')
+      const viewConfig = JSON.parse(all.config)
+      const filters = viewConfig.filterSpec?.['2'] ?? viewConfig.filter?.conditions
+      if (!Array.isArray(filters) || filters.length) throw new Error('全部房源视图存在筛选，停止缺失对账')
+      const records = await listRecords(docs, config.fileId, config.propertySheetId, all.view_id)
+      const scope = `tencent:${config.fileId}:${config.propertySheetId}:`
+      const live = new Set(records.map(record => scope + record.record_id))
+      let page = 1
+      for (;;) {
+        const result = await payload.find({ collection: 'projects', where: { seedKey: { contains: scope } }, sort: 'id', limit: 100, page, depth: 0, overrideAccess: true })
+        for (const row of result.docs as Row[]) {
+          if (!String(row.seedKey).startsWith(scope)) continue
+          const meta = (row.tencentSync || {}) as PropertySyncMeta
+          const next = live.has(String(row.seedKey))
+            ? { ...meta, scope: scope + (config.sourceRevision || 'initial'), firstMissingAt: null, removed: false, lastSeenAt: report.startedAt }
+            : nextMissing(meta, scope + (config.sourceRevision || 'initial'), report.startedAt)
+          try {
+            const explicitStop = records.find(record => scope + record.record_id === row.seedKey)
+            const stopping = explicitStop && ['暂停招租', '已出租'].includes(cellValue(explicitStop, '招租状态').trim())
+            await payload.update({ collection: 'projects', id: row.id, data: { tencentSync: { ...next, reason: next.removed ? '源记录已删除' : stopping ? '源房源停止招租' : '' }, ...((next.removed || stopping) ? { status: 'offline' } : {}) }, context: { tencentSync: true }, overrideAccess: true })
+            if (!live.has(String(row.seedKey)) && !meta.firstMissingAt) report.properties.missing++
+            if (next.removed && !meta.removed) report.properties.removed++
+            if (stopping && row.status !== 'offline') report.properties.stopped++
+          } catch (error) { report.errors.push({ area: '房源状态', recordId: String(row.id), message: syncErrorMessage(error) }) }
+        }
+        if (!result.hasNextPage) break
+        page++
+      }
       for (const record of records) {
-        try { report.properties[await importProperty(payload, config, record, state)]++ }
+        try { report.properties[await importProperty(payload, config, record, state, report)]++ }
         catch (error) { report.errors.push({ area: '房源', recordId: record.record_id, message: syncErrorMessage(error) }) }
       }
     }

@@ -45,14 +45,21 @@ export async function connectDocs(config: SyncConfig): Promise<DocsClient> {
   } catch (error) { await client.close().catch(() => {}); throw error }
 }
 
-export async function listRecords(client: DocsClient, fileId: string, sheetId: string): Promise<SheetRecord[]> {
+export async function listRecords(client: DocsClient, fileId: string, sheetId: string, viewId?: string): Promise<SheetRecord[]> {
   const records: SheetRecord[] = []
   let offset = 0
   for (;;) {
-    const page = await client.call('smartsheet.list_records', { file_id: fileId, sheet_id: sheetId, offset, limit: 100 })
+    const page = await client.call('smartsheet.list_records', { file_id: fileId, sheet_id: sheetId, ...(viewId ? { view_id: viewId } : {}), offset, limit: 100 })
     if (!Array.isArray(page.records)) throw new Error('腾讯文档记录响应缺少 records')
-    records.push(...page.records as SheetRecord[])
-    if (!page.has_more || page.has_more === 'false') return records
+    for (const row of page.records as SheetRecord[]) {
+      if (typeof row.record_id !== 'string' || !row.record_id.trim() || records.some(previous => previous.record_id === row.record_id)) throw new Error('记录 ID 缺失或重复，停止缺失对账')
+      records.push(row)
+    }
+    if (page.has_more === undefined) throw new Error('腾讯文档缺少分页完整性标记')
+    if (page.has_more === false || page.has_more === 'false') {
+      if (page.total !== undefined && Number(page.total) !== records.length) throw new Error('腾讯文档记录总数不一致')
+      return records
+    }
     const next = Number(page.next)
     if (!Number.isSafeInteger(next) || next <= offset) throw new Error('腾讯文档分页没有前进，已停止同步')
     offset = next

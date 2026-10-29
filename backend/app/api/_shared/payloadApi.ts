@@ -185,6 +185,7 @@ export function mapProject(doc: Doc, isStaff = false) {
 
   const mapped = {
     id: String(doc.id),
+    ...(isStaff ? { sourceManaged: String(doc.seedKey || '').startsWith('tencent:'), emergencyHidden: doc.emergencyHidden === true } : {}),
     opportunityType,
     listingKind: doc.listingKind === 'project' ? 'project' : 'unit',
     businessScene: commercialScene(doc),
@@ -283,6 +284,7 @@ export async function mapLead(doc: Doc) {
 
 export function sanitizeProjectInput(input: Record<string, unknown>) {
   return {
+    ...(typeof input.emergencyHidden === 'boolean' ? { emergencyHidden: input.emergencyHidden } : {}),
     ...Object.fromEntries(['listingKind', 'businessScene', 'parentProject', 'venueName', 'unitLocation', 'areaMin', 'areaMax', 'monthlyRentMin', 'monthlyRentMax', 'premisesConditions', 'introduction', 'operatingRequirements', 'coverImage', 'images'].filter(key => input[key] !== undefined).map(key => [key, input[key]])),
     opportunityType: input.opportunityType || 'leasing',
     title: input.title,

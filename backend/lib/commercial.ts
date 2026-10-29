@@ -25,6 +25,7 @@ function scopeWhere(prefix = ''): Where {
 export function publicCommercialWhere(): Where {
   return { and: [
     scopeWhere(),
+    { emergencyHidden: { not_equals: true } },
     { status: { in: PUBLIC_COMMERCIAL_STATUSES } },
     { or: [
       { parentProject: { exists: false } },
@@ -32,17 +33,18 @@ export function publicCommercialWhere(): Where {
         { 'parentProject.listingKind': { equals: 'project' } },
         { 'parentProject.status': { in: PUBLIC_COMMERCIAL_STATUSES } },
         scopeWhere('parentProject.'),
+        { 'parentProject.emergencyHidden': { not_equals: true } },
       ] },
     ] },
   ] }
 }
 export function commercialIsPublic(doc: CommercialRecord): boolean {
-  if (!PUBLIC_COMMERCIAL_STATUSES.includes(String(doc.status)) || !withinBusinessScope(doc)) return false
+  if (doc.emergencyHidden === true || !PUBLIC_COMMERCIAL_STATUSES.includes(String(doc.status)) || !withinBusinessScope(doc)) return false
   if (!commercialId(doc.parentProject)) return true
   const parent = doc.parentProject
   return Boolean(parent && typeof parent === 'object' && 'status' in parent
     && 'listingKind' in parent && parent.listingKind === 'project'
-    && PUBLIC_COMMERCIAL_STATUSES.includes(String(parent.status)) && withinBusinessScope(parent as CommercialRecord))
+    && !(parent as CommercialRecord).emergencyHidden && PUBLIC_COMMERCIAL_STATUSES.includes(String(parent.status)) && withinBusinessScope(parent as CommercialRecord))
 }
 export function validateCommercial(doc: CommercialRecord): string | null {
   if (!['project', 'unit'].includes(String(doc.listingKind || 'unit'))) return '发布内容无效'
