@@ -20,14 +20,38 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/api.cqwushi.com/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     client_max_body_size 11m;
-    location / {
+    add_header X-Robots-Tag "noindex" always;
+
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $remote_addr;
+    proxy_set_header X-Forwarded-Proto https;
+    proxy_read_timeout 90s;
+    proxy_send_timeout 90s;
+
+    # Keep APIs (including media), the staff UI and its assets available.
+    location ^~ /api/ {
         proxy_pass http://127.0.0.1:3300;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $remote_addr;
-        proxy_set_header X-Forwarded-Proto https;
-        proxy_read_timeout 90s;
-        proxy_send_timeout 90s;
+    }
+    location = /admin {
+        proxy_pass http://127.0.0.1:3300;
+    }
+    location ^~ /admin/ {
+        proxy_pass http://127.0.0.1:3300;
+    }
+    location ^~ /_next/ {
+        proxy_pass http://127.0.0.1:3300;
+    }
+    location = /favicon.ico {
+        proxy_pass http://127.0.0.1:3300;
+    }
+    location = / {
+        default_type text/plain;
+        charset utf-8;
+        return 404 "此地址用于应用接口服务。\n";
+    }
+    location / {
+        return 404;
     }
 }
