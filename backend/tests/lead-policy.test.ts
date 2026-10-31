@@ -86,3 +86,29 @@ test('only transfer location and equipment name are required by their respective
     assert.equal(validateLeadCreateRequirements({ leadType, equipmentDetails: { equipmentName: '冷柜' } }), null)
   }
 })
+
+test('editing public equipment content requires review but private and unchanged edits do not', () => {
+  const existing = {
+    leadType: 'equipment_sell', businessType: '冷柜', budgetRange: '2000元', regionPreference: '广州',
+    equipmentDetails: { equipmentName: '冷柜', specText: '双门', expectedPrice: null },
+    attachments: [{ id: 7 }], equipmentPublication: { status: 'online', publicRemark: '员工确认的说明' },
+  }
+  for (const patch of [
+    { businessType: '烤箱' }, { budgetRange: '3000元' }, { regionPreference: '深圳' },
+    { equipmentDetails: { specText: '单门' } }, { attachments: [8] }, { attachments: [] },
+  ]) {
+    const result = sanitizeLeadUpdateInput(patch, 'owner', existing)
+    assert.deepEqual(result.equipmentPublication, { status: 'draft', publicRemark: '员工确认的说明' })
+    assert.equal('customerSnapshot' in result, false)
+  }
+  for (const patch of [
+    { phone: '13912345678', remark: '私密补充' }, { businessType: '冷柜' },
+    { equipmentDetails: { specText: '双门', expectedPrice: '' } }, { attachments: ['7'] },
+    { equipmentPublication: { status: 'online', publicRemark: '客户注入' } },
+  ]) {
+    assert.equal('equipmentPublication' in sanitizeLeadUpdateInput(patch, 'owner', existing), false)
+  }
+  assert.equal('equipmentPublication' in sanitizeLeadUpdateInput({ businessType: '烤箱' }, 'owner', {
+    ...existing, equipmentPublication: { status: 'offline' },
+  }), false)
+})

@@ -100,15 +100,7 @@ export async function PUT(request: Request, { params }: Args) {
     const doc = await payload.update({
       collection: 'leads',
       id,
-      data: sanitizeLeadUpdateInput(input, auth.openid, {
-        leadType: lead.leadType,
-        sourceChannel: lead.sourceChannel,
-        project: lead.project,
-        businessScene: lead.businessScene,
-        transferDetails: lead.transferDetails,
-        equipmentDetails: lead.equipmentDetails,
-        renovationDetails: lead.renovationDetails,
-      }),
+      data: sanitizeLeadUpdateInput(input, auth.openid, lead),
       overrideAccess: true,
     })
     if (Array.isArray(input.attachments)) {

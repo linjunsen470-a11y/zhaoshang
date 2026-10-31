@@ -10,6 +10,7 @@ export const MINI_PROGRAM_LEAD_TYPES = [
 ]
 
 type StableLeadFields = {
+  [key: string]: unknown
   leadType?: unknown
   sourceChannel?: unknown
   project?: unknown
@@ -17,6 +18,11 @@ type StableLeadFields = {
   transferDetails?: unknown
   equipmentDetails?: unknown
   renovationDetails?: unknown
+  businessType?: unknown
+  budgetRange?: unknown
+  regionPreference?: unknown
+  attachments?: unknown
+  equipmentPublication?: { status?: string | null; publicRemark?: string | null } | null
 }
 
 function sanitizeLeadUserFields(
@@ -72,7 +78,22 @@ export function sanitizeLeadUpdateInput(
   submitterOpenId: string,
   stable: StableLeadFields,
 ) {
-  return sanitizeLeadUserFields(input, submitterOpenId, stable)
+  const data = sanitizeLeadUserFields(input, submitterOpenId, stable)
+  const textChanged = (['businessType', 'budgetRange', 'regionPreference'] as const).some(key => (
+    data[key] !== undefined && String(data[key] || '') !== String(stable[key] || '')
+  ))
+  const oldDetails = pickGroup(stable.equipmentDetails, ['equipmentName', 'specText', 'equipmentCondition', 'expectedPrice']) || {}
+  const detailsChanged = data.equipmentDetails && Object.entries(data.equipmentDetails).some(([key, value]) => (
+    String(value || '') !== String(oldDetails[key] || '')
+  ))
+  const attachmentsChanged = data.attachments !== undefined
+    && JSON.stringify(data.attachments.map(String)) !== JSON.stringify((relationIds(stable.attachments) || []).map(String))
+  // Only changes to the public listing require review; contact/private notes do not.
+  const needsReview = stable.equipmentPublication?.status === 'online' && (textChanged || detailsChanged || attachmentsChanged)
+  return {
+    ...data,
+    ...(needsReview ? { equipmentPublication: { ...stable.equipmentPublication, status: 'draft' as const } } : {}),
+  }
 }
 
 const LEAD_TEXT_LIMITS: Record<string, number> = {

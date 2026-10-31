@@ -61,13 +61,14 @@ async function importProperty(payload: Payload, config: SyncConfig, record: Shee
   const key = `tencent:${config.fileId}:${config.propertySheetId}:${record.record_id}`
   const existing = (await payload.find({ collection: 'projects', where: { seedKey: { equals: key } }, limit: 1, depth: 0, overrideAccess: true })).docs[0] as Row | undefined
   const sourceStatus = cellValue(record, '招租状态').trim()
-  if (existing && ['暂停招租', '已出租'].includes(sourceStatus)) {
-    await payload.update({ collection: 'projects', id: existing.id, data: { status: 'offline' }, context: { tencentSync: true }, overrideAccess: true })
-    existing.status = 'offline'
-  }
   if (sourceStatus === '暂停招租') return 'unchanged' as const
   const mapped = mapProperty(record)
   const hash = contentHash({ data: mapped.data, images: mapped.images.map(image => image.image_id || image.image_url) })
+  // Check the current fields too: a restored source row may need to go online
+  // again even when its content hash has not changed.
+  if (existing && state.properties[key] === hash
+    && Object.entries(mapped.data).every(([field, value]) => sameValue(existing[field], value))
+    && existing.coverImage && Array.isArray(existing.images) && existing.images.length === Math.min(mapped.images.length, 6)) return 'unchanged' as const
   const mediaIds: (string | number)[] = []
   for (const image of mapped.images.slice(0, 6)) {
     const mediaKey = `tencent-image:${contentHash({ key, image: image.image_id || image.image_url })}`
@@ -80,7 +81,10 @@ async function importProperty(payload: Payload, config: SyncConfig, record: Shee
     mediaIds.push(media.id)
   }
   const data = { ...mapped.data, coverImage: mediaIds[0], images: mediaIds }
-  if (existing && Object.entries(data).every(([field, value]) => sameValue(existing[field], value))) return 'unchanged' as const
+  if (existing && Object.entries(data).every(([field, value]) => sameValue(existing[field], value))) {
+    state.properties[key] = hash
+    return 'unchanged' as const
+  }
   if (existing) await payload.update({ collection: 'projects', id: existing.id, data, context: { tencentSync: true }, overrideAccess: true })
   else await payload.create({ collection: 'projects', data: { seedKey: key, ...data }, context: { tencentSync: true }, overrideAccess: true })
   if (existing && existing.status === 'offline' && data.status === 'online' && !existing.emergencyHidden) report.properties.restored++
@@ -142,9 +146,11 @@ async function syncLeads(payload: Payload, docs: DocsClient, config: SyncConfig,
           }
         }
       }
-      const customerChanged = !record || customerCells.some(cell => cellValue(record, cell.field!) !== cellValue({ record_id: '', field_values: [cell] }, cell.field!))
+      // Submission time is immutable and date columns may format it differently.
+      const editableCustomerCells = customerCells.filter(cell => cell.field !== '提交时间')
+      const customerChanged = !record || editableCustomerCells.some(cell => cellValue(record, cell.field!) !== cellValue({ record_id: '', field_values: [cell] }, cell.field!))
       if (!record || customerChanged || pushWorkflow || cellValue(record, '记录状态') !== '正常') {
-        const cells = [...customerCells, ...(pushWorkflow ? leadWorkflowCells(lead) : []), { field: '记录状态', text_value: { items: [{ text: '正常', type: 'text' }] } }, { field: '同步时间', string_value: String(Date.now()) }]
+        const cells = [...(record ? editableCustomerCells : customerCells), ...(pushWorkflow ? leadWorkflowCells(lead) : []), { field: '记录状态', text_value: { items: [{ text: '正常', type: 'text' }] } }, { field: '同步时间', string_value: String(Date.now()) }]
         const args = { file_id: config.fileId, sheet_id: config.leadSheetId, records: [{ ...(record ? { record_id: record.record_id } : {}), field_values: cells }] }
         await docs.call(record ? 'smartsheet.update_records' : 'smartsheet.add_records', args)
         report.leads[record ? 'updated' : 'created']++
@@ -175,6 +181,7 @@ export async function runTencentSync(payload: Payload, trigger = 'manual', suppl
       const records = await listRecords(docs, config.fileId, config.propertySheetId, all.view_id)
       const scope = `tencent:${config.fileId}:${config.propertySheetId}:`
       const live = new Set(records.map(record => scope + record.record_id))
+      const byKey = new Map(records.map(record => [scope + record.record_id, record]))
       let page = 1
       for (;;) {
         const result = await payload.find({ collection: 'projects', where: { seedKey: { contains: scope } }, sort: 'id', limit: 100, page, depth: 0, overrideAccess: true })
@@ -185,8 +192,13 @@ export async function runTencentSync(payload: Payload, trigger = 'manual', suppl
             ? { ...meta, scope: scope + (config.sourceRevision || 'initial'), firstMissingAt: null, removed: false, lastSeenAt: report.startedAt }
             : nextMissing(meta, scope + (config.sourceRevision || 'initial'), report.startedAt)
           try {
-            const explicitStop = records.find(record => scope + record.record_id === row.seedKey)
-            const stopping = explicitStop && ['暂停招租', '已出租'].includes(cellValue(explicitStop, '招租状态').trim())
+            const source = byKey.get(String(row.seedKey))
+            const status = source && cellValue(source, '招租状态').trim()
+            let stopping = status === '暂停招租'
+            if (source && status === '已出租') {
+              try { mapProperty(source) }
+              catch { stopping = true }
+            }
             await payload.update({ collection: 'projects', id: row.id, data: { tencentSync: { ...next, reason: next.removed ? '源记录已删除' : stopping ? '源房源停止招租' : '' }, ...((next.removed || stopping) ? { status: 'offline' } : {}) }, context: { tencentSync: true }, overrideAccess: true })
             if (!live.has(String(row.seedKey)) && !meta.firstMissingAt) report.properties.missing++
             if (next.removed && !meta.removed) report.properties.removed++

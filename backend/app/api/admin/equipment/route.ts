@@ -1,6 +1,6 @@
 import type { Where } from 'payload'
 import { getAuthenticatedStaff } from '../../_shared/auth'
-import { readJsonObject, jsonInputError } from '../../_shared/requestInput'
+import { readJsonObject, jsonInputError, sameOrigin } from '../../_shared/requestInput'
 import { getPayloadInstance, json } from '../../_shared/payloadApi'
 
 const EQUIPMENT_TYPES = ['equipment_sell', 'equipment_buy', 'equipment_recycle']
@@ -54,6 +54,7 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  if (!sameOrigin(request)) return json({ error: '请求来源无效' }, 403)
   const staff = await getAuthenticatedStaff('leads')
   if (!staff) return json({ error: '请先登录后台' }, 401)
   let body: { id?: unknown; status?: unknown; publicRemark?: unknown }

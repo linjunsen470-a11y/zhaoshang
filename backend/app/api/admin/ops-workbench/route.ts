@@ -1,13 +1,11 @@
-import { publicCommercialWhere } from '../../../../lib/commercial'
 import type { Where } from 'payload'
 import { getAuthenticatedStaff } from '../../_shared/auth'
-import { absoluteUrl, getPayloadInstance, json } from '../../_shared/payloadApi'
+import { getPayloadInstance, json } from '../../_shared/payloadApi'
 import { getProjectMissingFields, REQUIRED_PROJECT_FIELDS } from '../../../../lib/cmsRules.mjs'
 import {
   LEAD_TYPE_LABELS,
   categoryForLeadType,
 } from '../../../../collections/shared/fieldOptions'
-import { buildShareMaterial } from '../../../../lib/shareMaterials'
 
 const STALE_HOURS = 24
 const TODO_LIMIT = 8
@@ -16,15 +14,16 @@ function asRecord(doc: unknown) {
   return doc as Record<string, unknown> & { id: string | number; createdAt?: string; updatedAt?: string }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const staff = await getAuthenticatedStaff()
     if (!staff) return json({ error: '请先登录后台' }, 401)
 
+    const includeQuality = new URL(request.url).searchParams.get('view') === 'quality'
     const payload = await getPayloadInstance()
     const staleBefore = new Date(Date.now() - STALE_HOURS * 60 * 60 * 1000).toISOString()
 
-    const [newLeads, staleLeads, projectsPage, shareCandidates] = await Promise.all([
+    const [newLeads, staleLeads, projectsPage] = await Promise.all([
       payload.find({
         collection: 'leads',
         where: { status: { equals: 'new' } },
@@ -43,21 +42,13 @@ export async function GET() {
         } as Where,
         overrideAccess: true,
       }),
-      payload.find({
+      includeQuality ? payload.find({
         collection: 'projects',
         limit: 500,
         depth: 0,
         overrideAccess: true,
         sort: '-updatedAt',
-      }),
-      payload.find({
-        collection: 'projects',
-        where: publicCommercialWhere(),
-        limit: 20,
-        depth: 1,
-        overrideAccess: true,
-        sort: '-updatedAt',
-      }),
+      }) : Promise.resolve({ docs: [], totalDocs: 0 }),
     ])
 
     const projectRows = projectsPage.docs.map(doc => {
@@ -106,15 +97,19 @@ export async function GET() {
         summary: {
           newLeads: newLeads.totalDocs,
           staleLeads: staleLeads.totalDocs,
-          blockedProjects: blocked.length,
-          readyToPublish: readyDrafts.length,
-          publicIncomplete: publicIncomplete.length,
+          ...(includeQuality ? {
+            blockedProjects: blocked.length,
+            readyToPublish: readyDrafts.length,
+            publicIncomplete: publicIncomplete.length,
+          } : {}),
         },
         newLeads: newLeads.docs.map(mapLeadTodo),
-        blockedProjects: blocked.slice(0, TODO_LIMIT),
-        readyToPublish: readyDrafts.slice(0, TODO_LIMIT),
+        ...(includeQuality ? {
+          blockedProjects: blocked.slice(0, TODO_LIMIT),
+          readyToPublish: readyDrafts.slice(0, TODO_LIMIT),
+        } : {}),
       },
-      quality: {
+      ...(includeQuality ? { quality: {
         scanned: projectRows.length,
         truncated: projectsPage.totalDocs > projectRows.length,
         totalProjects: projectsPage.totalDocs,
@@ -125,52 +120,7 @@ export async function GET() {
         requiredFields: [...REQUIRED_PROJECT_FIELDS.map(field => field.label), '商业场景'],
         blocked: blocked.slice(0, 20),
         publicIncomplete: publicIncomplete.slice(0, 10),
-      },
-      share: {
-        projects: shareCandidates.docs.map(doc => {
-          const row = asRecord(doc)
-          const cover = row.coverImage
-          let coverImage = ''
-          if (typeof cover === 'string' && /^https?:\/\//i.test(cover)) coverImage = cover
-          else if (cover && typeof cover === 'object' && 'url' in cover && typeof (cover as { url?: unknown }).url === 'string') {
-            coverImage = absoluteUrl(String((cover as { url: string }).url))
-          }
-          const material = buildShareMaterial({
-            id: row.id,
-            title: String(row.title || ''),
-            listingKind: String(row.listingKind || 'unit'),
-            businessScene: String(row.businessScene || ''),
-            venueName: String(row.venueName || ''),
-            schoolName: String(row.schoolName || ''),
-            schoolAlias: String(row.schoolAlias || ''),
-            city: String(row.city || ''),
-            district: String(row.district || ''),
-            areaText: String(row.areaText || ''),
-            feeText: String(row.feeText || ''),
-            projectType: String(row.projectType || ''),
-            opportunityType: String(row.opportunityType || ''),
-            status: String(row.status || ''),
-            coverImage,
-          })
-          return {
-            id: String(row.id),
-            title: String(row.title || '未命名房源'),
-            status: String(row.status || ''),
-            listingKind: String(row.listingKind || 'unit'),
-            businessScene: String(row.businessScene || ''),
-            venueName: String(row.venueName || ''),
-            schoolName: String(row.schoolName || ''),
-            schoolAlias: String(row.schoolAlias || ''),
-            city: String(row.city || ''),
-            district: String(row.district || ''),
-            areaText: String(row.areaText || ''),
-            feeText: String(row.feeText || ''),
-            opportunityType: String(row.opportunityType || ''),
-            ...material,
-            coverImage: material.coverImage || coverImage,
-          }
-        }),
-      },
+      } } : {}),
     })
   } catch (err) {
     console.error('[GET /api/admin/ops-workbench]', err)

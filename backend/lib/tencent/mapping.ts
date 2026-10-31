@@ -86,11 +86,25 @@ export function mapProperty(record: SheetRecord) {
 
 export function leadCustomerCells(lead: Record<string, unknown>, key: string): Cell[] {
   const scene = options.scenes.find(item => item.value === lead.businessScene)?.label || ''
+  const detailFields: Record<string, { group: string; fields: [string, string][] }> = {
+    transfer: { group: 'transferDetails', fields: [['locationText', '店铺位置'], ['feeText', '面积与费用'], ['transferFee', '转让费预期'], ['remainingTerm', '剩余合同期'], ['includesEquipment', '包含设备']] },
+    equipment: { group: 'equipmentDetails', fields: [['equipmentName', '设备名称'], ['specText', '数量/规格'], ['equipmentCondition', '成色/说明'], ['expectedPrice', '预算/期望价格']] },
+    renovation_consult: { group: 'renovationDetails', fields: [['shopArea', '店铺面积'], ['renovationType', '装修类型'], ['designStyle', '装修风格'], ['budgetText', '装修预算'], ['expectedStartDate', '预计开工时间']] },
+  }
+  const type = String(lead.leadType || '')
+  const definition = detailFields[type.startsWith('equipment_') ? 'equipment' : type]
+  const details = (definition ? lead[definition.group] || {} : {}) as Record<string, unknown>
+  const summary = definition?.fields.flatMap(([field, label]) => {
+    const value = details[field]
+    if (value === undefined || value === null || value === '') return []
+    const text = typeof value === 'boolean' ? (value ? '是' : '否') : String(value)
+    return [`${label}：${text}`]
+  }) || []
   return [
     textCell('来源咨询ID', key), textCell('客户称呼', lead.name), textCell('联系电话', lead.phone),
     textCell('咨询类型', LEAD_TYPE_LABELS[String(lead.leadType)] || lead.leadType), textCell('意向场景', scene),
     textCell('经营品类', lead.businessType), textCell('预算', lead.budgetRange), textCell('意向区域', lead.regionPreference),
-    textCell('关联房源', lead.projectTitle), textCell('客户说明', lead.remark),
+    textCell('关联房源', lead.projectTitle), textCell('客户说明', [lead.remark, ...summary].filter(Boolean).join('\n')),
     { field: '提交时间', string_value: String(new Date(String(lead.createdAt)).getTime()) },
   ]
 }

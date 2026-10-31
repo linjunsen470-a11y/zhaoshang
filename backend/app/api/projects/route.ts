@@ -6,7 +6,7 @@ import {
   sanitizeProjectInput,
 } from '../_shared/payloadApi'
 import { getAuthenticatedStaff } from '../_shared/auth'
-import { readJsonObject, jsonInputError } from '../_shared/requestInput'
+import { readJsonObject, jsonInputError, sameOrigin } from '../_shared/requestInput'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -50,6 +50,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (!sameOrigin(request)) return json({ error: '请求来源无效' }, 403)
   const staff = await getAuthenticatedStaff('projects')
   if (!staff) {
     return json({ error: '权限不足，无法发布项目' }, 403)

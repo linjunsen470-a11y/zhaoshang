@@ -46,7 +46,7 @@ export function QualityWorkspaceView() {
 
   const load = useCallback(async (signal?: AbortSignal) => {
     try {
-      setData(await readJson<QualityPayload>(await fetch('/api/admin/ops-workbench', { signal })))
+      setData(await readJson<QualityPayload>(await fetch('/api/admin/ops-workbench?view=quality', { signal })))
       setError('')
     } catch (err) {
       if (!(err instanceof DOMException && err.name === 'AbortError')) {

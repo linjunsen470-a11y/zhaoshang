@@ -1,3 +1,14 @@
+/** Custom staff writes use the admin session cookie and must come from this site. */
+export function sameOrigin(request: Request) {
+  const origin = request.headers.get('origin')
+  if (!origin) return request.headers.get('sec-fetch-site') === 'same-origin'
+  const target = new URL(request.url)
+  const host = request.headers.get('host') || target.host
+  // The deployment proxy replaces Host and X-Forwarded-Proto.
+  const protocol = request.headers.get('x-forwarded-proto')?.split(',')[0].trim() || target.protocol.replace(':', '')
+  return origin === `${protocol}://${host}`
+}
+
 export class RequestInputError extends Error {
   constructor(message: string, public status = 400) {
     super(message)

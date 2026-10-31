@@ -14,7 +14,6 @@ Page({
       { id: 'renovation', name: '商铺装修', desc: '登记需求，对接施工服务', icon: '/images/icons/renovation.png', action: 'renovation' }
     ],
     categories: options.browseGroups.map(group => ({ id: group.value, name: group.label, desc: group.description, type: 'sceneGroup', val: group.value })),
-    services: [],
     showServices: false,
     recommendedList: [],
     latestList: [],
@@ -25,7 +24,6 @@ Page({
   onLoad() {
     if (typeof wx.showShareMenu === 'function') wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
     this._useLocalMock = config.USE_LOCAL_MOCK;
-    this.setData({ services: this.data.secondaryServices });
     this.loadData();
   },
 

@@ -76,7 +76,13 @@ Page({
       const items = result.docs.map(p => ({ ...p, isFav: favorites.includes(p.id) }));
       if (this.data.isRecentOnly) { const ids = recentIds(); items.sort((a, b) => ids.indexOf(String(a.id)) - ids.indexOf(String(b.id))); }
       const combined = append ? [...this.data.projectList, ...items] : items;
-      this.setData({ projectList: combined.filter((p, i, arr) => arr.findIndex(other => other.id === p.id) === i), totalDocs: result.totalDocs, page: result.page, hasNextPage: result.hasNextPage, loading: false, loadingMore: false, loadError: false, moreError: false });
+      const seen = new Set();
+      const projectList = combined.filter(p => {
+        if (seen.has(p.id)) return false;
+        seen.add(p.id);
+        return true;
+      });
+      this.setData({ projectList, totalDocs: result.totalDocs, page: result.page, hasNextPage: result.hasNextPage, loading: false, loadingMore: false, loadError: false, moreError: false });
     }).catch(error => {
       if (requestId !== this._requestId) return;
       console.error(error);

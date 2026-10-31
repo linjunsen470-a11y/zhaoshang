@@ -1,3 +1,4 @@
+import { sameOrigin } from '../../../../_shared/requestInput'
 import { getAuthenticatedStaff } from '../../../../_shared/auth'
 import { getPayloadInstance, json } from '../../../../_shared/payloadApi'
 import { DISTRICT_OPTIONS } from '../../../../../../collections/shared/fieldOptions'
@@ -10,7 +11,8 @@ function relationId(value: unknown) {
   return undefined
 }
 
-export async function POST(_: Request, { params }: Args) {
+export async function POST(request: Request, { params }: Args) {
+  if (!sameOrigin(request)) return json({ error: '请求来源无效' }, 403)
   const staff = await getAuthenticatedStaff('projects')
   if (!staff) return json({ error: '请先登录后台' }, 401)
   const { id } = await params
@@ -36,7 +38,6 @@ export async function POST(_: Request, { params }: Args) {
   }
 
   const details = (lead.transferDetails || {}) as Record<string, unknown>
-  const attachments = Array.isArray(lead.attachments) ? lead.attachments.map(relationId).filter(Boolean) : []
   const location = String(details.locationText || lead.regionPreference || '').trim()
   const district = DISTRICT_OPTIONS.some(option => option.value === lead.regionPreference) ? String(lead.regionPreference) : ''
   let project
@@ -52,8 +53,6 @@ export async function POST(_: Request, { params }: Args) {
         listingKind: 'unit',
         feeText: String(details.feeText || ''),
         customerInfo: String(lead.remark || ''),
-        coverImage: attachments[0],
-        images: attachments,
         transferInfo: {
           currentBusiness: String(lead.businessType || ''),
           remainingTerm: String(details.remainingTerm || ''),

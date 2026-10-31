@@ -219,11 +219,13 @@ const server = http.createServer(async (req, res) => {
   const query = parseQueryParams(req.url);
 
   if (urlPath.startsWith('/api/')) {
+    // Local Mock identity only; production authentication lives in backend/.
+    const openid = String(req.headers['x-dev-openid'] || 'dev-openid-local');
     const data = readData();
     data.projects = (data.projects || []).map(normalizeProject);
     data.leads = data.leads || [];
 
-    if ((urlPath === '/api/projects' || urlPath === '/api/opportunities') && req.method === 'GET') {
+    if (urlPath === '/api/projects' && req.method === 'GET') {
       try { sendJSON(filterProjects(data.projects, query)); } catch (error) { sendJSON({ error: error.message }, 400); }
       return;
     }
@@ -236,7 +238,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (urlPath === '/api/leads' && req.method === 'GET') {
-      let result = [...data.leads];
+      let result = data.leads.filter(l => l.submitterOpenId === openid);
       if (query.phone) result = result.filter(l => l.phone === query.phone);
       if (query.projectId) result = result.filter(l => l.projectId === query.projectId);
       if (query.status && query.status !== ALL) result = result.filter(l => l.status === query.status);
@@ -246,6 +248,13 @@ const server = http.createServer(async (req, res) => {
     }
 
     const leadItemMatch = urlPath.match(/^\/api\/leads\/([^/]+)$/);
+    if (leadItemMatch) {
+      const lead = data.leads.find(l => l.id === leadItemMatch[1]);
+      if (lead && lead.submitterOpenId !== openid) {
+        sendJSON({ error: '无权访问此线索' }, 403);
+        return;
+      }
+    }
     if (leadItemMatch && req.method === 'GET') {
       const id = leadItemMatch[1];
       const lead = data.leads.find(l => l.id === id);
@@ -262,6 +271,7 @@ const server = http.createServer(async (req, res) => {
         const rawBody = await readBody(req);
         const userFields = pickLeadUserFields(rawBody);
         const payload = normalizeLead(userFields, data.projects);
+        payload.submitterOpenId = openid;
         if (!payload.phone) {
           sendJSON({ error: '手机号为必填项' }, 400);
           return;
@@ -306,6 +316,8 @@ const server = http.createServer(async (req, res) => {
         }
         const updateFields = pickLeadUserFields(await readBody(req));
         delete updateFields.projectId;
+        delete updateFields.leadType;
+        delete updateFields.sourceChannel;
         if (data.leads[index].projectId) delete updateFields.businessScene;
         for (const key of ['transferDetails', 'equipmentDetails', 'renovationDetails']) {
           if (updateFields[key] && typeof updateFields[key] === 'object') {
@@ -343,7 +355,7 @@ const server = http.createServer(async (req, res) => {
       let list = [...data.leads];
       list = list.filter(l => 
         ['equipment_sell', 'equipment_buy', 'equipment_recycle'].includes(l.leadType) &&
-        (l.equipmentPublication?.status === 'online' || (l.equipmentPublication?.publishStatus === 'approved' && l.equipmentPublication?.isPublic))
+        l.equipmentPublication?.status === 'online'
       );
       if (query.leadType && query.leadType !== ALL) {
         list = list.filter(l => l.leadType === query.leadType);

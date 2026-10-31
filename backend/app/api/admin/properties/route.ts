@@ -2,7 +2,7 @@ import { commercialFilters } from '../../../../lib/commercial'
 import type { Where } from 'payload'
 import { getProjectMissingFields, PUBLIC_PROJECT_STATUSES } from '../../../../collections/Projects'
 import { getAuthenticatedStaff } from '../../_shared/auth'
-import { readJsonObject, jsonInputError } from '../../_shared/requestInput'
+import { readJsonObject, jsonInputError, sameOrigin } from '../../_shared/requestInput'
 import { getPayloadInstance, json, mapProject } from '../../_shared/payloadApi'
 import { projectQualityWhere } from '../../../../lib/cmsRules.mjs'
 
@@ -64,6 +64,7 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
+  if (!sameOrigin(request)) return json({ error: '请求来源无效' }, 403)
   const staff = await getAuthenticatedStaff('projects')
   if (!staff) return json({ error: '请先登录后台' }, 401)
 

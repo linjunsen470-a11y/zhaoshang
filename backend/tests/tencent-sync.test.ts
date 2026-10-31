@@ -103,6 +103,78 @@ test('repeated sync is idempotent; document follow-up updates only working field
   assert.equal(result.errors.length, 0)
 })
 
+test('formatted submission dates do not cause repeated customer exports or get overwritten on later edits', async t => {
+  await isolated(t)
+  const f = fixture()
+  await runTencentSync(f.payload, 'test', f.docs, config)
+  const date = f.records[0].field_values!.find(cell => cell.field === '提交时间')!
+  delete date.string_value
+  date.text_value = { items: [{ text: '2026/10/24 09:00' }] }
+  const writes = f.writes.length
+  assert.equal((await runTencentSync(f.payload, 'test', f.docs, config)).leads.unchanged, 1)
+  assert.equal(f.writes.length, writes)
+  f.local[0].name = '新称呼'
+  assert.equal((await runTencentSync(f.payload, 'test', f.docs, config)).leads.updated, 1)
+  assert.equal(cellValue(f.records[0], '提交时间'), '2026/10/24 09:00')
+})
+
+test('structured consultation details use the existing customer description column and keep private fields out', () => {
+  const cells = leadCustomerCells({ ...lead, leadType: 'transfer', remark: '方便时联系', transferDetails: {
+    locationText: '广州', includesEquipment: false, internalNote: '不能导出',
+  } }, 'test:42')
+  const description = cellValue({ record_id: 'r', field_values: cells }, '客户说明')
+  assert.equal(description, '方便时联系\n店铺位置：广州\n包含设备：否')
+  assert.equal(JSON.stringify(cells).includes('不能导出'), false)
+})
+
+test('rented property sync never toggles offline and unchanged rows skip media queries; restored rows still update', async t => {
+  await isolated(t)
+  const record: SheetRecord = { record_id: 'p1', field_values: [
+    textCell('城市', '广州'), textCell('行政区', '天河'), textCell('场所名称', '学校'), textCell('场景', '学校'),
+    textCell('校区/位置', 'A01'), textCell('招租状态', '已出租'),
+    { field: '商铺图片', image_value: { items: [{ image_id: 'image-1' }] } },
+  ] }
+  const row: Record<string, unknown> = { id: 1, seedKey: 'tencent:file:properties:p1', ...mapProperty(record).data, coverImage: 7, images: [7] }
+  const statuses: unknown[] = []
+  let mediaQueries = 0
+  const payload = {
+    async find(args: { collection: string }) {
+      if (args.collection === 'media') { mediaQueries++; return { docs: [{ id: 7 }] } }
+      return { docs: [structuredClone(row)], hasNextPage: false }
+    },
+    async update(args: { data: Record<string, unknown> }) {
+      if ('status' in args.data) statuses.push(args.data.status)
+      Object.assign(row, args.data)
+      return row
+    },
+  } as unknown as Payload
+  const docs: DocsClient = {
+    async call(method) {
+      if (method === 'smartsheet.list_views') return { views: [{ view_name: '全部房源', view_id: 'all', config: '{"filterSpec":{"2":[]}}' }] }
+      if (method === 'smartsheet.list_records') return { records: [record], total: 1, has_more: false }
+      throw new Error('Unexpected call')
+    }, async close() {},
+  }
+  const settings = { ...config, importProperties: true, exportLeads: false }
+  for (let i = 0; i < 2; i++) {
+    const result = await runTencentSync(payload, 'test', docs, settings)
+    assert.equal(result.errors.length, 0)
+    assert.equal(result.properties.stopped, 0)
+    assert.equal(result.properties.unchanged, 1)
+  }
+  assert.equal(mediaQueries, 1)
+  assert.deepEqual(statuses, [])
+  row.status = 'offline'
+  assert.equal((await runTencentSync(payload, 'test', docs, settings)).properties.updated, 1)
+  assert.equal(row.status, 'full')
+  assert.deepEqual(statuses, ['full'])
+  record.field_values = [textCell('招租状态', '已出租')]
+  const invalid = await runTencentSync(payload, 'test', docs, settings)
+  assert.equal(invalid.errors.length, 1)
+  assert.equal(invalid.properties.stopped, 1)
+  assert.equal(row.status, 'offline')
+})
+
 test('missing local consultations are marked withdrawn without deleting remote rows', async t => {
   await isolated(t)
   const f = fixture()

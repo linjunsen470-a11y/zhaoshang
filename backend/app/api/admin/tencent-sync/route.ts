@@ -1,21 +1,12 @@
 import { getAuthenticatedStaff } from '../../_shared/auth'
 import { getPayloadInstance, json } from '../../_shared/payloadApi'
-import { readJsonObject, jsonInputError } from '../../_shared/requestInput'
+import { readJsonObject, jsonInputError, sameOrigin } from '../../_shared/requestInput'
 import { connectDocs } from '../../../../lib/tencent/client'
 import { getSyncConfig, publicSyncConfig, readSyncFile, saveSyncConfig, syncErrorMessage } from '../../../../lib/tencent/config'
 import { runTencentSync, type SyncReport } from '../../../../lib/tencent/sync'
 
 export const runtime = 'nodejs'
 export const maxDuration = 300
-
-function sameOrigin(request: Request) {
-  const origin = request.headers.get('origin')
-  if (!origin) return true
-  const target = new URL(request.url)
-  const host = request.headers.get('host') || target.host
-  const protocol = request.headers.get('x-forwarded-proto')?.split(',')[0].trim() || target.protocol.replace(':', '')
-  return origin === `${protocol}://${host}`
-}
 
 export async function GET() {
   if (!await getAuthenticatedStaff()) return json({ error: '请先登录后台' }, 401)

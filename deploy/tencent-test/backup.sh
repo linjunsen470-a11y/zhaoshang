@@ -7,7 +7,9 @@ destination="backups/$stamp"
 mkdir -p "$destination"
 # For a fully consistent database/media pair, schedule this while writes and the
 # optional sync worker are paused. Copy the completed directory off this server.
-docker compose exec -T db pg_dump -U zhaoshang -d zhaoshang_cloud_test \
+docker compose exec -T db pg_dump \
+  -U "$(docker compose exec -T db printenv POSTGRES_USER)" \
+  -d "$(docker compose exec -T db printenv POSTGRES_DB)" \
   --no-owner --no-acl -Fc < /dev/null > "$destination/database.dump"
 docker compose run --rm --no-deps -T --user 0 --entrypoint tar tools \
   -czf - -C /app media .tencent-sync < /dev/null > "$destination/media-sync.tar.gz"

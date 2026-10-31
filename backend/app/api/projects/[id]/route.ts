@@ -1,6 +1,6 @@
 import { getPayloadInstance, isPublicProject, json, mapProject, sanitizeProjectInput } from '../../_shared/payloadApi'
 import { getAuthenticatedStaff } from '../../_shared/auth'
-import { readJsonObject, jsonInputError } from '../../_shared/requestInput'
+import { readJsonObject, jsonInputError, sameOrigin } from '../../_shared/requestInput'
 import { isAdminUser } from '../../../../collections/shared/access'
 
 type Args = {
@@ -24,6 +24,7 @@ export async function GET(_request: Request, { params }: Args) {
 }
 
 export async function PUT(request: Request, { params }: Args) {
+  if (!sameOrigin(request)) return json({ error: '请求来源无效' }, 403)
   const staff = await getAuthenticatedStaff('projects')
   if (!staff) {
     return json({ error: '权限不足' }, 403)
@@ -52,7 +53,8 @@ export async function PUT(request: Request, { params }: Args) {
   }
 }
 
-export async function DELETE(_: Request, { params }: Args) {
+export async function DELETE(request: Request, { params }: Args) {
+  if (!sameOrigin(request)) return json({ error: '请求来源无效' }, 403)
   const staff = await getAuthenticatedStaff('projects')
   if (!staff || !isAdminUser(staff)) {
     return json({ error: '权限不足，仅管理员可删除项目' }, 403)
