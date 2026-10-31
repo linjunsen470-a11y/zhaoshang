@@ -1,0 +1,27 @@
+version: "1.0"
+name: gitee-verify
+displayName: Tencent image verification
+stages:
+  - name: build
+    displayName: Build and upload image
+    strategy: naturally
+    trigger: auto
+    steps:
+      - step: image-build-plus@buildkitd
+        name: build-app
+        displayName: Build application image
+        dockerCerts:
+          - uuid: tencent-ccr-zhaoshang
+        tag: "ccr.ccs.tencentyun.com/jinyi_zhaoshang/wechat_app:${GITEE_COMMIT}"
+        dockerfile: backend/Dockerfile
+        context: backend
+        artifacts: []
+        isCache: true
+        processorType:
+          - amd64
+        strategy:
+          retry: "0"
+          timeout: 15
+          resource:
+            cpu: "4"
+            memory: "8"
