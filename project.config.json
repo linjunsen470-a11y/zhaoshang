@@ -1,6 +1,6 @@
 {
   "setting": {
-    "urlCheck": false,
+    "urlCheck": true,
     "es6": true,
     "postcss": true,
     "minified": false,
@@ -51,6 +51,6 @@
     ],
     "include": []
   },
-  "appid": "wx22fb8f72be05d5c3",
+  "appid": "wx98ad42097b40a52d",
   "editorSetting": {}
 }

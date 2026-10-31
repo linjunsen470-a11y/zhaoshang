@@ -11,12 +11,15 @@ node_modules/
 
 # Generated output and caches
 .next/
+.next-*/
 out/
 dist/
 build/
 coverage/
 test-results/
 scratch/
+/tmp/
+/temp/
 .turbo/
 .cache/
 .eslintcache
@@ -24,7 +27,17 @@ scratch/
 next-env.d.ts
 payload-types.ts
 media/
+.tencent-sync/
 /uploads/
+/backend/uploads/
+
+# Local preview/test artifacts and script caches
+playwright-report/
+blob-report/
+__pycache__/
+*.py[cod]
+*.pid
+*.pid.lock
 
 # Logs
 *.log
@@ -40,6 +53,10 @@ Thumbs.db
 .vscode/
 .cursor/
 mcps/
+*.swp
+*.swo
+*.orig
+*~
 
 # WeChat DevTools local output
 project.private.config.json
@@ -48,3 +65,9 @@ miniprogram_npm/
 # Deployment state and private keys
 .vercel/
 *.pem
+*.key
+*.p12
+*.pfx
+
+# Local deployment credentials
+deploy/local/

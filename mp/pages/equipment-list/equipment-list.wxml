@@ -1,3 +1,4 @@
+<import src="../../templates/loading.wxml" />
 <view class="container e2e-equipment-list" data-test="equipment-list">
   <!-- 头部筛选 Tabs -->
   <view class="tabs-bar">
@@ -7,10 +8,7 @@
   <view class="list-body">
     <!-- 加载中 -->
     <view class="loading-state" wx:if="{{loading}}">
-      <view class="skeleton">
-      </view>
-      <view class="skeleton">
-      </view>
+      <template is="loading-cards" data="{{kind: 'fields'}}" />
     </view>
     <!-- 列表展示 -->
     <view class="state-box" wx:elif="{{loadError}}">
@@ -65,6 +63,7 @@
             </scroll-view>
           </view>
           <!-- 底部动作条 -->
+          <button class="equipment-copy" bindtap="onCopyEquipment" data-id="{{item.id}}">复制设备信息，发给顾问</button>
           <view class="card-actions flex align-center justify-between">
             <text class="privacy-tip">联系方式已隐藏，请通过顾问对接</text>
             <button class="btn btn-primary btn-action" bindtap="onContactAdvisor">联系顾问</button>

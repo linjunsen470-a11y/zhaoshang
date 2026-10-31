@@ -1,10 +1,10 @@
 const api = require('../services/api.js');
 const upload = require('../services/upload.js');
+const { authorizeWechatPhone, rememberContact } = require('./wechatContact.js');
 const { normalizeAttachments, previewUrls } = require('./attachment.js');
 const {
   clip,
   validatePhone,
-  validateName,
   validatePrivacyConsent,
   rememberPrivacyConsent,
   hasPrivacyConsent,
@@ -14,8 +14,14 @@ const {
 
 module.exports = Behavior({
   data: {
+    maxRemarkLength: config.MAX_REMARK_LENGTH,
+    maxNameLength: config.MAX_NAME_LENGTH,
+    maxPhoneLength: config.MAX_PHONE_LENGTH,
+    maxRegionLength: config.MAX_REGION_LENGTH,
+    maxTextLength: config.MAX_TEXT_LENGTH,
     name: '',
     phone: '',
+    phoneAuthorizing: false,
     remark: '',
     attachments: [],
     uploadingImages: false,
@@ -44,8 +50,8 @@ module.exports = Behavior({
         loadLeadForEdit(api, options.leadId, lead => {
           this.setData({
             formLoading: false,
-            name: lead.name,
-            phone: lead.phone,
+            name: lead.name || '',
+            phone: lead.phone || '',
             remark: lead.remark || '',
             attachments: normalizeAttachments(lead.attachments)
           });
@@ -62,6 +68,23 @@ module.exports = Behavior({
     onInputPhone(e) {
       this.clearFieldError('phone');
       this.setData({ phone: clip(e.detail.value, config.MAX_PHONE_LENGTH) });
+    },
+
+    async onGetPhoneNumber(e) {
+      if (this.data.phoneAuthorizing || this.data.submitting) return;
+      this.setData({ phoneAuthorizing: true });
+      try {
+        const phone = await authorizeWechatPhone(e);
+        if (!phone) return;
+        this.clearFieldError('phone');
+        this.setData({ phone });
+        rememberContact({ phone });
+        wx.showToast({ title: '微信手机号已获取', icon: 'none' });
+      } catch (error) {
+        wx.showToast({ title: error.message || '手机号获取失败，请重试', icon: 'none' });
+      } finally {
+        this.setData({ phoneAuthorizing: false });
+      }
     },
 
     onInputRemark(e) {
@@ -121,20 +144,22 @@ module.exports = Behavior({
 
     validateCommonForm() {
       if (this.data.submitting) return false;
+      if (this.data.phoneAuthorizing) {
+        wx.showToast({ title: '正在获取微信手机号', icon: 'none' });
+        return false;
+      }
       if (this.data.formLoading || this.data.projectLoading || this.data.formLoadError || this.data.projectLoadError) {
         wx.showToast({ title: '请先重新加载咨询信息', icon: 'none' });
         return false;
       }
-      const { name, phone, uploadingImages, isEditMode } = this.data;
+      const { phone, uploadingImages, isEditMode } = this.data;
       if (uploadingImages) {
         wx.showToast({ title: '图片仍在上传', icon: 'none' });
         return false;
       }
       const errors = {};
       (this.data.requiredFields || []).forEach(field => { if (!String(this.data[field.key] || '').trim()) errors[field.key] = field.message; });
-      const nameError = validateName(name);
-      if (nameError) errors.name = nameError;
-      if (!validatePhone(phone)) errors.phone = '请输入正确的 11 位手机号';
+      if (!validatePhone(phone)) errors.phone = '请输入有效手机号或使用微信授权';
       if (!isEditMode) {
         const privacyError = validatePrivacyConsent(this.data.privacyAccepted);
         if (privacyError) {

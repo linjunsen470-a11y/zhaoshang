@@ -75,10 +75,9 @@ function generateId(prefix) {
     const data = readData();
     const leads = data.leads || [];
     const maxId = leads.reduce((max, l) => {
-      const cleaned = String(l.id).replace(/^l_?/, '');
-      const num = parseInt(cleaned, 10);
+      const num = Number(l.id);
       return (!isNaN(num) && num > max) ? num : max;
-    }, 26000000);
+    }, 0);
     return String(maxId + 1);
   }
   return prefix + Math.random().toString(36).substring(2, 9);
@@ -119,17 +118,17 @@ function readBody(req) {
 
 
 const commercialOptions = JSON.parse(fs.readFileSync(path.join(__dirname, 'backend/collections/shared/commercialOptions.json'), 'utf8'));
-const sceneOf = p => p.businessScene || (commercialOptions.campusTypes.includes(p.projectType) ? 'campus' : '');
+const sceneOf = p => p.businessScene || '';
 const parentId = p => p.parentProject && typeof p.parentProject === 'object' ? p.parentProject.id : p.parentProject;
 function isPublic(p, all) {
-  if (!p || !PUBLIC_STATUSES.has(p.status)) return false;
+  if (!p || !PUBLIC_STATUSES.has(p.status) || !commercialOptions.scenes.some(scene => scene.value === sceneOf(p)) || p.projectType === '校外临校铺位') return false;
   if (!parentId(p)) return true;
   const parent = all.find(row => String(row.id) === String(parentId(p)));
-  return !!parent && parent.listingKind === 'project' && PUBLIC_STATUSES.has(parent.status);
+  return !!parent && parent.listingKind === 'project' && PUBLIC_STATUSES.has(parent.status) && commercialOptions.scenes.some(scene => scene.value === sceneOf(parent)) && parent.projectType !== '校外临校铺位';
 }
 function publicProject(p, all) {
   const parent = all.find(row => String(row.id) === String(parentId(p)));
-  const { remark, sourceLead, sourceLeadKey, seedKey, legacyUnclassified, ...publicFields } = p;
+  const { remark, sourceLead, sourceLeadKey, seedKey, ...publicFields } = p;
   return { ...publicFields, listingKind: p.listingKind || 'unit', businessScene: sceneOf(p), parentProject: parent && isPublic(parent, all) ? { id: parent.id, title: parent.title, status: parent.status } : null };
 }
 
@@ -168,7 +167,11 @@ function normalizeLead(raw, projects) {
 }
 
 function filterProjects(projects, query) {
+  const group = query.sceneGroup && query.sceneGroup !== ALL ? commercialOptions.browseGroups.find(item => item.value === query.sceneGroup) : null;
+  if (query.sceneGroup && query.sceneGroup !== ALL && !group) throw new Error('sceneGroup 筛选无效');
   let result = projects.filter(p => isPublic(p, projects)).map(p => publicProject(p, projects));
+  if (group) result = result.filter(p => group.scenes.includes(p.businessScene));
+  if (query.available === 'true') result = result.filter(project => project.status !== 'full');
   for (const key of ['district', 'projectType', 'status', 'opportunityType', 'businessScene', 'listingKind']) {
     if (query[key] && query[key] !== ALL) result = result.filter(p => p[key] === query[key]);
   }
@@ -189,10 +192,10 @@ function filterProjects(projects, query) {
   const timestamp = v => typeof v === 'number' ? v : Date.parse(v) || 0;
   result.sort((a, b) => (query.sort === 'latest' ? 0 : b.sort - a.sort) || timestamp(b.createdAt) - timestamp(a.createdAt) || String(b.id).localeCompare(String(a.id)));
   const page = Math.max(1, Math.floor(Number(query.page) || 1));
-  const limit = Math.min(100, Math.max(1, Math.floor(Number(query.limit) || (query.pagination === 'true' ? 20 : 100))));
+  const limit = Math.min(100, Math.max(1, Math.floor(Number(query.limit) || 20)));
   const totalDocs = result.length, totalPages = Math.ceil(totalDocs / limit);
   const docs = result.slice((page - 1) * limit, page * limit);
-  return query.pagination === 'true' ? { docs, page, totalDocs, totalPages, hasNextPage: page < totalPages } : docs;
+  return { docs, page, totalDocs, totalPages, hasNextPage: page < totalPages };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -259,12 +262,20 @@ const server = http.createServer(async (req, res) => {
         const rawBody = await readBody(req);
         const userFields = pickLeadUserFields(rawBody);
         const payload = normalizeLead(userFields, data.projects);
-        if (!payload.name || !payload.phone) {
-          sendJSON({ error: '称呼和手机号为必填项' }, 400);
+        if (!payload.phone) {
+          sendJSON({ error: '手机号为必填项' }, 400);
           return;
         }
         if (!/^1[3-9]\d{9}$/.test(payload.phone)) {
           sendJSON({ error: '手机号格式不正确' }, 400);
+          return;
+        }
+        if (payload.leadType === 'transfer' && !String(payload.transferDetails?.locationText || '').trim()) {
+          sendJSON({ error: '请填写店铺所在城市或区域' }, 400);
+          return;
+        }
+        if (['equipment_sell', 'equipment_buy', 'equipment_recycle'].includes(payload.leadType) && !String(payload.equipmentDetails?.equipmentName || '').trim()) {
+          sendJSON({ error: '请填写设备名称' }, 400);
           return;
         }
         if (payload.projectId) {
@@ -296,6 +307,11 @@ const server = http.createServer(async (req, res) => {
         const updateFields = pickLeadUserFields(await readBody(req));
         delete updateFields.projectId;
         if (data.leads[index].projectId) delete updateFields.businessScene;
+        for (const key of ['transferDetails', 'equipmentDetails', 'renovationDetails']) {
+          if (updateFields[key] && typeof updateFields[key] === 'object') {
+            updateFields[key] = { ...(data.leads[index][key] || {}), ...updateFields[key] };
+          }
+        }
         data.leads[index] = {
           ...data.leads[index],
           ...updateFields,

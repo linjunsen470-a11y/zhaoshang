@@ -43,7 +43,7 @@ export async function PUT(request: Request, { params }: Args) {
     const doc = await payload.update({
       collection: 'projects',
       id,
-      data: sanitizeProjectInput(input),
+      data: Object.fromEntries(Object.entries(sanitizeProjectInput(input)).filter(([key]) => Object.hasOwn(input, key))),
       overrideAccess: true,
     })
     return json(mapProject(doc, !!staff))

@@ -1,11 +1,29 @@
 const options = require('../config/commercial.js');
+const { projectText } = require('./publicText.js');
 const PUBLIC = ['online', 'coming', 'full'];
 function sceneOf(p) {
-  return p.businessScene || (options.campusTypes.includes(p.projectType) ? 'campus' : '');
+  return p.businessScene || '';
+}
+function withinScope(p) {
+  return options.scenes.some(scene => scene.value === sceneOf(p)) && p.projectType !== '校外临校铺位';
 }
 function rangeText(min, max, unit) {
   if (typeof min !== 'number' || typeof max !== 'number') return '';
   return (min === max ? String(min) : `${min}—${max}`) + unit;
+}
+function formatAmount(value) {
+  const [whole, fraction] = String(value).split('.');
+  return whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',') + (fraction ? '.' + fraction : '');
+}
+function feeBreakdown(text, hasRent) {
+  const items = [];
+  const rest = [];
+  String(text || '').split(/[；;\n]/).map(value => value.trim()).filter(Boolean).forEach(part => {
+    const match = part.match(/^(进场费|入场费|押金|物业费|管理费|转让费)[：:\s]*(.+)$/);
+    if (match && !/[、，,]/.test(match[2])) items.push({ label: match[1], value: match[2] });
+    else if (!hasRent || !/^(基础租金|基础月租|月租|租金)\s*[：:]?\s*[\d,.—–~至-]+\s*元\s*\/\s*月$/.test(part)) rest.push(part);
+  });
+  return { items, remainder: rest.join('；') };
 }
 function campusLabel(p) {
   const place = `${p.city || ''}${p.district || ''}`;
@@ -44,11 +62,13 @@ function decorate(p) {
   const businessScene = sceneOf(p);
   const campusName = campusLabel(p);
   const names = schoolNames(p);
-  const rewrite = value => names.length ? scrubText(value, names, campusName) : String(value || '');
+  const rewrite = value => projectText(names.length ? scrubText(value, names, campusName) : value);
   const label = businessScene === 'campus' ? campusName : rewrite(p.venueName || p.district || '');
   const title = rewrite(p.title);
   const feeText = rewrite(p.feeText);
   const rentText = rangeText(p.monthlyRentMin, p.monthlyRentMax, '元/月');
+  const priceAmount = rentText ? (p.monthlyRentMin === p.monthlyRentMax ? formatAmount(p.monthlyRentMin) : `${formatAmount(p.monthlyRentMin)}—${formatAmount(p.monthlyRentMax)}`) : '';
+  const fees = feeBreakdown(feeText, Boolean(rentText));
   const highlights = Array.isArray(p.highlights) ? p.highlights.map(rewrite) : p.highlights;
   const transferInfo = p.transferInfo && typeof p.transferInfo === 'object' ? Object.keys(p.transferInfo).reduce((info, key) => {
     info[key] = typeof p.transferInfo[key] === 'string' ? rewrite(p.transferInfo[key]) : p.transferInfo[key];
@@ -56,9 +76,10 @@ function decorate(p) {
   }, {}) : p.transferInfo;
   const parent = p.parentProject && typeof p.parentProject === 'object' ? { ...p.parentProject, title: rewrite(p.parentProject.title) } : p.parentProject;
   return { ...p, businessScene, listingKind: p.listingKind || 'unit',
-    isDemoImage: [p.coverImage, ...(Array.isArray(p.images) ? p.images : [])].some(url => /^\/images\/(demo\/|shop-demo-)/.test(url || '')),
+    isDemoImage: [p.coverImage, ...(Array.isArray(p.images) ? p.images : [])].some(url => /^\/images\/(demo\/|shop-demo-)/.test(url || '') || /\/tencent-demo-/.test(url || '')),
     sceneLabel: (options.scenes.find(s => s.value === businessScene) || {}).label || '待分类',
     kindLabel: p.listingKind === 'project' ? '项目招商' : '具体铺位',
+    spaceLabel: p.listingKind === 'project' ? '项目招商' : p.projectType === '食堂档口' ? '饭堂档口' : p.projectType === '校园服务点' ? '配套服务点' : '商铺',
     locationLabel: label,
     placeText: summaryPlace(title, label, p.city, p.district),
     placeDetail: detailPlace(businessScene, label, p.city, p.district),
@@ -70,13 +91,15 @@ function decorate(p) {
     venueName: businessScene === 'campus' ? '' : rewrite(p.venueName),
     showVenue: businessScene !== 'campus' && Boolean(rewrite(p.venueName)) && !detailPlace(businessScene, label, p.city, p.district).includes(rewrite(p.venueName)),
     unitLocation: rewrite(p.unitLocation),
-    communityInfo: rewrite(p.communityInfo),
-    tourismInfo: rewrite(p.tourismInfo),
-    mallInfo: rewrite(p.mallInfo),
     premisesConditions: rewrite(p.premisesConditions),
     cooperationMode: rewrite(p.cooperationMode),
     viewingTimeText: rewrite(p.viewingTimeText),
     feeText,
+    feeItems: fees.items,
+    feeRemainder: fees.remainder,
+    priceAmount,
+    priceUnit: priceAmount ? '元/月' : '',
+    priceSummary: /面议/.test(feeText) && !rentText ? '面议' : (rentText || feeText || '面议'),
     priceText: rentText || feeText || '面议',
     priceLabel: rentText ? '基础月租' : '费用',
     areaText: rewrite(p.areaText),
@@ -92,20 +115,24 @@ function decorate(p) {
 }
 function parentId(p) { return p.parentProject && typeof p.parentProject === 'object' ? p.parentProject.id : p.parentProject; }
 function publicRecord(p, all) {
-  if (!p || !PUBLIC.includes(p.status)) return false;
+  if (!p || !PUBLIC.includes(p.status) || !withinScope(p)) return false;
   if (!parentId(p)) return true;
   const parent = all.find(item => String(item.id) === String(parentId(p)));
-  return Boolean(parent && parent.listingKind === 'project' && PUBLIC.includes(parent.status));
+  return Boolean(parent && parent.listingKind === 'project' && PUBLIC.includes(parent.status) && withinScope(parent));
 }
 function overlaps(p, min, max, range) {
   return typeof p[min] === 'number' && typeof p[max] === 'number'
     && p[max] >= range.min && (range.max === null || p[min] < range.max);
 }
 function queryLocal(all, params) {
+  const group = params.sceneGroup && params.sceneGroup !== '全部' ? options.browseGroups.find(item => item.value === params.sceneGroup) : null;
+  if (params.sceneGroup && params.sceneGroup !== '全部' && !group) throw new Error('sceneGroup 筛选无效');
   let docs = all.filter(p => publicRecord(p, all)).map(p => {
     const parent = all.find(item => String(item.id) === String(parentId(p)));
     return decorate({ ...p, parentProject: parent ? { id: parent.id, title: parent.title, status: parent.status } : null });
   });
+  if (params.available === true || params.available === 'true') docs = docs.filter(p => p.status !== 'full');
+  if (group) docs = docs.filter(p => group.scenes.includes(p.businessScene));
   ['district', 'projectType', 'status', 'opportunityType', 'businessScene', 'listingKind'].forEach(key => {
     if (params[key] && params[key] !== '全部') docs = docs.filter(p => p[key] === params[key]);
   });
@@ -123,16 +150,15 @@ function queryLocal(all, params) {
   const timestamp = value => typeof value === 'number' ? value : Date.parse(value) || 0;
   docs.sort((a, b) => (params.sort === 'latest' ? 0 : (b.sort || 0) - (a.sort || 0)) || timestamp(b.createdAt) - timestamp(a.createdAt) || String(b.id).localeCompare(String(a.id)));
   const page = Math.max(1, Math.floor(Number(params.page) || 1));
-  const paginated = params.pagination === true || params.pagination === 'true';
-  const limit = Math.min(100, Math.max(1, Math.floor(Number(params.limit) || (paginated ? 20 : 100))));
+  const limit = Math.min(100, Math.max(1, Math.floor(Number(params.limit) || 20)));
   const totalDocs = docs.length;
   const totalPages = Math.ceil(totalDocs / limit);
   docs = docs.slice((page - 1) * limit, page * limit);
-  return paginated ? { docs, page, totalDocs, totalPages, hasNextPage: page < totalPages } : docs;
+  return { docs, page, totalDocs, totalPages, hasNextPage: page < totalPages };
 }
 function scrubKnownText(value, project) {
   if (!project) return String(value || '');
   const names = schoolNames(project);
   return names.length ? scrubText(value, names, campusLabel(project)) : String(value || '');
 }
-module.exports = { options, sceneOf, decorate, publicRecord, overlaps, queryLocal, scrubKnownText };
+module.exports = { options, sceneOf, withinScope, decorate, publicRecord, overlaps, queryLocal, scrubKnownText };

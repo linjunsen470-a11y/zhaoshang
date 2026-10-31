@@ -3,8 +3,9 @@
     <icon type="success" size="64" color="#204C3C" class="success-icon">
     </icon>
     <view class="success-title">提交成功</view>
-    <view class="success-desc">招商顾问会查看你提交的信息并联系跟进。请保持电话畅通，以便进一步确认需求。</view>
+    <view class="success-desc">需求已送达招商顾问。顾问会联系你确认经营品类、面积与预算，再沟通合适房源和看铺安排。</view>
   </view>
+  <view class="next-steps"><view class="next-title">接下来</view><view><text class="step-num">1</text>保持电话或微信畅通，确认找铺需求</view><view><text class="step-num">2</text>沟通匹配房源，预约现场看铺</view><view><text class="step-num">3</text>在「我的咨询」查看进度或补充信息</view></view>
   <view class="btn-group">
     <button class="btn btn-primary action-btn e2e-view-leads" data-test="view-created-lead" hover-class="btn-primary-active" bindtap="onViewLeads">查看我的咨询记录</button>
     <button class="btn btn-secondary action-btn" hover-class="btn-secondary-active" bindtap="onGoHome">返回服务首页</button>

@@ -12,6 +12,8 @@
 
 `pnpm test:ci` 是普通 PR 闸门，不要求安装微信开发者工具。
 
+需要 JUnit 报告时可运行 `pnpm test:mp:smoke:junit` 或 `pnpm test:mp:full:junit`；命令会自动创建 `test-results/mp-e2e/`，该目录清空后也可正常生成报告。
+
 ## 快速测试
 
 ```powershell
@@ -80,3 +82,9 @@ pnpm test:mp:full
 - `.github/workflows/mp-e2e.yml` 使用带 `Windows`、`wechat-devtools` 标签的 self-hosted runner，工作日定时运行 full，也支持手动选择 smoke/full。
 - Runner 必须预装固定版本的微信开发者工具并配置 `MP_E2E_CLI_PATH`、`MP_E2E_API_URL` repository variables。
 - DevTools 或基础库升级先在 runner 上连续运行 full 10 次；无失败、无数据残留后再更新固定版本。
+
+## 2026-10-31 清理后本机复验
+
+在微信开发者工具 Stable 2.01.2510290 中连接本地演示后台：找铺页显示 11 条可咨询房源，详情页展示了图片、面积和租金，咨询表单带入了对应房源。使用独立的开发测试身份提交一条演示咨询后，已核对后台记录与咨询历史，并删除该记录、恢复原有本地状态。
+
+本次用模拟号码填写表单，未验证微信真实手机号授权或真机环境。开发者工具提示本地 HTTP 图片地址应升级为 HTTPS；上线时需使用实际 HTTPS 图片地址。工具初始化期间另出现一条基础库 `timeout` 日志，未定位到具体请求，本次上述流程未被阻断。

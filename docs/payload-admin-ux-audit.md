@@ -1,5 +1,7 @@
 # Payload CMS 房源后台重做记录
 
+> 本文保留历史审计。2026-10-16 已将主导航收拢、首页改为日常入口与待联系列表，并统一保存和状态说明；当前操作以 [CMS 上手指南](payload-cms-quickstart.md) 为准。
+
 > 实施日期：2026-07-11
 > 核心目标：快速整理、修改和上架房源；CRM 不再是后台主线。
 
@@ -37,7 +39,7 @@
 
 ### 详情双版本
 
-- **客户原文**（`customerSnapshot` JSON）：创建时锁定，后台不可覆盖；历史数据首次保存时按当时库中内容回填一次。
+- **客户原文**（`customerSnapshot` JSON）：创建时锁定，后台不可覆盖。
 - **处理编辑**：可改字段、状态、内部备注、设备公开设置；不影响原文快照。
 - 顶部 **联系条**（`InquiryContactBar`）：大号电话、复制、关联房源、转让生成草稿。
 
@@ -67,11 +69,6 @@
 - 浅色与深色主题均显式设置按钮文字颜色。
 - 所有筛选反映到 URL；表单控件有标签；异步反馈使用 `aria-live`；抽屉阻止背景滚动；减少动效设置得到尊重。
 
-## 迁移
+## 数据库结构
 
-```bash
-pnpm --dir backend migrate:property-cms
-pnpm --dir backend exec tsx scripts/push-schema.ts
-```
-
-迁移脚本先在独立 `cms_backup` schema 中创建时间戳备份表，再在事务中完成状态映射。Schema push 后旧商户档案、跟进记录和高级 CRM 字段不再可用。
+统一按 [数据库初始化](schema-setup.md) 准备当前 Schema。

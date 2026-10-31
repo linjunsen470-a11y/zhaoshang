@@ -1,254 +1,107 @@
-import { publicCommercialWhere } from '../../lib/commercial'
+import Image from 'next/image'
+import Link from 'next/link'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
-import { mapProject } from '../api/_shared/payloadApi'
 import { headers } from 'next/headers'
+import { commercialFilters, commercialIsPublic, publicCommercialWhere } from '../../lib/commercial'
+import options from '../../collections/shared/commercialOptions.json'
+import { mapProject } from '../api/_shared/payloadApi'
 import { getClientIp, takeRateLimit } from '../api/_shared/rateLimit'
 import { LeadForm, type LeadFormState } from './LeadForm'
 
 export const dynamic = 'force-dynamic'
-
-type Opportunity = {
-  id: string
-  opportunityType?: 'leasing' | 'transfer'
-  title: string
-  city?: string
-  district?: string
-  venueName?: string
-  placeLabel?: string
-  schoolName?: string
-  projectType?: string
-  areaText?: string
-  feeText?: string
-  suitableBusiness?: string[]
-  highlights?: string[]
-  coverImage?: string
-  status?: string
-  isRecommended?: boolean
-}
+type Opportunity = { id: string; title: string; businessScene: string; city?: string; district?: string; areaText?: string; feeText?: string; suitableBusiness?: string[]; coverImage?: string; status: string; projectType?: string; opportunityType?: string }
+const sceneDescriptions: Record<string, string> = { campus: '校内食堂、商业配套与生活服务', industrial_park: '服务园区员工的餐饮与配套空间', office: '面向办公人群的轻餐饮与生活配套' }
 
 async function submitWebsiteLead(_: LeadFormState, formData: FormData): Promise<LeadFormState> {
   'use server'
-
-  const requestHeaders = await headers()
-  const request = new Request('http://local/website-lead', { headers: requestHeaders })
-  const rate = takeRateLimit(`website-lead:${getClientIp(request)}`, 10, 60 * 60 * 1000)
-  if (!rate.allowed) {
-    return { status: 'error', message: '提交次数较多，请稍后再试，或直接联系招商顾问。' }
-  }
-
+  const request = new Request('http://local/website-lead', { headers: await headers() })
+  if (!takeRateLimit('website-lead:' + getClientIp(request), 10, 60 * 60 * 1000).allowed) return { status: 'error', message: '提交次数较多，请稍后再试。' }
   const name = String(formData.get('name') || '').trim().slice(0, 20)
   const phone = String(formData.get('phone') || '').trim()
-  const leadType = String(formData.get('leadType') || 'leasing')
-  const businessType = String(formData.get('businessType') || '').trim().slice(0, 100)
-  const remark = String(formData.get('remark') || '').trim().slice(0, 500)
-  const allowedLeadTypes = new Set([
-    'leasing', 'transfer', 'equipment_sell', 'equipment_buy', 'equipment_recycle', 'brand_cooperation',
-  ])
-
-  if (formData.get('privacyConsent') !== 'on') {
-    return { status: 'error', message: '请先确认信息使用说明，再提交需求。' }
-  }
-  if (!name) return { status: 'error', message: '请填写称呼，方便招商顾问与您联系。' }
-  if (!/^1[3-9]\d{9}$/.test(phone)) {
-    return { status: 'error', message: '请输入有效的 11 位手机号。' }
-  }
-  if (!allowedLeadTypes.has(leadType)) {
-    return { status: 'error', message: '请选择有效的需求类型后重新提交。' }
-  }
-
+  let leadType = String(formData.get('leadType') || 'leasing')
+  let businessScene = String(formData.get('businessScene') || '')
+  const projectId = String(formData.get('projectId') || '')
+  if (formData.get('privacyConsent') !== 'on') return { status: 'error', message: '请先确认信息使用说明，再提交需求。' }
+  if (!name) return { status: 'error', message: '请填写称呼，方便顾问与您联系。' }
+  if (!/^1[3-9]\d{9}$/.test(phone)) return { status: 'error', message: '请输入有效的 11 位手机号。' }
+  if (!['leasing', 'transfer', 'equipment_sell', 'equipment_buy', 'equipment_recycle'].includes(leadType)) return { status: 'error', message: '请选择有效的需求类型。' }
+  if (businessScene && !options.scenes.some(scene => scene.value === businessScene)) return { status: 'error', message: '请选择学校、工业园区或写字楼场景。' }
   try {
-    const payloadInstance = await getPayload({ config })
-    await payloadInstance.create({
-      collection: 'leads',
-      data: {
-        leadType: leadType as
-          | 'leasing'
-          | 'transfer'
-          | 'equipment_sell'
-          | 'equipment_buy'
-          | 'equipment_recycle'
-          | 'brand_cooperation',
-        sourceChannel: 'website',
-        name,
-        phone,
-        businessType: businessType || '网站提交需求',
-        budgetRange: '待沟通',
-        remark,
-        status: 'new',
-      },
-    })
-    return { status: 'success', message: '需求已提交，招商顾问会尽快与您联系。' }
-  } catch (dbErr) {
-    console.error('Failed to write lead to Payload database:', dbErr)
-    return { status: 'error', message: '暂时无法提交，请稍后重试，或直接联系招商顾问。' }
+    const payload = await getPayload({ config })
+    if (projectId) {
+      if (!/^[1-9]\d*$/.test(projectId) || !Number.isSafeInteger(Number(projectId))) return { status: 'error', message: '房源信息无效，请重新选择。' }
+      const project = await payload.findByID({ collection: 'projects', id: projectId, depth: 1, overrideAccess: true }).catch(() => null)
+      if (!project || !commercialIsPublic(project) || project.status === 'full') return { status: 'error', message: '该房源暂不接受咨询，请重新选择或提交通用需求。' }
+      businessScene = String(project.businessScene || '')
+      leadType = 'leasing'
+    }
+    await payload.create({ collection: 'leads', data: {
+      leadType, businessScene: businessScene || null, project: projectId ? Number(projectId) : undefined,
+      sourceChannel: 'website', name, phone,
+      businessType: String(formData.get('businessType') || '').trim().slice(0, 100) || '待沟通',
+      budgetRange: '待沟通', remark: String(formData.get('remark') || '').trim().slice(0, 500), status: 'new',
+    } })
+    return { status: 'success', message: '需求已收到，顾问会与您确认条件并协助匹配。' }
+  } catch (error) {
+    console.error('[website-lead]', error instanceof Error ? error.message : 'Submission failed')
+    return { status: 'error', message: '暂时无法提交，请稍后重试。已填写的内容仍保留。' }
   }
 }
-
-const serviceCards = [
-  {
-    title: '找商铺',
-    desc: '按区域、面积和基础月租查看校园、社区、文旅及购物中心的项目与铺位。',
-  },
-  {
-    title: '委托店铺转让',
-    desc: '提交店铺位置、合同期限和设备情况，由招商顾问协助联系意向方。',
-  },
-  {
-    title: '餐饮设备供需',
-    desc: '登记出售、求购或回收需求，由运营人员审核资料并协助双方沟通。',
-  },
-  {
-    title: '品牌合作入口',
-    desc: '为品牌方寻找经营点位，也为学校和物业提供品牌引入咨询。',
-  },
-]
 
 async function getOpportunities() {
   try {
-    const payloadInstance = await getPayload({ config })
-    const result = await payloadInstance.find({
-      collection: 'projects',
-      where: publicCommercialWhere(),
-      sort: '-isRecommended',
-      limit: 6,
-      depth: 1,
-    })
-
-    return result.docs.map(doc => mapProject(doc) as Opportunity)
-  } catch (dbErr) {
-    console.error('Failed to read opportunities from Payload database:', dbErr)
-    return []
-  }
+    const payload = await getPayload({ config })
+    const results = await Promise.all(options.scenes.map(scene => payload.find({ collection: 'projects', where: { and: [publicCommercialWhere(), ...commercialFilters(new URLSearchParams({ businessScene: scene.value, available: 'true' }))] }, sort: '-isRecommended,-updatedAt', limit: 4, depth: 1 })))
+    return { docs: results.flatMap(result => result.docs.map(doc => mapProject(doc) as Opportunity)), failed: false }
+  } catch { return { docs: [] as Opportunity[], failed: true } }
 }
 
-export default async function Home() {
-  const opportunities = await getOpportunities()
-  const featured = opportunities[0]
+function PropertyCard({ item }: { item: Opportunity }) {
+  const demo = item.title.includes('【演示】') || (item.coverImage || '').includes('/tencent-demo-') || (item.coverImage || '').includes('/images/demo/')
+  return <article className="web-opportunity-card">
+    <div className="web-property-photo">{item.coverImage ? <Image src={item.coverImage} alt={item.title + '展示图'} width={640} height={420} unoptimized /> : <span>图片待补充</span>}{demo ? <span className="web-photo-label">演示 · 示意图</span> : null}</div>
+    <div className="web-property-copy"><div className="web-property-meta"><span>{item.city} · {item.district}</span><span>{item.status === 'coming' ? '即将开放' : '开放中'}</span></div>
+      <h3>{item.title}</h3><p className="web-property-area">{item.areaText || '面积待确认'} · {item.projectType === '食堂档口' ? '饭堂档口' : '配套商铺'}</p>
+      <p className="web-property-fee">{item.feeText || '费用待确认'}</p>
+      {item.suitableBusiness?.length ? <p className="web-property-business">适合 {item.suitableBusiness.slice(0, 3).join(' / ')}</p> : null}
+      <a className="web-property-contact" href={'/?projectId=' + encodeURIComponent(item.id) + '#lead-form'}>咨询这处房源 <span aria-hidden="true">↗</span></a>
+    </div>
+  </article>
+}
 
-  return (
-    <>
-      <a className="web-skip-link" href="#main-content">跳到主要内容</a>
-      <main className="min-h-screen bg-white text-[#161a18]" id="main-content">
-      <section className="border-b border-[#e3e7e5]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-5">
-          <div>
-            <div className="text-lg font-semibold">商业空间</div>
-            <div className="text-sm text-[#66706c]">商铺招商、店铺转让与设备供需</div>
-          </div>
-          <a className="web-header-action" href="#lead-form">
-            提交需求
-          </a>
-        </div>
+export default async function Home({ searchParams }: { searchParams: Promise<{ projectId?: string; scene?: string }> }) {
+  const [query, opportunities] = await Promise.all([searchParams, getOpportunities()])
+  let selectedProject = opportunities.docs.find(item => item.id === query.projectId) || null
+  if (!selectedProject && query.projectId && /^[1-9]\d*$/.test(query.projectId)) {
+    try {
+      const payload = await getPayload({ config })
+      const result = await payload.find({ collection: 'projects', where: { and: [publicCommercialWhere(), { id: { equals: query.projectId } }, { status: { in: ['online', 'coming'] } }] }, depth: 1, limit: 1 })
+      if (result.docs[0]) selectedProject = mapProject(result.docs[0]) as Opportunity
+    } catch { /* The public fallback and general form remain available. */ }
+  }
+  const initialScene = options.scenes.some(scene => scene.value === query.scene) ? query.scene : ''
+  return <>
+    <a className="web-skip-link" href="#main-content">跳到主要内容</a>
+    <header className="web-site-header"><Link className="web-brand" href="/">饭堂与商铺<span>学校 · 园区 · 写字楼</span></Link><a className="web-header-action" href="#lead-form">提交找铺需求</a></header>
+    <main id="main-content">
+      <section className="web-scope-hero"><div className="web-content">
+        <p className="web-eyebrow">封闭与半封闭物业招租服务</p><h1>找对场所，<br />让生意更有方向。</h1>
+        <p className="web-hero-description">为餐饮与生活服务经营者，寻找学校、工业园区、写字楼里的饭堂档口和配套商铺。</p>
+        <div className="web-hero-actions"><a className="web-header-action" href="#opportunities">浏览可咨询房源</a><a className="web-secondary-action" href="#lead-form">让顾问帮我找</a></div>
+        <nav className="web-scene-navigation" aria-label="按物业场景找房源">{options.scenes.map((scene, index) => <a href={'#scene-' + scene.value} key={scene.value}><span className="web-scene-number">0{index + 1}</span><strong>{scene.label}</strong><span>{sceneDescriptions[scene.value]}</span><span aria-hidden="true">↗</span></a>)}</nav>
+      </div></section>
+      <section className="web-content web-list-section" id="opportunities"><div className="web-section-heading"><div><p className="web-eyebrow">经营空间</p><h2>从你的目标场景开始找</h2></div><p>默认展示开放中与即将开放的房源。<br />费用、经营条件与档期由顾问进一步确认。</p></div>
+        {opportunities.failed ? <div className="web-empty-state" role="status">暂时无法加载房源。<Link href="/">刷新重试</Link>，也可以先登记找铺需求。</div> : options.scenes.map(scene => {
+          const items = opportunities.docs.filter(item => item.businessScene === scene.value)
+          return <section className="web-scene-section" id={'scene-' + scene.value} key={scene.value}><div className="web-scene-heading"><h3>{scene.label}</h3><a href={'/?scene=' + scene.value + '#lead-form'}>登记{scene.label}找铺需求 →</a></div>
+            {items.length ? <div className="web-property-grid">{items.map(item => <PropertyCard key={item.id} item={item} />)}</div> : <div className="web-empty-state">该场景的房源正在整理中，可先告诉我们你的品类、预算与意向区域。</div>}
+          </section>
+        })}
       </section>
-
-      <section>
-        <div className="mx-auto grid max-w-6xl gap-10 px-5 py-12 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
-          <div>
-            <p className="text-sm text-[#66706c]">餐饮、零售与校园服务</p>
-            <h1 className="mt-3 max-w-3xl text-balance text-4xl font-semibold leading-tight md:text-5xl">
-              找项目、选铺位、转让店铺，一次提交即可获得顾问协助。
-            </h1>
-            <p className="mt-5 max-w-2xl text-pretty text-base leading-8 text-[#66706c]">
-              查看校园、社区、文旅和购物中心的招商信息，也可登记店铺转让、设备供需及品牌合作需求。提交后由招商顾问联系并跟进。
-            </p>
-            <div className="mt-8 border-y border-[#e3e7e5]">
-              {serviceCards.map(card => (
-                <div className="grid gap-1 border-b border-[#e3e7e5] py-4 last:border-b-0" key={card.title}>
-                  <h2 className="text-base font-semibold">{card.title}</h2>
-                  <p className="text-sm leading-6 text-[#66706c]">{card.desc}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <a className="web-header-action" href="#opportunities">查看项目与铺位</a>
-              <a className="web-secondary-action" href="#lead-form">提交需求</a>
-            </div>
-          </div>
-          <article className="overflow-hidden rounded border border-[#e3e7e5] bg-white">
-            {featured ? (
-              <>
-                <div
-                  className="h-80 bg-[#f3f6f5] bg-cover bg-center"
-                  role="img"
-                  aria-label={`${featured.title}封面`}
-                  style={{ backgroundImage: featured.coverImage ? `url(${featured.coverImage})` : undefined }}
-                />
-                <div className="p-5">
-                  <p className="text-xs text-[#66706c]">
-                    {featured.opportunityType === 'transfer' ? '转让店铺' : '招商铺位'}
-                    {featured.city ? ` · ${featured.city}` : ''}
-                    {featured.district ? ` / ${featured.district}` : ''}
-                  </p>
-                  <h2 className="mt-2 text-2xl font-semibold">{featured.title}</h2>
-                  <p className="mt-3 text-lg font-semibold text-[#1e3a34]">{featured.feeText || '费用面议'}</p>
-                </div>
-              </>
-            ) : (
-              <div className="flex h-80 items-center justify-center p-8 text-center text-sm text-[#66706c]">
-                暂无公开项目与铺位。可以先提交需求，由招商顾问协助查找。
-              </div>
-            )}
-          </article>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl scroll-mt-8 px-5 py-12" id="opportunities">
-        <div className="mb-5 flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-semibold">精选项目与铺位</h2>
-            <p className="mt-2 text-sm text-[#66706c]">查看近期开放的招商项目、具体铺位和转让店铺。</p>
-          </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {opportunities.map(item => (
-            <article className="web-opportunity-card" key={item.id}>
-              <div
-                className="h-40 bg-cover bg-center"
-                role="img"
-                aria-label={`${item.title}封面`}
-                style={{
-                  backgroundImage: `url(${item.coverImage || 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=800&q=80'})`,
-                }}
-              />
-              <div className="p-5">
-                <div className="mb-3 flex items-center gap-2">
-                  <span className="rounded-sm bg-[#e7eeea] px-2 py-1 text-xs font-medium text-[#1e3a34]">
-                    {item.opportunityType === 'transfer' ? '转让店铺' : '招商铺位'}
-                  </span>
-                  <span className="text-xs text-[#66706c]">
-                    {item.city} / {item.district}
-                  </span>
-                </div>
-                <h3 className="line-clamp-2 min-h-14 text-lg font-semibold">{item.title}</h3>
-                <p className="mt-2 truncate text-sm text-[#66706c]">{item.placeLabel || item.projectType || '位置待确认'}</p>
-                <p className="mt-3 text-base font-semibold text-[#1e3a34]">{item.feeText || '费用面议'}</p>
-                <p className="mt-3 line-clamp-2 text-sm leading-6 text-[#66706c]">
-                  {item.highlights?.join('、')}
-                </p>
-              </div>
-            </article>
-          ))}
-          {!opportunities.length ? (
-            <div className="col-span-full rounded-sm border border-dashed border-[#e3e7e5] bg-white p-8 text-center text-sm text-[#66706c]">
-              暂无公开项目与铺位。您可以先提交需求，由招商顾问协助查找。
-            </div>
-          ) : null}
-        </div>
-      </section>
-
-      <section className="border-t border-[#e3e7e5]" id="lead-form">
-        <div className="mx-auto grid max-w-6xl gap-8 px-5 py-12 md:grid-cols-[0.9fr_1.1fr]">
-          <div>
-            <h2 className="text-2xl font-semibold">提交合作需求</h2>
-            <p className="mt-3 leading-7 text-[#66706c]">
-              填写您的经营方向和联系方式，招商顾问会根据需求提供项目推荐、转让或设备供需对接服务。
-            </p>
-          </div>
-          <LeadForm action={submitWebsiteLead} />
-        </div>
-      </section>
-      </main>
-    </>
-  )
+      <section className="web-lead-section" id="lead-form"><div className="web-content web-lead-layout"><div><p className="web-eyebrow">需求匹配</p><h2>先说需求，<br />顾问帮你缩小选择。</h2><p>提交后，我们会与你确认经营品类、费用承受范围和营业安排，再协助匹配房源与沟通看铺。</p><ol className="web-service-steps"><li>登记经营需求</li><li>确认条件并匹配房源</li><li>协助看铺与后续沟通</li></ol><details className="web-support-services"><summary>转让、餐饮设备等配套服务</summary><p>如已有店铺需要转让，或有餐饮设备出售、求购需求，可在右侧选择对应需求类型。</p></details></div>
+        <div>{query.projectId && !selectedProject ? <p className="web-selection-notice" role="status">原房源暂不可咨询，你可以提交通用需求，让顾问寻找其他选择。</p> : null}<LeadForm key={selectedProject?.id || initialScene || 'general'} action={submitWebsiteLead} selectedProject={selectedProject} initialScene={initialScene} /></div>
+      </div></section>
+    </main><footer className="web-site-footer web-content">饭堂与商铺 · 专注固定服务客群的经营空间</footer>
+  </>
 }

@@ -1,34 +1,41 @@
 <import src="../../templates/property.wxml" />
 <view class="container">
   <view class="masthead">
-    <view class="brand-line">商业空间 · 招商服务</view>
-    <view class="home-title">为你的生意，找到合适空间</view>
+    <view class="brand-line">
+      <view class="brand-mark" aria-hidden="true">锦</view>
+      <text class="brand-name">{{appName}}</text>
+      <text class="brand-service">商业空间招商服务</text>
+    </view>
+    <view class="home-title">好生意，从合适的铺位开始</view>
+    <view class="home-subtitle">校园 · 园区 · 写字楼的餐饮与配套商铺</view>
     <view class="search-bar">
       <image class="search-icon" src="/images/icons/search.png" />
-      <input class="e2e-search-input" data-test="home-search-input" aria-label="搜索项目、区域或品类" placeholder="搜索项目、区域或品类" confirm-type="search" bindconfirm="onSearch" bindinput="onSearchInput" value="{{searchKeyword}}" />
+      <input class="e2e-search-input" data-test="home-search-input" aria-label="搜索区域、场所或经营品类" placeholder="搜区域、场所或经营品类" confirm-type="search" bindconfirm="onSearch" bindinput="onSearchInput" value="{{searchKeyword}}" />
       <button class="search-btn e2e-search-button" data-test="home-search-submit" bindtap="onSearch">搜索</button>
     </view>
   </view>
   <view class="scene-row">
     <button class="scene-item" wx:for="{{categories}}" wx:key="id" bindtap="onCategoryTap" data-type="{{item.type}}" data-val="{{item.val}}" hover-class="tap-active">
-      <image src="{{item.icon}}" class="scene-icon" />
-      <text>{{item.name}}</text>
+      <view class="scene-art scene-art-{{item.id}}" aria-hidden="true"><view class="scene-building"></view><view class="scene-tree"></view></view>
+      <text class="scene-name">{{item.name}}</text>
+      <view class="scene-summary"><text class="scene-desc">{{item.desc}}</text><text class="scene-arrow" aria-hidden="true"><text class="ui-chevron" aria-hidden="true"></text></text></view>
     </button>
   </view>
-  <view class="service-row">
-    <button class="service-item e2e-service-entry" data-test="service-entry" wx:for="{{services}}" wx:key="id" data-action="{{item.action}}" bindtap="onServiceTap" hover-class="tap-active">
-      {{item.name}}
-      <text class="service-arrow">›</text>
-    </button>
+  <view class="home-actions">
+    <button class="home-action home-action-need" bindtap="onApplyCustom" hover-class="action-pressed"><view><view class="need-title">帮我找铺</view><view class="need-desc">说出需求，顾问帮你匹配</view></view><text class="ui-chevron" aria-hidden="true"></text></button>
+    <button class="home-action home-action-services" bindtap="onOpenServices" hover-class="action-pressed" aria-expanded="{{showServices}}">更多服务 <text aria-hidden="true"><text class="ui-chevron ui-chevron-down" aria-hidden="true"></text></text></button>
   </view>
   <view class="section-container" wx:if="{{loading}}">
     <view class="skeleton skeleton-title">
     </view>
-    <view class="skeleton skeleton-cover">
-    </view>
-    <view class="skeleton skeleton-line">
-    </view>
-    <view class="skeleton skeleton-row">
+    <view class="recommended-skeleton">
+      <view class="skeleton skeleton-cover"></view>
+      <view class="skeleton-copy">
+        <view class="skeleton skeleton-kicker"></view>
+        <view class="skeleton skeleton-line"></view>
+        <view class="skeleton skeleton-line short"></view>
+        <view class="skeleton skeleton-price"></view>
+      </view>
     </view>
   </view>
   <view class="state-box" wx:elif="{{loadError}}">
@@ -40,7 +47,7 @@
     <view class="section-container" wx:if="{{recommendedList.length}}">
       <view class="section-header">
         <view class="section-title">重点推荐</view>
-        <button class="section-more" bindtap="onViewRecommended">查看全部 ›</button>
+        <button class="section-more" bindtap="onViewRecommended">查看全部 <text class="ui-chevron" aria-hidden="true"></text></button>
       </view>
       <scroll-view class="recommended-scroll" scroll-x enhanced show-scrollbar="{{false}}">
         <view class="recommended-track">
@@ -51,17 +58,16 @@
                 <image class="line-icon" src="/images/icons/shops.png" />
                 <text>暂无实拍</text>
               </view>
-              <text class="demo-label" wx:if="{{item.isDemoImage}}">摄影示意 · 非实拍</text>
             </view>
             <view class="rec-copy">
-              <view class="rec-kicker">{{item.sceneLabel}} · {{item.kindLabel}}</view>
+              <view class="rec-kicker">{{item.sceneLabel}} · {{item.spaceLabel}} <text wx:if="{{item.status === 'coming'}}">· 即将开放</text></view>
               <view class="rec-title ellipsis-2">{{item.title}}</view>
               <view class="rec-place ellipsis" wx:if="{{item.placeText}}">{{item.placeText}}</view>
               <view class="rec-price">
                 <text class="property-price-label">{{item.priceLabel}}</text>
-                {{item.priceText}}
+                <block wx:if="{{item.priceAmount}}"><text class="price-number">{{item.priceAmount}}</text><text class="price-unit">{{item.priceUnit}}</text></block><text wx:else>{{item.priceSummary}}</text>
               </view>
-              <button class="rec-favorite" catchtap="onToggleFav" data-id="{{item.id}}" aria-label="{{item.isFav ? '取消收藏' : '收藏'}}">
+              <button class="rec-favorite {{item.isFav ? 'favorite-active' : ''}}" catchtap="onToggleFav" data-id="{{item.id}}" aria-label="{{item.isFav ? '取消收藏' : '收藏'}}">
                 <image src="{{item.isFav ? '/images/icons/star-fill.png' : '/images/icons/star.png'}}" />
               </button>
             </view>
@@ -69,15 +75,15 @@
         </view>
       </scroll-view>
     </view>
-    <view class="section-container latest-section">
+    <view class="section-container latest-section" wx:if="{{latestList.length || !recommendedList.length}}">
       <view class="section-header">
-        <view class="section-title">最新项目与铺位</view>
-        <navigator class="section-more" url="/pages/list/list" open-type="switchTab">查看全部 ›</navigator>
+        <view class="section-title">精选房源</view>
+        <navigator class="section-more" url="/pages/list/list" open-type="switchTab">查看全部 <text class="ui-chevron" aria-hidden="true"></text></navigator>
       </view>
       <view wx:if="{{latestList.length}}">
         <view class="latest-card property-row e2e-latest-card" data-test="latest-project-card" wx:for="{{latestList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" data-status="{{item.status}}" role="button" aria-label="{{item.title}}">
           <template is="property" data="{{item, lazy: true, listName: 'latestList'}}" />
-          <button class="property-favorite e2e-latest-favorite" data-test="latest-project-favorite" catchtap="onToggleFav" data-id="{{item.id}}" aria-label="{{item.isFav ? '取消收藏' : '收藏'}}">
+          <button class="{{item.isFav ? 'favorite-active' : ''}} property-favorite e2e-latest-favorite" data-test="latest-project-favorite" catchtap="onToggleFav" data-id="{{item.id}}" aria-label="{{item.isFav ? '取消收藏' : '收藏'}}">
             <image src="{{item.isFav ? '/images/icons/star-fill.png' : '/images/icons/star.png'}}" />
           </button>
         </view>
@@ -86,13 +92,16 @@
         <text class="state-title">房源正在整理中</text>
         <text class="state-desc">先告诉我们你的需求，顾问会协助寻找合适空间。</text>
       </view>
-      <button class="advisor-link" bindtap="onApplyCustom">
-        <view>
-          <view class="advisor-title">还没找到合适的？</view>
-          <view class="advisor-desc">提交需求，让顾问协助匹配</view>
-        </view>
-        <text>›</text>
-      </button>
     </view>
   </block>
+</view>
+<view class="services-overlay" wx:if="{{showServices}}" catchtouchmove="noop">
+  <view class="services-backdrop" bindtap="onCloseServices"></view>
+  <view class="services-sheet" role="dialog" aria-modal="true" aria-label="更多服务">
+    <view class="services-heading"><text>更多服务</text><button class="services-close" bindtap="onCloseServices" aria-label="关闭更多服务"><text class="ui-close" aria-hidden="true"></text></button></view>
+    <button class="service-item e2e-service-entry" data-test="service-entry" wx:for="{{services}}" wx:key="id" data-action="{{item.action}}" bindtap="onServiceTap" hover-class="action-pressed">
+      <view class="service-copy"><view class="service-title">{{item.name}}</view><view class="service-desc">{{item.desc}}</view></view><text class="service-arrow" aria-hidden="true"><text class="ui-chevron" aria-hidden="true"></text></text>
+    </button>
+    <button class="services-cancel" bindtap="onCloseServices" hover-class="action-pressed">取消</button>
+  </view>
 </view>

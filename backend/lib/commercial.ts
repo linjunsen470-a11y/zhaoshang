@@ -4,8 +4,7 @@ import options from '../collections/shared/commercialOptions.json'
 export const PUBLIC_COMMERCIAL_STATUSES = ['online', 'coming', 'full']
 export type CommercialRecord = Record<string, unknown>
 export function commercialScene(doc: CommercialRecord): string {
-  return typeof doc.businessScene === 'string' && doc.businessScene
-    ? doc.businessScene : options.campusTypes.includes(String(doc.projectType)) ? 'campus' : ''
+  return typeof doc.businessScene === 'string' ? doc.businessScene : ''
 }
 export function commercialId(value: unknown): string | number | undefined {
   if (typeof value === 'string' && value) return value
@@ -13,29 +12,40 @@ export function commercialId(value: unknown): string | number | undefined {
   if (value && typeof value === 'object' && 'id' in value) return commercialId(value.id)
   return undefined
 }
+export function withinBusinessScope(doc: CommercialRecord): boolean {
+  return options.scenes.some(scene => scene.value === commercialScene(doc)) && doc.projectType !== '校外临校铺位'
+}
+function scopeWhere(prefix = ''): Where {
+  return { [`${prefix}businessScene`]: { in: options.scenes.map(scene => scene.value) } }
+}
 export function publicCommercialWhere(): Where {
   return { and: [
+    scopeWhere(),
+    { emergencyHidden: { not_equals: true } },
     { status: { in: PUBLIC_COMMERCIAL_STATUSES } },
     { or: [
       { parentProject: { exists: false } },
       { and: [
         { 'parentProject.listingKind': { equals: 'project' } },
         { 'parentProject.status': { in: PUBLIC_COMMERCIAL_STATUSES } },
+        scopeWhere('parentProject.'),
+        { 'parentProject.emergencyHidden': { not_equals: true } },
       ] },
     ] },
   ] }
 }
 export function commercialIsPublic(doc: CommercialRecord): boolean {
-  if (!PUBLIC_COMMERCIAL_STATUSES.includes(String(doc.status))) return false
+  if (doc.emergencyHidden === true || !PUBLIC_COMMERCIAL_STATUSES.includes(String(doc.status)) || !withinBusinessScope(doc)) return false
   if (!commercialId(doc.parentProject)) return true
   const parent = doc.parentProject
   return Boolean(parent && typeof parent === 'object' && 'status' in parent
     && 'listingKind' in parent && parent.listingKind === 'project'
-    && PUBLIC_COMMERCIAL_STATUSES.includes(String(parent.status)))
+    && !(parent as CommercialRecord).emergencyHidden && PUBLIC_COMMERCIAL_STATUSES.includes(String(parent.status)) && withinBusinessScope(parent as CommercialRecord))
 }
 export function validateCommercial(doc: CommercialRecord): string | null {
   if (!['project', 'unit'].includes(String(doc.listingKind || 'unit'))) return '发布内容无效'
-  if (doc.businessScene && !options.scenes.some(s => s.value === doc.businessScene)) return '商业场景无效'
+  if (doc.businessScene && !options.scenes.some(s => s.value === doc.businessScene)) return '该物业场景已停止服务，请选择学校、工业园区或写字楼'
+  if (doc.projectType === '校外临校铺位') return '当前仅服务封闭或半封闭物业的内部铺位'
   if (doc.listingKind === 'project' && (doc.opportunityType === 'transfer' || commercialId(doc.parentProject))) {
     return '整项目仅支持招商，且不能关联父项目'
   }
@@ -51,6 +61,13 @@ export function validateCommercial(doc: CommercialRecord): string | null {
 }
 export function commercialFilters(params: URLSearchParams): Where[] {
   const conditions: Where[] = []
+  const groupValue = params.get('sceneGroup')
+  if (groupValue && groupValue !== '全部') {
+    const group = options.browseGroups.find(item => item.value === groupValue)
+    if (!group) throw new Error('sceneGroup 筛选无效')
+    conditions.push({ businessScene: { in: group.scenes } })
+  }
+  if (params.get('available') === 'true') conditions.push({ status: { in: ['online', 'coming'] } })
   for (const [key, values] of Object.entries({ listingKind: options.kinds.map(v => v.value), businessScene: options.scenes.map(v => v.value), district: options.districts, status: ['draft', 'online', 'coming', 'full', 'offline'], opportunityType: ['leasing', 'transfer'], projectType: [...options.campusTypes, '其他', '店铺转让'] })) {
     const value = params.get(key)
     if (value && value !== '全部' && !values.includes(value)) throw new Error(`${key} 筛选无效`)
@@ -61,10 +78,7 @@ export function commercialFilters(params: URLSearchParams): Where[] {
     if (value && value !== '全部') conditions.push({ [key]: { equals: value } })
   }
   const scene = params.get('businessScene')
-  if (scene && scene !== '全部') conditions.push(scene === 'campus' ? { or: [
-    { businessScene: { equals: scene } },
-    { and: [{ businessScene: { exists: false } }, { projectType: { in: options.campusTypes } }] },
-  ] } : { businessScene: { equals: scene } })
+  if (scene && scene !== '全部') conditions.push({ businessScene: { equals: scene } })
   if (params.get('business') && params.get('business') !== '全部') {
     if (!options.businesses.includes(params.get('business')!)) throw new Error('经营品类无效')
     conditions.push({ suitableBusiness: { in: [params.get('business')] } })

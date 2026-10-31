@@ -47,27 +47,27 @@ graph LR
 ### 🔴 Critical（关键安全问题 - 已全部修复）
 
 #### 1. Projects 集合读权限越权漏配
-- **文件**：[Projects.ts](file:///d:/work/zhaoshang/backend/collections/Projects.ts) L25
+- **文件**：[Projects.ts](../backend/collections/Projects.ts) L25
 - **问题**：`read: () => true` 使得所有项目（包括草稿、已拒绝）通过 Payload 原生 REST API 对未认证用户可见。
 - **修复**：**[已修复]** 修改 read 权限：对 staff 用户放行所有数据，非 staff 用户限制仅能读取状态为 `online` / `coming` / `full` 且审核状态为 `approved` 的公开项目。
 
 #### 2. 自定义 GET /api/projects 泄露草稿
-- **文件**：[projects/route.ts](file:///d:/work/zhaoshang/backend/app/api/projects/route.ts)
+- **文件**：[projects/route.ts](../backend/app/api/projects/route.ts)
 - **问题**：不带 `?public=true` 参数时默认返回所有项目（含草稿），且无认证要求。
 - **修复**：**[已修复]** 路由层检查 staff 身份。非 staff 访问或显式指定了 `public=true` 时，自动追加 `PUBLIC_STATUSES` 及 `auditStatus='approved'` 过滤。
 
 #### 3. DELETE /api/projects 权限绕过
-- **文件**：[projects/[id]/route.ts](file:///d:/work/zhaoshang/backend/app/api/projects/%5Bid%5D/route.ts)
+- **文件**：[projects/[id]/route.ts](../backend/app/api/projects/[id]/route.ts)
 - **问题**：路由允许普通 advisor/editor 发起删除，绕过了 Projects 集合仅限 admin 删除的限制。
 - **修复**：**[已修复]** 路由层引入并校验 `isAdminUser(staff)`，仅限 admin 角色的用户可执行删除，其余角色均返回 403。
 
 #### 4. mapProject 暴露内部敏感字段
-- **文件**：[payloadApi.ts](file:///d:/work/zhaoshang/backend/app/api/_shared/payloadApi.ts)
+- **文件**：[payloadApi.ts](../backend/app/api/_shared/payloadApi.ts)
 - **问题**：向公共 API 暴露了 `advisorTips`（招商顾问提示）、`remark`（内部备注）、`trafficTags`、`facilityTags`。
 - **修复**：**[已修复]** 给 `mapProject` 方法增加 `isStaff` 传参，非 staff 用户请求时上述敏感备注字段统一赋空值输出。
 
 #### 5. WeChat 登录降级与开发模式风险
-- **文件**：[wechat-login/route.ts](file:///d:/work/zhaoshang/backend/app/api/auth/wechat-login/route.ts)
+- **文件**：[wechat-login/route.ts](../backend/app/api/auth/wechat-login/route.ts)
 - **问题**：`WECHAT_AUTH_MODE` 未配置时默认开启 `'dev'` 模式；小程序 `wxLogin()` 失败时返回 `'dev'` 导致静默登录。
 - **修复**：**[已修复]** `WECHAT_AUTH_MODE` 未配置时改为默认使用安全 `'wechat'` 模式。修改小程序 `wxLogin()` 代码，失败时直接 `reject` 抛出错误以阻断登录流程。
 
@@ -75,11 +75,11 @@ graph LR
 
 | # | 问题 | 位置 | 修复方案 |
 |---|------|------|------|
-| 6 | Leads `create: () => true` 允许通过 Payload REST API 创建未经过滤的线索 | [Leads.ts](file:///d:/work/zhaoshang/backend/collections/Leads.ts) | **[已修复]** create 权限更改为 `canManageLeads`，匿名用户无法通过 REST API 注入 CRM 字段。 |
-| 7 | `transferDetails`/`equipmentDetails`/`renovationDetails` 字段未校验 | [payloadApi.ts](file:///d:/work/zhaoshang/backend/app/api/_shared/payloadApi.ts) | **[已修复]** 使用 `sanitizeLeadUserFields` 对 Leads 所有结构化子字段进行清洗与透传过滤。 |
-| 8 | mock 服务器仍有手机号旁路查询 | [server.js](file:///d:/work/zhaoshang/server.js) | **[已修复]** mock 服务 leads 接口已移除对 phone 参数的无鉴权查询，并添加了 `pickLeadUserFields` 白名单限制。 |
-| 9 | `wxLogin()` 失败时返回 `'dev'` 而非错误 | [auth.js](file:///d:/work/zhaoshang/mp/services/auth.js) | **[已修复]** 改为 `reject` 报错。 |
-| 10 | 公共设备列表数据库 ID 暴露问题 | [equipments/route.ts](file:///d:/work/zhaoshang/backend/app/api/equipments/route.ts) | **[已修复]** 对公共设备列表接口返回的 leads ID 注入 `LEAD_ID_OFFSET` 包装，防止客户端探测总线索量。 |
+| 6 | Leads `create: () => true` 允许通过 Payload REST API 创建未经过滤的线索 | [Leads.ts](../backend/collections/Leads.ts) | **[已修复]** create 权限更改为 `canManageLeads`，匿名用户无法通过 REST API 注入 CRM 字段。 |
+| 7 | `transferDetails`/`equipmentDetails`/`renovationDetails` 字段未校验 | [payloadApi.ts](../backend/app/api/_shared/payloadApi.ts) | **[已修复]** 使用 `sanitizeLeadUserFields` 对 Leads 所有结构化子字段进行清洗与透传过滤。 |
+| 8 | mock 服务器仍有手机号旁路查询 | [server.js](../server.js) | **[已修复]** mock 服务 leads 接口已移除对 phone 参数的无鉴权查询，并添加了 `pickLeadUserFields` 白名单限制。 |
+| 9 | `wxLogin()` 失败时返回 `'dev'` 而非错误 | [auth.js](../mp/services/auth.js) | **[已修复]** 改为 `reject` 报错。 |
+| 10 | 公共设备列表数据库 ID 暴露问题 | [equipments/route.ts](../backend/app/api/equipments/route.ts) | **[已修复]** 对公共设备列表接口返回的 leads ID 注入 `LEAD_ID_OFFSET` 包装，防止客户端探测总线索量。 |
 | 11 | 无任何 API 端点速率限制 | 后端全局 | 建议在 nginx/网关层或中间件中配置限流。 |
 
 ---
@@ -94,7 +94,7 @@ graph LR
 - **防抖与拦截机制**：在提交表单时实现了防重防抖（`submitting` 锁）。
 
 #### ✅ 代码去重重构完成
-- **[formBehavior.js](file:///d:/work/zhaoshang/mp/utils/formBehavior.js)**：我们提取了通用的小程序 `Behavior`，封装了图片选择/压缩/上传、隐私协议切换、通用表单校验与持久化缓存记忆等逻辑，成功消除了原先三个表单页中约 **400+ 行重复代码**。
+- **[formBehavior.js](../mp/utils/formBehavior.js)**：我们提取了通用的小程序 `Behavior`，封装了图片选择/压缩/上传、隐私协议切换、通用表单校验与持久化缓存记忆等逻辑，成功消除了原先三个表单页中约 **400+ 行重复代码**。
 
 ### 4.2 后端 (backend/)
 
@@ -192,29 +192,29 @@ pie title 功能实现进度
 在 2026-07-08 的代码审计中，针对小程序客户端进行了深度安全加固与代码逻辑清理，已全部修复以下问题：
 
 ### 1. 动态环境 API 地址切换
-- **文件**：[config.js](file:///d:/work/zhaoshang/mp/config.js)
+- **文件**：[config.js](../mp/config.js)
 - **修复情况**：**[已修复]** 引入 `wx.getAccountInfoSync()` 动态获取环境类型，自动在开发版（`127.0.0.1:3000`）、体验版（`trial-api.zhaoshang.com`）和正式版（`api.zhaoshang.com`）之间切换，杜绝了生产环境误用 HTTP 或开发地址的风险。
 
 ### 2. 编辑模式免除隐私勾选拦截
-- **文件**：[formBehavior.js](file:///d:/work/zhaoshang/mp/utils/formBehavior.js)
+- **文件**：[formBehavior.js](../mp/utils/formBehavior.js)
 - **修复情况**：**[已修复]** `validateCommonForm` 校验逻辑中增加 `!isEditMode` 条件。在编辑模式（勾选框隐藏）下跳过隐私政策同意校验，防止换设备或清除缓存的用户无法保存编辑。
 
 ### 3. 上传接口支持 Token 过期刷新与 401 重试
-- **文件**：[upload.js](file:///d:/work/zhaoshang/mp/services/upload.js)
+- **文件**：[upload.js](../mp/services/upload.js)
 - **修复情况**：**[已修复]** 为 `wx.uploadFile` 增加 401 响应处理，在 Token 过期时能够清除本地无效 Token、自动刷新登录并重新发起上传请求，保证图片上传链条的稳定性。
 
 ### 4. 详情页草稿与下线项目越权展示拦截
-- **文件**：[detail.js](file:///d:/work/zhaoshang/mp/pages/detail/detail.js)
+- **文件**：[detail.js](../mp/pages/detail/detail.js)
 - **修复情况**：**[已修复]** 在详情页拉取数据后增加二次状态验证，若项目属于 `draft`、`offline` 或 `rejected` 状态，弹窗警告并安全退回，与后端项目权限加固形成完整闭环。
 
 ### 5. URL 参数解码异常保护
-- **文件**：[list.js](file:///d:/work/zhaoshang/mp/pages/list/list.js)
+- **文件**：[list.js](../mp/pages/list/list.js)
 - **修复情况**：**[已修复]** 封装 `safeDecode` 工具函数包裹 `decodeURIComponent`，利用 `try-catch` 降级，避免含有不合规特殊字符的分享链接/小程序二维码导致页面初始化抛错崩溃。
 
 ### 6. 统一顾问联系交互，去除冗余代码
-- **文件**：[app.js](file:///d:/work/zhaoshang/mp/app.js) / [detail.js](file:///d:/work/zhaoshang/mp/pages/detail/detail.js)
+- **文件**：[app.js](../mp/app.js) / [detail.js](../mp/pages/detail/detail.js)
 - **修复情况**：**[已修复]** 将更加优良的 ActionSheet 拨打/复制顾问手机号逻辑统一合并到全局 `app.js` 的 `callAdvisor` 中，详情页直接通过 `getApp().callAdvisor()` 调用，删除了约 35 行冗余代码。
 
 ### 7. 统一个人资料修改与全局规范对齐
-- **文件**：[my.js](file:///d:/work/zhaoshang/mp/pages/my/my.js)
+- **文件**：[my.js](../mp/pages/my/my.js)
 - **修复情况**：**[已修复]** 个人中心编辑弹窗引入 `form.js`，移除了硬编码的正则和长度限制。修改昵称和手机号输入时动态应用全局配置中的 `clip` 长度裁剪，并统一使用全局 `validatePhone`，提升了逻辑可维护性。

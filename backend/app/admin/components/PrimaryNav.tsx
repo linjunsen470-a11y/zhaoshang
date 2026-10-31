@@ -4,10 +4,11 @@ import { useAuth } from '@payloadcms/ui'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-/**
- * Nav order (business first):
- * 运营工作台 → 项目与铺位 → 咨询收件箱 → 分享素材 → 上架检查 → 系统设置
- */
+const projectTools = [
+  { label: '上架检查', href: '/admin/workspace/quality' },
+  { label: '分享素材', href: '/admin/workspace/share' },
+]
+
 const links = [
   {
     label: '运营工作台',
@@ -17,24 +18,21 @@ const links = [
   {
     label: '项目与铺位',
     href: '/admin/collections/projects',
-    match: (pathname: string) => pathname.startsWith('/admin/collections/projects'),
+    match: (pathname: string) => pathname.startsWith('/admin/collections/projects')
+      || projectTools.some(tool => pathname.startsWith(tool.href)),
   },
   {
     label: '咨询收件箱',
     href: '/admin/workspace/inquiries',
     match: (pathname: string) =>
       pathname.startsWith('/admin/workspace/inquiries')
-      || pathname.startsWith('/admin/collections/leads'),
+      || pathname.startsWith('/admin/collections/leads')
+      || pathname.startsWith('/admin/workspace/equipment'),
   },
   {
-    label: '分享素材',
-    href: '/admin/workspace/share',
-    match: (pathname: string) => pathname.startsWith('/admin/workspace/share'),
-  },
-  {
-    label: '上架检查',
-    href: '/admin/workspace/quality',
-    match: (pathname: string) => pathname.startsWith('/admin/workspace/quality'),
+    label: '腾讯文档同步',
+    href: '/admin/workspace/sync',
+    match: (pathname: string) => pathname.startsWith('/admin/workspace/sync'),
   },
 ]
 
@@ -45,12 +43,12 @@ export function PrimaryNav() {
   const visibleLinks = role === 'admin'
     ? [
         ...links,
+        { label: '用户管理', href: '/admin/collections/users', match: (path: string) => path.startsWith('/admin/collections/users') },
         {
           label: '系统设置',
           href: '/admin/workspace/system',
           match: (path: string) =>
             path.startsWith('/admin/workspace/system')
-            || path.startsWith('/admin/collections/users')
             || path.startsWith('/admin/collections/media'),
         },
       ]
@@ -62,14 +60,24 @@ export function PrimaryNav() {
       {visibleLinks.map(link => {
         const active = link.match(pathname)
         return (
-          <Link
-            className={`cms-nav__link${active ? ' cms-nav__link--active' : ''}`}
-            href={link.href}
-            key={link.href}
-            aria-current={active ? 'page' : undefined}
-          >
-            {link.label}
-          </Link>
+          <div key={link.href}>
+            <Link
+              className={`cms-nav__link${active ? ' cms-nav__link--active' : ''}`}
+              href={link.href}
+              aria-current={active && !projectTools.some(tool => pathname.startsWith(tool.href)) ? 'page' : undefined}
+            >
+              {link.label}
+            </Link>
+            {active && link.href === '/admin/collections/projects' ? (
+              <div className="cms-nav__tools" aria-label="项目工具">
+                {projectTools.map(tool => (
+                  <Link key={tool.href} href={tool.href} aria-current={pathname.startsWith(tool.href) ? 'page' : undefined}>
+                    {tool.label}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </div>
         )
       })}
     </nav>

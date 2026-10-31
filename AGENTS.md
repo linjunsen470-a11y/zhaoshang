@@ -5,11 +5,11 @@
 This repository has four main surfaces:
 
 - `mp/`: WeChat mini-program client. Pages live in `mp/pages/<page>/` with matching `.js`, `.wxml`, `.wxss`, and `.json` files. Shared API calls are in `mp/services/api.js`; client constants are in `mp/config.js`; shared form helpers are in `mp/utils/form.js`; images are in `mp/images/`. Core user flows include finding campus shops, submitting transfer/equipment leads, viewing/editing/deleting own consultation history, and reading the privacy policy.
-- `backend/`: Payload CMS + Next.js backend and public website. App routes are in `backend/app/`, collections in `backend/collections/`, CMS configuration in `backend/payload.config.ts`, and admin UI extensions in `backend/app/admin/components/`. Shared field labels/options live in `backend/collections/shared/fieldOptions.ts`; role-based access helpers live in `backend/collections/shared/access.ts`. Mini-program compatibility APIs and shared auth/sanitization helpers are in `backend/app/api/`.
+- `backend/`: Payload CMS + Next.js backend and public website. App routes are in `backend/app/`, collections in `backend/collections/`, CMS configuration in `backend/payload.config.ts`, and admin UI extensions in `backend/app/admin/components/`. Shared field labels/options live in `backend/collections/shared/fieldOptions.ts`; role-based access helpers live in `backend/collections/shared/access.ts`. Mini-program APIs and shared auth/sanitization helpers are in `backend/app/api/`.
 - Root mock tooling: `server.js` runs the local Mock API and `data.json` stores mock data. The static `admin/` UI has been retired; Payload is the only admin.
 - Deployment tooling: `docker-compose.yml`, root `.env.example`, `backend/Dockerfile`, and `backend/.env.example` support production builds.
 
-Docs belong in `docs/`, including `docs/miniprogram-ux-audit.md` and `docs/payload-admin-ux-audit.md`. Deployment configuration is in `docker-compose.yml` and `.env.example`.
+Docs belong in `docs/`, including `docs/miniprogram-ux-audit.md` and `docs/payload-admin-ux-audit.md`. Deployment configuration is in `docker-compose.yml` and `.env.example`; `.github/workflows/ci.yml` and `deploy/deploy.sh` manage CI and deployment. See `docs/ci-deployment.md`.
 
 ## Build, Test, and Development Commands
 
@@ -19,16 +19,18 @@ Docs belong in `docs/`, including `docs/miniprogram-ux-audit.md` and `docs/paylo
 - `pnpm backend:build`: builds the backend from the repository root.
 - `pnpm backend:lint`: runs backend ESLint from the repository root.
 - `pnpm --dir backend install`: installs backend dependencies using the lockfile.
-- `docker compose up -d --build`: builds and starts Payload, connecting to external Postgres via `DATABASE_URI`; Compose has no `db` service.
+- `docker compose up -d --build`: starts the cloud stack from immutable images; includes a private `db` service. CI builds and publishes images before SSH deployment.
 - `pnpm test:ci`: runs client/backend unit tests; real HTTP contracts require explicit isolated-environment configuration.
 
 Open the mini-program with WeChat DevTools using `mp/project.config.json`.
 
 ## Coding Style & Naming Conventions
 
+This project is not launched. Maintain only the current schema and API contract; do not introduce historical field/status adapters, old-response fallbacks, or automatic old-data repair. Keep explicit schema setup, access control, and runtime error handling. Demo data and its temporary backups need not be retained; use appropriate backup practices for real or production data.
+
 Use JavaScript modules at the root and in `mp/`; use TypeScript in `backend/`. Follow the existing 2-space indentation style and keep semicolons consistent with nearby files. Name mini-program pages by route directory, such as `pages/detail/detail.js`. Name Payload collection files with PascalCase, for example `Projects.ts`.
 
-Run `pnpm backend:lint` before backend changes. Keep client API logic centralized in `mp/services/api.js` rather than duplicating request code in pages. Demo mini-program mode defaults to local storage mock data through `useLocalMock`; disable it only when intentionally testing the local request API.
+Choose backend checks according to the scope and risk of the change. Keep client API logic centralized in `mp/services/api.js` rather than duplicating request code in pages. The develop mini-program currently connects to the Tencent HTTPS API. Configure environments only in `mp/config/environments.js`; local mock requires explicit `useLocalMock: true`.
 
 For lead-related backend changes:
 
@@ -41,24 +43,24 @@ For Payload admin UX changes:
 
 - Register custom admin components in `backend/app/admin/components/` and wire them through `backend/app/admin/[[...segments]]/importMap.js`.
 - Custom workspace views belong under `admin.components.views` with a `path` (e.g. `/workspace/inquiries`). Primary nav routes:
-  - 运营工作台: `/admin`（团队待办 + 漏斗；dashboard 勿再包 AdminWorkspaceShell）
+  - 运营工作台: `/admin`（日常入口 + 待联系咨询；dashboard 勿再包 AdminWorkspaceShell）
   - 项目与铺位: `/admin/collections/projects`
   - 咨询收件箱: `/admin/workspace/inquiries`
-  - 分享素材: `/admin/workspace/share`（文案 + 小程序码 + 海报图）
-  - 上架检查: `/admin/workspace/quality`（原质量门禁，通俗命名）
+  - 项目工具（次级入口）: 分享素材 `/admin/workspace/share`、上架检查 `/admin/workspace/quality`；从项目列表或项目相关页面的次级导航进入
   - 系统: `/admin/workspace/system`
   - 聚合数据: `GET /api/admin/ops-workbench`；咨询快捷改状态: `PATCH /api/admin/inquiries`
 - Workspace custom views (`/workspace/*`) must use `*Route` server components that wrap content with `AdminWorkspaceShell` (`DefaultTemplate`), otherwise the Payload nav/account chrome is missing.
 - Lead detail has two layers: `customerSnapshot` (immutable original) and editable working fields under the「处理编辑」tab. Populate snapshot on create via `buildLeadSnapshot`; never overwrite on update.
+- Keep consultation handling status and internal note in the detail sidebar. “已结束” does not mean “成交”; equipment publication remains an independent state. Project editing uses the native save button plus status selection; do not add another competing publish/save flow.
 - Keep `leads`, `projects`, `users`, and `media` visible so native document routes work (e.g. 「完整详情」→ `/admin/collections/leads/:id`). Hide default Payload nav groups via `admin-theme.css`; PrimaryNav is the IA.
 - Keep dropdown labels/options aligned with the mini-program via `backend/collections/shared/fieldOptions.ts`.
 - Staff roles are `admin` and `editor`; enforce permissions through `backend/collections/shared/access.ts`.
 
-Schema changes against Postgres must run explicitly via `backend/scripts/push-schema.ts` after backup. Keep `PAYLOAD_DB_PUSH=false` during normal startup and production image builds.
+Schema changes against Postgres must run explicitly via `backend/scripts/push-schema.ts` after backup. Temporary demo backups may be removed after verification. Keep `PAYLOAD_DB_PUSH=false` during normal startup and production image builds.
 
 ## Testing Guidelines
 
-For backend changes, run `pnpm backend:lint`, `pnpm test:ci`, `pnpm --dir backend test:cms`, and `pnpm backend:build`. Tests live in `tests/` and `backend/tests/`; real HTTP/database tests must use an isolated test environment. For mini-program changes, compile templates/styles with `node scripts/mp-check-templates.mjs` and verify affected pages in WeChat DevTools, including navigation, form submission, local mock behavior, API error states, lead edit/delete, image upload, token refresh on `401`, and the privacy policy page. Distinguish skipped or unavailable E2E checks from passing tests.
+Favor rapid iteration. Select the smallest meaningful verification that covers the changed behavior and its risks; do not run the full test suite, production build, or complete E2E journey after every small feature or copy/layout change. Documentation-only edits generally need no tests; mini-program template or style edits can use `node scripts/mp-check-templates.mjs` and a focused page check when useful. Use targeted tests for affected backend, client, or admin behavior; expand validation for authentication, permissions, schema/data changes, release preparation, failures, or other material risks. Existing commands such as `pnpm backend:lint`, `pnpm test:ci`, `pnpm --dir backend test:cms`, and `pnpm backend:build` remain available when warranted. Real HTTP/database tests must use an isolated test environment. Distinguish skipped or unavailable E2E checks from passing tests.
 
 ## Commit & Pull Request Guidelines
 

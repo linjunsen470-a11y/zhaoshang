@@ -5,6 +5,7 @@ import {
   sanitizeLeadCreateInput,
   sanitizeLeadUpdateInput,
   validateLeadUserInput,
+  validateLeadCreateRequirements,
 } from '../app/api/_shared/leadPolicy'
 
 test('create sanitization forces ownership and removes CRM-only fields', () => {
@@ -53,11 +54,35 @@ test('partial updates preserve omitted experience and scene; nested CRM fields a
   assert.equal(sanitizeLeadCreateInput({ sourceChannel: 'admin' }, 'openid-a').sourceChannel, 'mini_program')
 })
 
-test('lead validation rejects blank names, fake booleans and invalid attachment identifiers', () => {
-  assert.ok(validateLeadUserInput({ name: '   ' }))
+test('lead validation accepts omitted names and rejects fake booleans and invalid attachment identifiers', () => {
+  assert.equal(validateLeadUserInput({ name: '   ' }), null)
+  assert.equal(validateLeadUserInput({ phone: '13812345678' }), null)
   assert.ok(validateLeadUserInput({ name: ' '.repeat(500) + '客户' }))
   assert.ok(validateLeadUserInput({ hasCampusExperience: 'false' }))
   assert.ok(validateLeadUserInput({ equipmentDetails: { equipmentName: true } }))
   for (const id of [null, {}, '', 'bad', 0, -1, 1.5]) assert.ok(validateLeadUserInput({ attachments: [id] }))
   assert.equal(validateLeadUserInput({ attachments: [1, '2', { id: 3 }] }), null)
+})
+
+test('unnamed leads keep unasked fields unknown and partial edits preserve nested details', () => {
+  const created = sanitizeLeadCreateInput({ name: '  ', phone: '13812345678', transferDetails: { locationText: '广州' } }, 'owner')
+  assert.equal(created.name, null)
+  assert.equal(created.hasCampusExperience, null)
+  assert.equal(created.transferDetails?.includesEquipment, null)
+  const edited = sanitizeLeadUpdateInput({ transferDetails: { locationText: '深圳' } }, 'owner', {
+    leadType: 'transfer', transferDetails: { locationText: '广州', transferFee: '5万', includesEquipment: true },
+  })
+  assert.deepEqual(edited.transferDetails, { locationText: '深圳', transferFee: '5万', includesEquipment: true })
+})
+
+
+test('only transfer location and equipment name are required by their respective consultation types', () => {
+  assert.equal(validateLeadCreateRequirements({ leadType: 'leasing' }), null)
+  assert.equal(validateLeadCreateRequirements({ leadType: 'renovation_consult' }), null)
+  assert.ok(validateLeadCreateRequirements({ leadType: 'transfer' }))
+  assert.equal(validateLeadCreateRequirements({ leadType: 'transfer', transferDetails: { locationText: '广州' } }), null)
+  for (const leadType of ['equipment_sell', 'equipment_buy', 'equipment_recycle']) {
+    assert.ok(validateLeadCreateRequirements({ leadType }))
+    assert.equal(validateLeadCreateRequirements({ leadType, equipmentDetails: { equipmentName: '冷柜' } }), null)
+  }
 })

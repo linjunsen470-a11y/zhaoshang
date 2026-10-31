@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import sharp from 'sharp'
 import { getPayload } from 'payload'
 
-const isolated = new URL(process.env.DATABASE_URI || 'http://unset').pathname === '/zhaoshang_commercial_test_20260922'
+const isolated = ['/zhaoshang_commercial_test_20260922', '/zhaoshang_scene_group_test_20261025'].includes(new URL(process.env.DATABASE_URI || 'http://unset').pathname)
 if (!isolated) throw new Error('Run only through tests/with-commercial-db.mjs with the isolated localhost:3100 service')
 const base = 'http://127.0.0.1:3100/api'
 
@@ -41,6 +41,40 @@ test('prelaunch HTTP security and attachment lifecycle', { timeout: 240_000 }, a
   const draft = await payload.create({ collection: 'projects', data: { title: `prelaunch-${suffix}`, city: '广州', district: '天河', feeText: '测试费用', customerInfo: '审计测试客群', status: 'draft', coverImage: fixture.id, images: [fixture.id] }, overrideAccess: true })
   projects.push(draft.id)
 
+  await t.test('browse groups filter mixed scenes before HTTP pagination and intersect exact scenes', async () => {
+    type Page = { totalDocs: number; hasNextPage: boolean; docs: { id: string; businessScene: string; sort: number }[] }
+    const prefix = `browse-${suffix}`
+    for (let i = 0; i < 36; i++) {
+      const project = await payload.create({ collection: 'projects', data: {
+        title: `${prefix}-${String(i).padStart(2, '0')}`, businessScene: ['campus', 'industrial_park', 'office'][i % 3],
+        city: '广州', district: '天河', listingKind: 'unit', feeText: '隔离环境测试', customerInfo: '隔离测试客群',
+        status: 'online', coverImage: fixture.id, images: [fixture.id], sort: i,
+      }, overrideAccess: true })
+      projects.push(project.id)
+    }
+    const query = `/projects?public=true&q=${prefix}&sceneGroup=workplace&limit=20`
+    const firstResponse = await call(query)
+    assert.equal(firstResponse.status, 200)
+    const first = await firstResponse.json() as Page
+    const second = await (await call(query + '&page=2')).json() as Page
+    assert.equal(first.totalDocs, 24)
+    assert.equal(first.docs.length, 20)
+    assert.equal(first.hasNextPage, true)
+    assert.equal(second.docs.length, 4)
+    assert.equal(second.hasNextPage, false)
+    const ids = [...first.docs, ...second.docs].map(row => row.id)
+    assert.equal(new Set(ids).size, 24)
+    assert.ok([...first.docs, ...second.docs].every(row => ['industrial_park', 'office'].includes(row.businessScene)))
+    assert.ok(first.docs.every((row, i) => i === 0 || first.docs[i - 1].sort > row.sort))
+    const office = await (await call(query + '&businessScene=office')).json() as Page
+    assert.equal(office.totalDocs, 12)
+    assert.ok(office.docs.every(row => row.businessScene === 'office'))
+    const campus = await (await call(`/projects?public=true&q=${prefix}&sceneGroup=campus`)).json()
+    assert.equal(campus.totalDocs, 12)
+    assert.equal((await (await call(query + '&businessScene=campus')).json()).totalDocs, 0)
+    assert.equal((await call('/projects?sceneGroup=invalid')).status, 400)
+  })
+
   await t.test('anonymous and mini-program users cannot read drafts or staff endpoints', async () => {
     assert.equal((await call(`/projects/${draft.id}`)).status, 404)
     assert.equal((await call(`/payload/projects/${draft.id}`)).status, 404)
@@ -57,6 +91,31 @@ test('prelaunch HTTP security and attachment lifecycle', { timeout: 240_000 }, a
     for (const input of [null, [], 'text']) assert.equal((await post('/auth/wechat-login', input)).status, 400)
     assert.equal((await post('/leads', null, owner)).status, 400)
     assert.equal((await post('/leads', { remark: 'x'.repeat(70_000) }, owner)).status, 413)
+  })
+
+  await t.test('unnamed transfer keeps unasked answers unknown and preserves staff details during edit', async () => {
+    const response = await post('/leads', { leadType: 'transfer', phone: '13812345678', transferDetails: { locationText: '广州天河' } }, owner)
+    assert.equal(response.status, 201)
+    const created = await response.json()
+    const id = String(created.id)
+    leads.push(id)
+    assert.equal(created.name, '')
+    assert.equal(created.hasCampusExperience, null)
+    assert.equal(created.transferDetails.includesEquipment, null)
+    const original = await payload.findByID({ collection: 'leads', id, overrideAccess: true })
+    assert.equal(original.name, null)
+    const snapshot = original.customerSnapshot as Record<string, unknown>
+    assert.notEqual(snapshot.hasCampusExperience, false)
+    await payload.update({ collection: 'leads', id, data: { transferDetails: { locationText: '广州天河', feeText: '月租待核', includesEquipment: true } }, overrideAccess: true })
+    const edited = await post(`/leads/${id}`, { name: '', phone: '13812345678', transferDetails: { locationText: '广州番禺' } }, owner, 'PUT')
+    assert.equal(edited.status, 200)
+    const updated = await edited.json()
+    assert.equal(updated.name, '')
+    assert.equal(updated.transferDetails.locationText, '广州番禺')
+    assert.equal(updated.transferDetails.feeText, '月租待核')
+    assert.equal(updated.transferDetails.includesEquipment, true)
+    const saved = await payload.findByID({ collection: 'leads', id, overrideAccess: true })
+    assert.deepEqual(saved.customerSnapshot, original.customerSnapshot)
   })
 
   let attachment: { id: string; url: string }

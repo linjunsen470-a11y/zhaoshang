@@ -12,6 +12,7 @@ runInNewContext(readFileSync(new URL('mp/config/environments.js', root), 'utf8')
 const environments = clientModule.exports
 const configText = readFileSync(new URL('mp/config/index.js', root), 'utf8')
 const phone = configText.match(/ADVISOR_PHONE:\s*['"]([^'"]*)['"]/)?.[1]
+const miniProgramIcp = configText.match(/MINIPROGRAM_ICP_NUMBER:\s*['"]([^'"]*)['"]/)?.[1]
 const errors = []
 const check = (ok, message) => { if (!ok) errors.push(message) }
 const placeholder = value => !value || /change.this|your[-_]|example|fallback|local-dev|placeholder|use-a-different/i.test(value)
@@ -30,6 +31,7 @@ for (const version of ['trial', 'release']) {
   check(!env?.useLocalMock && !env?.allowDevOpenId, `${version} 必须关闭本地 Mock 和开发 OpenID`)
 }
 check(/^1[3-9]\d{9}$/.test(phone || '') && phone !== '18888888888', '顾问电话须替换占位号码')
+check(Boolean(miniProgramIcp) && /X$/i.test(miniProgramIcp) && !placeholder(miniProgramIcp), '须填写管局核发的小程序备案号（以 X 结尾）')
 for (const key of ['PAYLOAD_SECRET', 'MINIPROGRAM_TOKEN_SECRET']) {
   check(!placeholder(process.env[key]) && process.env[key].length >= 32, `${key} 须配置至少 32 字符的独立随机密钥`)
 }
@@ -37,6 +39,17 @@ check(process.env.PAYLOAD_SECRET !== process.env.MINIPROGRAM_TOKEN_SECRET, '两�
 check(process.env.WECHAT_AUTH_MODE === 'wechat', 'WECHAT_AUTH_MODE 必须为 wechat')
 check(!placeholder(process.env.WECHAT_APP_SECRET), 'WECHAT_APP_SECRET 尚未配置真实值')
 const project = JSON.parse(readFileSync(new URL('mp/project.config.json', root), 'utf8'))
+check(project.setting?.urlCheck === true, '微信开发者工具须开启合法域名校验')
+for (const file of ['project.private.config.json', 'mp/project.private.config.json']) {
+  const path = new URL(file, root)
+  if (!existsSync(path)) continue
+  try {
+    const local = JSON.parse(readFileSync(path, 'utf8'))
+    check(local.setting?.urlCheck !== false, `${file} 覆盖关闭了本机合法域名校验，请在发布验收前开启`)
+  } catch {
+    check(false, `${file} 读取失败，请检查本机微信开发者工具配置`)
+  }
+}
 check(process.env.WECHAT_APPID === project.appid, 'WECHAT_APPID 必须与小程序 appid 一致')
 check(process.env.WECHAT_CODE_ENV_VERSION === 'release', 'WECHAT_CODE_ENV_VERSION 必须为 release')
 check(publicHttps(process.env.PAYLOAD_PUBLIC_SERVER_URL), 'PAYLOAD_PUBLIC_SERVER_URL 须使用真实 HTTPS 域名')

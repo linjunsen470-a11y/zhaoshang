@@ -9,27 +9,43 @@ import { getAuthenticatedStaff } from '../_shared/auth'
 import { readJsonObject, jsonInputError } from '../_shared/requestInput'
 
 export async function GET(request: Request) {
-  const payload = await getPayloadInstance()
   const { searchParams } = new URL(request.url)
-  const staff = await getAuthenticatedStaff('projects')
-  const showPublicOnly = !staff || searchParams.get('public') === 'true'
+  let conditions
   try {
-    const conditions = commercialFilters(searchParams)
+    conditions = commercialFilters(searchParams)
+  } catch (error) {
+    return json({ error: error instanceof Error ? error.message : '筛选无效' }, 400)
+  }
+
+  try {
+    const payload = await getPayloadInstance()
+    const staff = await getAuthenticatedStaff('projects')
+    const showPublicOnly = !staff || searchParams.get('public') === 'true'
     if (showPublicOnly) conditions.push(publicCommercialWhere())
-    const paginated = searchParams.get('pagination') === 'true'
     const result = await payload.find({
       collection: 'projects',
       where: conditions.length ? { and: conditions } : undefined,
       page: pageNumber(searchParams.get('page'), 1, 100000),
-      limit: pageNumber(searchParams.get('limit'), paginated ? 20 : 100, 100),
+      limit: pageNumber(searchParams.get('limit'), 20, 100),
       sort: searchParams.get('sort') === 'latest' ? ['-createdAt', '-id'] : ['-sort', '-createdAt', '-id'],
+      ...(searchParams.get('view') === 'card' ? { select: {
+        introduction: false, operatingRequirements: false, premisesConditions: false,
+        customerInfo: false, cooperationMode: false, viewingTimeText: false,
+        transferInfo: false, remark: false,
+      } } : {}),
       depth: 1,
       overrideAccess: true,
     })
     const docs = result.docs.map(doc => mapProject(doc, Boolean(staff) && searchParams.get('public') !== 'true'))
-    return json(paginated ? { docs, page: result.page, totalPages: result.totalPages, totalDocs: result.totalDocs, hasNextPage: result.hasNextPage } : docs)
+    const output = searchParams.get('view') === 'card' ? docs.map(doc => {
+      const card: Record<string, unknown> = { ...doc }
+      for (const key of ['introduction', 'operatingRequirements', 'premisesConditions', 'customerInfo', 'cooperationMode', 'viewingTimeText', 'transferInfo', 'remark', 'images']) delete card[key]
+      return card
+    }) : docs
+    return json({ docs: output, page: result.page, totalPages: result.totalPages, totalDocs: result.totalDocs, hasNextPage: result.hasNextPage })
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : '查询失败' }, 400)
+    console.error('[GET /api/projects] query failed', error)
+    return json({ error: '项目列表暂时无法加载，请稍后重试' }, 500)
   }
 }
 

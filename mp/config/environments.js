@@ -1,15 +1,17 @@
 const ENVIRONMENTS = {
   develop: {
-    apiUrl: 'http://127.0.0.1:3000/api',
-    useLocalMock: true,
-    allowDevOpenId: true
+    apiUrl: 'https://api.cqwushi.com/api',
+    useLocalMock: false,
+    allowDevOpenId: false
   },
   trial: {
+    // Planned: https://api.jinyifangchan.com/api. Enable only after deployment and domain approval.
     apiUrl: '',
     useLocalMock: false,
     allowDevOpenId: false
   },
   release: {
+    // Planned: https://api.jinyifangchan.com/api. Keep empty until the production backend is ready.
     apiUrl: '',
     useLocalMock: false,
     allowDevOpenId: false

@@ -1,24 +1,93 @@
+name: zhaoshang-test
+
+x-app-environment: &app-environment
+  NODE_ENV: production
+  PAYLOAD_SECRET: ${PAYLOAD_SECRET:?required}
+  MINIPROGRAM_TOKEN_SECRET: ${MINIPROGRAM_TOKEN_SECRET:?required}
+  DATABASE_URI: ${DATABASE_URI:?required}
+  PAYLOAD_DB_PUSH: 'false'
+  PAYLOAD_PUBLIC_SERVER_URL: ${PAYLOAD_PUBLIC_SERVER_URL:?required}
+  WECHAT_AUTH_MODE: wechat
+  WECHAT_APPID: ${WECHAT_APPID:-}
+  WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-}
+  WECHAT_CODE_ENV_VERSION: ${WECHAT_CODE_ENV_VERSION:-trial}
+  TENCENT_SYNC_DIR: /app/.tencent-sync
+  NODE_OPTIONS: --max-old-space-size=768
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: 10m
+    max-file: '3'
+
 services:
-  payload:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
+  db:
+    image: postgres:16-alpine
     environment:
-      - NODE_ENV=${NODE_ENV:-production}
-      - PAYLOAD_SECRET=${PAYLOAD_SECRET}
-      - MINIPROGRAM_TOKEN_SECRET=${MINIPROGRAM_TOKEN_SECRET}
-      - PAYLOAD_DB_PUSH=${PAYLOAD_DB_PUSH:-false}
-      - DATABASE_URI=${DATABASE_URI:?Set DATABASE_URI in the root .env file}
-      - PAYLOAD_PUBLIC_SERVER_URL=${PAYLOAD_PUBLIC_SERVER_URL:-http://localhost:3000}
-      - WECHAT_AUTH_MODE=${WECHAT_AUTH_MODE:-wechat}
-      - WECHAT_APPID=${WECHAT_APPID}
-      - WECHAT_APP_SECRET=${WECHAT_APP_SECRET}
-      - WECHAT_CODE_ENV_VERSION=${WECHAT_CODE_ENV_VERSION:-release}
-    restart: unless-stopped
+      POSTGRES_USER: ${POSTGRES_USER:?required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?required}
+      POSTGRES_DB: ${POSTGRES_DB:?required}
     volumes:
-      - payload-media:/app/media
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+    mem_limit: 512m
+    logging: *logging
+
+  payload:
+    image: ${APP_IMAGE:?required}
+    environment: *app-environment
+    ports:
+      - '127.0.0.1:3300:3000'
+    volumes:
+      - media:/app/media
+      - tencent-sync:/app/.tencent-sync
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/api/projects?limit=1').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 3
+    restart: unless-stopped
+    mem_limit: 1280m
+    logging: *logging
+
+  tools:
+    image: ${TOOLS_IMAGE:?required}
+    profiles: [maintenance]
+    environment: *app-environment
+    volumes:
+      - media:/app/media
+      - tencent-sync:/app/.tencent-sync
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: 'no'
+    mem_limit: 1280m
+    logging: *logging
+
+  sync:
+    image: ${TOOLS_IMAGE:?required}
+    profiles: [sync]
+    environment: *app-environment
+    volumes:
+      - media:/app/media
+      - tencent-sync:/app/.tencent-sync
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    mem_limit: 1024m
+    logging: *logging
 
 volumes:
-  payload-media:
+  postgres-data:
+  media:
+  tencent-sync:

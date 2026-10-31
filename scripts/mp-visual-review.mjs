@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import automator from 'miniprogram-automator';
-import { withTimeout } from '../tests/e2e/harness.mjs';
+import { withTimeout, readSystemInfo } from '../tests/e2e/harness.mjs';
 
 // Read-only page capture against the local demo. Restore the user's storage.
 const phase = process.argv.includes('--baseline') ? 'before' : 'after';
@@ -30,7 +30,7 @@ try {
     await timeout(mp.screenshot({ path: path.join(out, `${name}.png`) }), `capture ${name}`);
     console.log(`Captured ${phase}/${name}`);
   }
-  fs.writeFileSync(path.join(out, 'runtime.json'), JSON.stringify({ capturedAt: new Date().toISOString(), system: await timeout(mp.systemInfo(), 'system info'), pages, errors }, null, 2));
+  fs.writeFileSync(path.join(out, 'runtime.json'), JSON.stringify({ capturedAt: new Date().toISOString(), system: await timeout(readSystemInfo(mp), 'system info'), pages, errors }, null, 2));
 } catch (error) {
   fs.writeFileSync(path.join(out, 'failure.json'), JSON.stringify({ capturedAt: new Date().toISOString(), message: error.message, errors }, null, 2));
   throw error;

@@ -1,133 +1,26 @@
+<import src="../../templates/loading.wxml" />
+<import src="../../templates/lead-form.wxml" />
 <view class="container form-page">
   <view class="form-header">
     <view class="form-title">{{isEditMode ? '修改咨询信息' : (projectTitle ? '咨询该项目或铺位' : '提交找铺需求')}}</view>
-    <view class="form-desc" wx:if="{{!projectTitle}}">填写你的经营品类、预算和区域偏好，招商顾问会协助匹配合适铺位。</view>
+    <view class="form-desc" wx:if="{{!projectTitle}}">留下联系方式，顾问会协助您找铺。</view>
   </view>
-  <view class="form-loading" wx:if="{{formLoading || projectLoading}}">
-    <view class="skeleton">
-    </view>
-    <view class="skeleton">
-    </view>
-  </view>
+  <view class="form-loading" wx:if="{{formLoading || projectLoading}}"><template is="loading-cards" data="{{kind: 'fields'}}" /></view>
   <view class="state-box" wx:elif="{{formLoadError || projectLoadError}}">
-    <text class="state-title">咨询信息加载失败</text>
-    <text class="state-desc">请重新加载咨询信息后再填写。</text>
+    <text class="state-title">咨询信息加载失败</text><text class="state-desc">请重新加载咨询信息后再填写。</text>
     <button class="btn btn-primary" bindtap="onRetryForm">重新加载</button>
   </view>
   <block wx:else>
     <view class="project-context card" wx:if="{{projectTitle}}">
       <image class="project-context-cover" src="{{projectCover}}" mode="aspectFill" wx:if="{{projectCover && !projectCoverError}}" binderror="onProjectCoverError" />
       <view wx:else class="project-context-cover project-context-fallback">暂无图片</view>
-      <view class="project-context-info">
-        <view class="project-context-label">{{isEditMode ? '原咨询对象' : '正在咨询'}}{{projectIsDemoImage ? ' · 图片为摄影示意' : ''}}</view>
-        <view class="project-context-title">{{projectTitle}}</view>
-        <view class="project-context-fee" wx:if="{{projectFeeText}}">{{projectFeeText}}</view>
-      </view>
+      <view class="project-context-info"><view class="project-context-label">{{isEditMode ? '原咨询对象' : '正在咨询'}}</view><view class="project-context-title">{{projectTitle}}</view><view class="project-context-fee" wx:if="{{projectFeeText}}">{{projectFeeText}}</view></view>
     </view>
-    <view class="form-section">
-      <view class="form-section-title">业务需求</view>
-      <view class="form-card">
-        <view id="field-businessType" class="form-item">
-          <label for="input-businessType" class="item-label">
-            经营品类
-            <text class="required-mark">*</text>
-          </label>
-          <picker id="input-businessType" aria-label="经营品类" class="e2e-business-picker" data-test="lead-business" mode="selector" range="{{businesses}}" bindchange="onBusinessChange">
-            <view class="picker-value">{{businessType || '请选择经营品类'}}</view>
-          </picker>
-          <view class="field-error" wx:if="{{fieldErrors.businessType}}">{{fieldErrors.businessType}}</view>
-        </view>
-        <view id="field-budgetRange" class="form-item">
-          <label for="input-budgetRange" class="item-label">
-            总投资预算
-            <text class="required-mark">*</text>
-          </label>
-          <picker id="input-budgetRange" aria-label="总投资预算" class="e2e-budget-picker" data-test="lead-budget" mode="selector" range="{{budgets}}" bindchange="onBudgetChange">
-            <view class="picker-value">{{budgetRange || '请选择预算范围'}}</view>
-          </picker>
-          <view class="field-error" wx:if="{{fieldErrors.budgetRange}}">{{fieldErrors.budgetRange}}</view>
-        </view>
-        <view id="field-regionPreference" class="form-item">
-          <label for="input-regionPreference" class="item-label">意向区域</label>
-          <input aria-label="意向区域" id="input-regionPreference" focus="{{focusField === 'regionPreference'}}" class="item-input e2e-region-input" data-test="lead-region" type="text" maxlength="50" placeholder="例如：天河、番禺、增城" bindinput="onInputRegion" value="{{regionPreference}}" />
-          <view class="field-error" wx:if="{{fieldErrors.regionPreference}}">{{fieldErrors.regionPreference}}</view>
-        </view>
-        <view class="form-item">
-          <view class="item-label">意向场景（可选）</view>
-          <picker aria-label="意向场景" wx:if="{{!projectId}}" mode="selector" range="{{scenes}}" range-key="label" value="{{sceneIndex}}" bindchange="onSceneChange">
-            <view class="picker-value">{{scenes[sceneIndex].label}}</view>
-          </picker>
-          <view wx:else>{{scenes[sceneIndex].label}}</view>
-        </view>
-        <radio-group wx:if="{{businessScene === 'campus'}}" class="form-item" bindchange="onExperienceChange">
-          <view class="item-label">是否有校园经营经验</view>
-          <label class="radio-line">
-            <radio color="#204C3C" value="true" checked="{{hasCampusExperience}}" />
-            有
-          </label>
-          <label class="radio-line">
-            <radio color="#204C3C" value="false" checked="{{!hasCampusExperience}}" />
-            暂无
-          </label>
-        </radio-group>
-      </view>
+    <template is="lead-phone" data="{{phone, phoneAuthorizing, submitting, focusField, fieldErrors, maxPhoneLength}}" />
+    <template is="lead-optional" data="{{showRegion: !projectId, allowImages: false, attachments, uploadingImages, name, maxNameLength, regionPreference, maxRegionLength, remark, maxRemarkLength}}" />
+    <view class="form-footer">
+      <template is="lead-privacy" data="{{isEditMode, privacyAccepted, fieldErrors}}" />
+      <view class="form-actions"><button class="btn btn-primary e2e-submit-lead" data-test="submit-lead" loading="{{submitting}}" disabled="{{submitting || uploadingImages || phoneAuthorizing}}" bindtap="onSubmitForm">{{submitting ? '正在提交…' : (isEditMode ? '保存修改' : '提交咨询')}}</button></view>
     </view>
-    <view class="form-section">
-      <view class="form-section-title">联系方式</view>
-      <view class="form-card">
-        <view id="field-name" class="form-item">
-          <label for="input-name" class="item-label">
-            称呼
-            <text class="required-mark">*</text>
-          </label>
-          <input aria-label="称呼" id="input-name" focus="{{focusField === 'name'}}" class="item-input e2e-name-input" data-test="lead-name" type="text" maxlength="20" placeholder="例如：张老板" bindinput="onInputName" value="{{name}}" />
-          <view class="field-error" wx:if="{{fieldErrors.name}}">{{fieldErrors.name}}</view>
-        </view>
-        <view id="field-phone" class="form-item">
-          <label for="input-phone" class="item-label">
-            手机号
-            <text class="required-mark">*</text>
-          </label>
-          <input aria-label="手机号" id="input-phone" focus="{{focusField === 'phone'}}" class="item-input e2e-phone-input" data-test="lead-phone" type="number" maxlength="11" placeholder="用于顾问联系" bindinput="onInputPhone" value="{{phone}}" />
-          <view class="field-error" wx:if="{{fieldErrors.phone}}">{{fieldErrors.phone}}</view>
-        </view>
-      </view>
-    </view>
-    <view class="form-section">
-      <view class="form-section-title">补充材料</view>
-      <view class="form-card">
-        <view class="form-item">
-          <view class="item-label">补充说明</view>
-          <textarea aria-label="补充说明" class="item-textarea e2e-remark-input" data-test="lead-remark-input" maxlength="500" placeholder="可补充面积、月租承受范围、排烟要求及开业时间" bindinput="onInputRemark" value="{{remark}}" />
-        </view>
-        <view class="form-item border-none">
-          <view class="item-label">
-            补充图片
-            <text class="label-hint">最多 6 张</text>
-          </view>
-          <view class="attachment-grid">
-            <view class="attachment-card" wx:for="{{attachments}}" wx:key="id">
-              <view wx:if="{{item.imageError}}" class="attachment-img attachment-fallback">图片暂不可用</view>
-              <image wx:else binderror="onAttachmentError" data-index="{{index}}" class="attachment-img" src="{{item.displayUrl}}" mode="aspectFill" bindtap="onPreviewAttachment" data-url="{{item.displayUrl}}" />
-              <button aria-label="移除图片" class="attachment-remove" bindtap="onRemoveImage" data-index="{{index}}">×</button>
-            </view>
-            <view role="button" aria-label="添加图片" class="upload-tile" bindtap="onChooseImages" wx:if="{{attachments.length < 6}}">
-              <text class="upload-plus">+</text>
-              <text class="upload-hint">{{uploadingImages ? '上传中' : '添加图片'}}</text>
-            </view>
-          </view>
-        </view>
-      </view>
-    </view>
-    <view id="field-privacy" class="privacy-consent e2e-privacy-consent" data-test="privacy-consent" wx:if="{{!isEditMode}}" bindtap="onTogglePrivacy">
-      <checkbox aria-label="已阅读并同意隐私政策" checked="{{privacyAccepted}}" color="#204C3C" />
-      <text class="privacy-text">我已阅读并同意</text>
-      <text class="privacy-link" catchtap="onGoPrivacy">《隐私政策》</text>
-    </view>
-    <view class="field-error privacy-error" wx:if="{{fieldErrors.privacy}}">{{fieldErrors.privacy}}</view>
-    <view class="form-actions">
-      <button class="btn btn-primary e2e-submit-lead" data-test="submit-lead" style="{{isEditMode ? 'flex: 1;' : ''}}" loading="{{submitting}}" disabled="{{submitting || uploadingImages}}" bindtap="onSubmitForm">{{submitting ? '正在提交…' : (isEditMode ? '保存修改' : '提交咨询')}}</button>
-    </view>
-    <button class="clear-form" bindtap="onClearForm" wx:if="{{!isEditMode}}">清空已填写内容</button>
   </block>
 </view>

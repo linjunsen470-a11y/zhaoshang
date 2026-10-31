@@ -1,28 +1,21 @@
+const { toggleFavorite } = require('../../utils/favorites.js');
 const api = require('../../services/api.js');
+const config = require('../../config.js');
 const { isPublicProject } = require('../../utils/project.js');
+const { options } = require('../../utils/commercial.js');
 
 Page({
   data: {
+    appName: config.APP_NAME,
     searchKeyword: '',
-    primaryService: {
-      id: 'find',
-      name: '全部铺位',
-      desc: '校园、社区、文旅与购物中心',
-      icon: '/images/icons/shops.png',
-      action: 'list'
-    },
     secondaryServices: [
       { id: 'transfer', name: '委托转让', desc: '登记信息，协助联系意向方', icon: '/images/icons/transfer.png', action: 'transfer' },
       { id: 'equipment', name: '餐饮设备', desc: '求购、出售与回收登记', icon: '/images/icons/equipment.png', action: 'equipment' },
       { id: 'renovation', name: '商铺装修', desc: '登记需求，对接施工服务', icon: '/images/icons/renovation.png', action: 'renovation' }
     ],
-    categories: [
-      { id: 'campus', name: '校园商铺', icon: '/images/icons/campus.png', type: 'businessScene', val: 'campus' },
-      { id: 'community', name: '社区商业', icon: '/images/icons/community.png', type: 'businessScene', val: 'community' },
-      { id: 'tourism', name: '文旅街区', icon: '/images/icons/tourism.png', type: 'businessScene', val: 'tourism' },
-      { id: 'mall', name: '购物中心', icon: '/images/icons/mall.png', type: 'businessScene', val: 'mall' },
-    ],
+    categories: options.browseGroups.map(group => ({ id: group.value, name: group.label, desc: group.description, type: 'sceneGroup', val: group.value })),
     services: [],
+    showServices: false,
     recommendedList: [],
     latestList: [],
     loading: true,
@@ -30,11 +23,18 @@ Page({
   },
 
   onLoad() {
-    this.setData({ services: [this.data.primaryService, ...this.data.secondaryServices] });
+    if (typeof wx.showShareMenu === 'function') wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
+    this._useLocalMock = config.USE_LOCAL_MOCK;
+    this.setData({ services: this.data.secondaryServices });
     this.loadData();
   },
 
   onShow() {
+    if (this._useLocalMock !== config.USE_LOCAL_MOCK) {
+      this._useLocalMock = config.USE_LOCAL_MOCK;
+      this.loadData();
+      return;
+    }
     if (this.data.recommendedList.length > 0 || this.data.latestList.length > 0) {
       const favs = wx.getStorageSync('favorites') || [];
       this.setData({
@@ -60,13 +60,15 @@ Page({
     });
 
     Promise.race([Promise.all([
-      api.getProjectPage({ public: true, recommended: 'true', page: 1, limit: 6 }),
-      api.getProjectPage({ public: true, sort: 'latest', page: 1, limit: 4 })
+      api.getProjectPage({ public: true, available: 'true', recommended: 'true', page: 1, limit: 3 }),
+      api.getProjectPage({ public: true, available: 'true', sort: 'latest', page: 1, limit: 6 })
     ]), requestTimeout])
       .then(([recommended, latest]) => {
         const favs = wx.getStorageSync('favorites') || [];
-        const prepare = rows => rows.filter(isPublicProject).map(p => ({ ...p, isFav: favs.includes(p.id) }));
-        this.setData({ recommendedList: prepare(recommended.docs), latestList: prepare(latest.docs), loading: false, loadError: false });
+        const prepare = rows => rows.filter(p => isPublicProject(p) && p.status !== 'full').map(p => ({ ...p, isFav: favs.includes(p.id) }));
+        const recommendedList = prepare(recommended.docs);
+        const recommendedIds = new Set(recommendedList.map(project => String(project.id)));
+        this.setData({ recommendedList, latestList: prepare(latest.docs).filter(project => !recommendedIds.has(String(project.id))).slice(0, 4), loading: false, loadError: false });
         if (callback) callback();
       })
       .catch(err => {
@@ -97,6 +99,7 @@ Page({
 
   onServiceTap(e) {
     const action = e.currentTarget.dataset.action;
+    this.onCloseServices();
     if (action === 'list') {
       wx.setStorageSync('pendingListFilter', {});
       wx.switchTab({ url: '/pages/list/list' });
@@ -108,11 +111,15 @@ Page({
       wx.navigateTo({ url: '/pages/renovation/renovation' });
     }
   },
-
+  onOpenServices() { this.setData({ showServices: true }); },
+  onCloseServices() { this.setData({ showServices: false }); },
+  onHide() { this.onCloseServices(); },
+  noop() {},
   onCategoryTap(e) {
     const { type, val } = e.currentTarget.dataset;
     const filter = {};
-    if (type === 'businessScene') filter.businessScene = val;
+    if (type === 'sceneGroup') filter.sceneGroup = val;
+    else if (type === 'businessScene') filter.businessScene = val;
     else if (type === 'projectType') filter.projectType = val;
     else if (type === 'business') filter.business = val;
     else if (type === 'budget') filter.budget = val;
@@ -149,21 +156,13 @@ Page({
     this.setData({ [`${listName}[${index}].coverImageError`]: true });
   },
 
+  onShareAppMessage() { return { title: `${config.APP_NAME} · 校园、园区与写字楼商铺`, path: '/pages/index/index' }; },
+  onShareTimeline() { return { title: `${config.APP_NAME} · 校园、园区与写字楼商铺` }; },
   onToggleFav(e) {
     const id = e.currentTarget.dataset.id;
-    let favs = wx.getStorageSync('favorites') || [];
-    const isFav = favs.includes(id);
+    const isFav = toggleFavorite(id);
 
-    if (isFav) {
-      favs = favs.filter(x => x !== id);
-      wx.showToast({ title: '已取消收藏', icon: 'none' });
-    } else {
-      favs.push(id);
-      wx.showToast({ title: '收藏成功', icon: 'success' });
-    }
-    wx.setStorageSync('favorites', favs);
-
-    const updateFav = arr => arr.map(item => item.id === id ? { ...item, isFav: !isFav } : item);
+    const updateFav = arr => arr.map(item => item.id === id ? { ...item, isFav } : item);
     this.setData({
       recommendedList: updateFav(this.data.recommendedList),
       latestList: updateFav(this.data.latestList)

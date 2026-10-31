@@ -1,5 +1,8 @@
 const app = getApp();
+const api = require('../../services/api.js');
+const { recentIds } = require('../../utils/recent.js');
 const { clip, validatePhone, config } = require('../../utils/form.js');
+const { authorizeWechatPhone, rememberContact } = require('../../utils/wechatContact.js');
 
 Page({
   data: {
@@ -8,19 +11,29 @@ Page({
       avatarUrl: '/images/tab_my.png',
       phone: ''
     },
+    favoriteCount: 0, recentCount: 0, leadCount: null,
+    companyName: config.COMPANY_NAME,
+    appName: config.APP_NAME,
+    maxNameLength: config.MAX_NAME_LENGTH,
+    maxPhoneLength: config.MAX_PHONE_LENGTH,
+    miniProgramIcpNumber: config.MINIPROGRAM_ICP_NUMBER,
     showEditModal: false,
     editNickname: '',
-    editPhone: ''
+    editPhone: '',
+    phoneAuthorizing: false
   },
 
   onShow() {
+    config.refreshRuntimeConfig();
+    this.setData({ favoriteCount: (wx.getStorageSync('favorites') || []).length, recentCount: recentIds().length });
+    api.getLeads().then(leads => this.setData({ leadCount: leads.length })).catch(() => this.setData({ leadCount: null }));
     const localInfo = wx.getStorageSync('userInfo');
     if (localInfo) {
       this.setData({
         userInfo: {
           ...this.data.userInfo,
-          nickname: localInfo.nickname || this.data.userInfo.nickname,
-          phone: localInfo.phone || this.data.userInfo.phone
+          nickname: localInfo.nickname || '',
+          phone: localInfo.phone || ''
         }
       });
     } else {
@@ -40,8 +53,21 @@ Page({
     this.setData({ editNickname: clip(e.detail.value, config.MAX_NAME_LENGTH) });
   },
 
-  onPhoneInput(e) {
+  onProfilePhoneInput(e) {
     this.setData({ editPhone: clip(e.detail.value, config.MAX_PHONE_LENGTH) });
+  },
+
+  async onGetProfilePhone(e) {
+    if (this.data.phoneAuthorizing) return;
+    this.setData({ phoneAuthorizing: true });
+    try {
+      const phone = await authorizeWechatPhone(e);
+      if (phone) this.setData({ editPhone: phone });
+    } catch (error) {
+      wx.showToast({ title: error.message || '手机号获取失败，请重试', icon: 'none' });
+    } finally {
+      this.setData({ phoneAuthorizing: false });
+    }
   },
 
   onCancelEdit() {
@@ -51,14 +77,11 @@ Page({
   noop() {},
 
   onSaveEdit() {
+    if (this.data.phoneAuthorizing) return;
     const { editNickname, editPhone } = this.data;
 
-    if (!editNickname) {
-      wx.showToast({ title: '昵称不能为空', icon: 'none' });
-      return;
-    }
     if (!validatePhone(editPhone)) {
-      wx.showToast({ title: '手机号格式不正确', icon: 'none' });
+      wx.showToast({ title: '请输入有效手机号或使用微信授权', icon: 'none' });
       return;
     }
 
@@ -67,9 +90,7 @@ Page({
       phone: editPhone
     };
 
-    wx.setStorageSync('userInfo', updatedUser);
-    app.globalData.userInfo.nickname = editNickname;
-    app.globalData.userInfo.phone = editPhone;
+    rememberContact(updatedUser);
 
     this.setData({
       userInfo: {
@@ -92,6 +113,10 @@ Page({
     wx.switchTab({ url: '/pages/list/list' });
   },
 
+  onGoToRecent() {
+    wx.setStorageSync('pendingListFilter', { recent: true });
+    wx.switchTab({ url: '/pages/list/list' });
+  },
   onCallService() {
     getApp().callAdvisor();
   },
@@ -102,8 +127,8 @@ Page({
 
   onShowAbout() {
     wx.showModal({
-      title: '关于商业空间招商服务',
-      content: '为餐饮、零售和校园服务商户提供项目与铺位查询、店铺转让、设备供需及顾问对接服务。版本：v1.0.0',
+      title: `关于${config.APP_NAME}`,
+      content: `${config.COMPANY_NAME}运营。专注学校、工业园区、写字楼等物业的饭堂档口与配套商铺，为经营者提供需求登记和咨询对接服务。版本：v1.0.0`,
       showCancel: false,
       confirmText: '我知道了'
     });

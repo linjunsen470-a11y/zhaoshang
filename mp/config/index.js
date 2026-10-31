@@ -55,7 +55,11 @@ module.exports = {
   ...runtime,
   validateEnvironment,
   refreshRuntimeConfig,
-  ADVISOR_PHONE: '18888888888',
+  APP_NAME: '锦奕找铺',
+  COMPANY_NAME: '广州锦奕咨询服务有限公司',
+  ADVISOR_PHONE: '17322251752',
+  // Fill with the actual mini-program ICP number after approval (for example, 粤ICP备…号-1X).
+  MINIPROGRAM_ICP_NUMBER: '',
   MAX_NAME_LENGTH: 20,
   MAX_PHONE_LENGTH: 11,
   MAX_REGION_LENGTH: 50,

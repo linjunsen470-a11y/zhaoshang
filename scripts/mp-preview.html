@@ -23,8 +23,7 @@ const pages = ['index','list','detail','apply','transfer','equipment','renovatio
 const titles = ['商业空间','找商铺','项目与铺位','找铺咨询','委托转让','设备供需登记','商铺装修','我的','咨询记录','设备供需','提交成功','隐私政策'];
 const query = new URLSearchParams(location.search);
 const page = query.get('page'), state = query.get('state') || 'normal';
-const phase = query.get('phase') === 'before' ? 'before' : 'after';
-const sourceUrl = file => '/source/' + file + '?phase=' + phase;
+const sourceUrl = file => '/source/' + file;
 const evaluate = (expression, scope) => { try { return Function('scope', 'with(scope){return (' + expression + ')}')(scope); } catch { return undefined; } };
 const interpolate = (value, scope) => String(value || '').replace(/{{([\s\S]*?)}}/g, (_, expression) => evaluate(expression, scope) ?? '');
 const escape = value => String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('"','&quot;');

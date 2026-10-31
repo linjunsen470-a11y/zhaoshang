@@ -176,3 +176,19 @@
 .modal-actions .btn {
   flex: 1;
 }
+
+.shortcut-count { margin-left: 12rpx; font-size: 24rpx; color: var(--pine); }
+.recent-entry { margin-top: 16rpx; padding: 24rpx; width: 100%; display: flex; align-items: center; justify-content: space-between; background: var(--wash); border-radius: 16rpx; font-size: 28rpx; text-align: left; color: var(--ink); line-height: 1.5; }
+.edit-modal-box { animation: sheet-in 200ms ease-out; }
+
+.profile-phone-authorization { display: flex; align-items: center; gap: 16rpx; }
+.profile-phone-input { box-sizing: border-box; flex: 1 1 140rpx; min-width: 0; width: 0; padding-top: 0; padding-bottom: 0; line-height: 88rpx; }
+.profile-phone-authorization .btn { flex-shrink: 0; font-size: 24rpx; padding: 16rpx; }
+
+.operator-info {
+  margin: 32rpx 0;
+  color: var(--muted);
+  font-size: 24rpx;
+  line-height: 1.8;
+  text-align: center;
+}

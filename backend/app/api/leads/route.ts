@@ -9,6 +9,7 @@ import {
   mapLeads,
   sanitizeLeadCreateInput,
   validateLeadUserInput,
+  validateLeadCreateRequirements,
   validateAttachmentOwnership,
 } from '../_shared/payloadApi'
 import { requireAuth, verifyAuthToken } from '../_shared/auth'
@@ -86,8 +87,8 @@ export async function POST(request: Request) {
     return jsonInputError(error)
   }
 
-  if (typeof input.name !== 'string' || !input.name.trim() || !input.phone) {
-    return json({ error: '称呼和手机号为必填项' }, 400)
+  if (!input.phone) {
+    return json({ error: '手机号为必填项' }, 400)
   }
   if (!/^1[3-9]\d{9}$/.test(String(input.phone))) {
     return json({ error: '手机号格式不正确' }, 400)
@@ -97,6 +98,8 @@ export async function POST(request: Request) {
   }
   const validationError = validateLeadUserInput(input)
   if (validationError) return json({ error: validationError }, 400)
+  const requiredError = validateLeadCreateRequirements(input)
+  if (requiredError) return json({ error: requiredError }, 400)
 
   const attachmentError = await validateAttachmentOwnership(input.attachments, auth.openid)
   if (attachmentError) return attachmentError

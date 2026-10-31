@@ -29,7 +29,7 @@ async function open(mp, route) {
   return waitForPage(mp, route.replace(/^\//, '').split('?')[0]);
 }
 
-for (const scene of ['campus', 'community', 'tourism', 'mall']) {
+for (const scene of ['campus', 'industrial_park', 'office']) {
   test(`local ${scene} list and consultation submission`, { timeout: 120_000 }, () => localSession(async mp => {
     const list = await open(mp, `/pages/list/list?businessScene=${scene}`);
     await waitForData(list, 'loading', value => value === false);
@@ -45,16 +45,16 @@ for (const scene of ['campus', 'community', 'tourism', 'mall']) {
 }
 
 test('local child navigation', { timeout: 120_000 }, () => localSession(async mp => {
-  const detail = await open(mp, '/pages/detail/detail?id=demo-community');
+  const detail = await open(mp, '/pages/detail/detail?id=demo-park');
   await waitForData(detail, 'loading', value => value === false);
-  await waitForData(detail, 'units', rows => rows.length === 2);
-  await mp.evaluate(() => { setTimeout(() => getCurrentPages()[getCurrentPages().length - 1].onRelatedProject({ currentTarget: { dataset: { id: 'demo-community-unit1' } } }), 100); });
-  await waitUntil(async () => (await (await mp.currentPage()).data('project'))?.id === 'demo-community-unit1', 'child detail navigation');
-  assert.equal((await (await mp.currentPage()).data('project')).parentProject.id, 'demo-community');
+  await waitForData(detail, 'units', rows => rows.length === 1);
+  await mp.evaluate(() => { setTimeout(() => getCurrentPages()[getCurrentPages().length - 1].onRelatedProject({ currentTarget: { dataset: { id: 'demo-park-unit' } } }), 100); });
+  await waitUntil(async () => (await (await mp.currentPage()).data('project'))?.id === 'demo-park-unit', 'child detail navigation');
+  assert.equal((await (await mp.currentPage()).data('project')).parentProject.id, 'demo-park');
 }));
 
 test('local empty filter, reset and privacy', { timeout: 120_000 }, () => localSession(async mp => {
-  const list = await open(mp, '/pages/list/list?businessScene=mall&area=200plus');
+  const list = await open(mp, '/pages/list/list?businessScene=office&area=200plus');
   await waitForData(list, 'loading', value => value === false);
   assert.equal((await list.data('projectList')).length, 0);
   assert.ok(await list.$('.empty-state'));

@@ -5,7 +5,9 @@ try { loadEnvFile(new URL('../.env', import.meta.url)) } catch (error) { if (err
 if (!process.env.DATABASE_URI) throw new Error('DATABASE_URI required for local test credentials')
 const uri = new URL(process.env.DATABASE_URI)
 uri.hostname = '127.0.0.1'
-uri.pathname = '/zhaoshang_commercial_test_20260922'
+const testDatabase = process.env.COMMERCIAL_TEST_DATABASE || 'zhaoshang_commercial_test_20260922'
+if (!['zhaoshang_commercial_test_20260922', 'zhaoshang_scene_group_test_20261025'].includes(testDatabase)) throw new Error('Only an explicitly isolated test database is allowed')
+uri.pathname = '/' + testDatabase
 process.env.DATABASE_URI = uri.toString()
 process.env.PAYLOAD_DB_PUSH = 'false'
 process.env.PAYLOAD_PUBLIC_SERVER_URL = 'http://127.0.0.1:3100'

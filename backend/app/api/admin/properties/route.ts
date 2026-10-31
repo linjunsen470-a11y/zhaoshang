@@ -4,8 +4,9 @@ import { getProjectMissingFields, PUBLIC_PROJECT_STATUSES } from '../../../../co
 import { getAuthenticatedStaff } from '../../_shared/auth'
 import { readJsonObject, jsonInputError } from '../../_shared/requestInput'
 import { getPayloadInstance, json, mapProject } from '../../_shared/payloadApi'
+import { projectQualityWhere } from '../../../../lib/cmsRules.mjs'
 
-const QUICK_FIELDS = ['title', 'district', 'areaText', 'feeText', 'status', 'isRecommended', 'sort', 'areaMin', 'areaMax', 'monthlyRentMin', 'monthlyRentMax'] as const
+const QUICK_FIELDS = ['emergencyHidden', 'title', 'district', 'areaText', 'feeText', 'status', 'isRecommended', 'sort', 'areaMin', 'areaMax', 'monthlyRentMin', 'monthlyRentMax'] as const
 const SORTS = new Set(['-updatedAt', 'updatedAt', '-sort', 'sort', 'title', '-title'])
 
 function positiveInt(value: string | null, fallback: number, max: number) {
@@ -31,6 +32,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   let where: Where[]
   try { where = commercialFilters(searchParams) } catch (error) { return json({ error: error instanceof Error ? error.message : '筛选无效' }, 400) }
+  const quality = searchParams.get('quality')
+  if (quality && !['ready', 'blocked'].includes(quality)) return json({ error: '资料筛选无效' }, 400)
+  const qualityFilter = projectQualityWhere(quality)
+  if (qualityFilter) where.push(qualityFilter as Where)
 
   const page = positiveInt(searchParams.get('page'), 1, 100000)
   const limit = positiveInt(searchParams.get('limit'), 25, 100)

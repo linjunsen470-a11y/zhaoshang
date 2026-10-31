@@ -11,12 +11,12 @@ export {
   sanitizeLeadCreateInput,
   sanitizeLeadUpdateInput,
   validateLeadUserInput,
+  validateLeadCreateRequirements,
 } from './leadPolicy'
 
 export const ALL = '全部'
 export const PUBLIC_STATUSES = ['online', 'coming', 'full']
 export const PUBLIC_EQUIPMENT_LEAD_TYPES = ['equipment_sell', 'equipment_buy', 'equipment_recycle']
-export const LEAD_ID_OFFSET = 26000000
 
 
 type Doc = Record<string, unknown> & {
@@ -51,16 +51,7 @@ export function toTimestamp(value: unknown) {
 
 export function toArrayItems(value: unknown) {
   if (!Array.isArray(value)) return []
-  return value
-    .map(item => {
-      if (typeof item === 'string') return item
-      if (item && typeof item === 'object' && 'item' in item) {
-        const nested = (item as { item?: unknown }).item
-        return typeof nested === 'string' ? nested : ''
-      }
-      return ''
-    })
-    .filter(Boolean)
+  return value.filter((item): item is string => typeof item === 'string' && item.length > 0)
 }
 
 export function fromArrayItems(value: unknown) {
@@ -139,7 +130,7 @@ function mapTransferInfo(value: unknown) {
     currentBusiness: stringValue(info.currentBusiness),
     monthlyRent: stringValue(info.monthlyRent),
     remainingTerm: stringValue(info.remainingTerm),
-    includesEquipment: booleanValue(info.includesEquipment),
+    includesEquipment: typeof info.includesEquipment === 'boolean' ? info.includesEquipment : null,
     expectedTransferFee: stringValue(info.expectedTransferFee),
     contractTransferAllowed: stringValue(info.contractTransferAllowed),
   }
@@ -152,7 +143,7 @@ function mapTransferDetails(value: unknown) {
     feeText: stringValue(details.feeText),
     transferFee: stringValue(details.transferFee),
     remainingTerm: stringValue(details.remainingTerm),
-    includesEquipment: booleanValue(details.includesEquipment),
+    includesEquipment: typeof details.includesEquipment === 'boolean' ? details.includesEquipment : null,
   }
 }
 
@@ -185,6 +176,7 @@ export function mapProject(doc: Doc, isStaff = false) {
 
   const mapped = {
     id: String(doc.id),
+    ...(isStaff ? { sourceManaged: String(doc.seedKey || '').startsWith('tencent:'), emergencyHidden: doc.emergencyHidden === true } : {}),
     opportunityType,
     listingKind: doc.listingKind === 'project' ? 'project' : 'unit',
     businessScene: commercialScene(doc),
@@ -194,9 +186,6 @@ export function mapProject(doc: Doc, isStaff = false) {
     areaMax: typeof doc.areaMax === 'number' ? doc.areaMax : null,
     monthlyRentMin: typeof doc.monthlyRentMin === 'number' ? doc.monthlyRentMin : null,
     monthlyRentMax: typeof doc.monthlyRentMax === 'number' ? doc.monthlyRentMax : null,
-    communityInfo: stringValue(doc.communityInfo),
-    tourismInfo: stringValue(doc.tourismInfo),
-    mallInfo: stringValue(doc.mallInfo),
     premisesConditions: stringValue(doc.premisesConditions),
     introduction: stringValue(doc.introduction),
     operatingRequirements: stringValue(doc.operatingRequirements),
@@ -245,13 +234,7 @@ export function isPublicProject(doc: Record<string, unknown>) {
 
 export async function mapLeads(docs: Doc[]) {
   return docs.map(doc => ({
-      id: (() => {
-        const num = Number(doc.id)
-        if (!isNaN(num) && num < 10000000) {
-          return String(LEAD_ID_OFFSET + num)
-        }
-        return String(doc.id)
-      })(),
+      id: String(doc.id),
 
       leadType: stringValue(doc.leadType) || 'leasing',
       sourceChannel: stringValue(doc.sourceChannel) || 'mini_program',
@@ -261,7 +244,7 @@ export async function mapLeads(docs: Doc[]) {
       businessScene: stringValue(doc.businessScene),
       budgetRange: stringValue(doc.budgetRange),
       regionPreference: stringValue(doc.regionPreference),
-      hasCampusExperience: booleanValue(doc.hasCampusExperience),
+      hasCampusExperience: typeof doc.hasCampusExperience === 'boolean' ? doc.hasCampusExperience : null,
       transferDetails: mapTransferDetails(doc.transferDetails),
       equipmentDetails: mapEquipmentDetails(doc.equipmentDetails),
       renovationDetails: mapRenovationDetails(doc.renovationDetails),
@@ -286,7 +269,8 @@ export async function mapLead(doc: Doc) {
 
 export function sanitizeProjectInput(input: Record<string, unknown>) {
   return {
-    ...Object.fromEntries(['listingKind', 'businessScene', 'parentProject', 'venueName', 'unitLocation', 'areaMin', 'areaMax', 'monthlyRentMin', 'monthlyRentMax', 'communityInfo', 'tourismInfo', 'mallInfo', 'premisesConditions', 'introduction', 'operatingRequirements', 'coverImage', 'images'].filter(key => input[key] !== undefined).map(key => [key, input[key]])),
+    ...(typeof input.emergencyHidden === 'boolean' ? { emergencyHidden: input.emergencyHidden } : {}),
+    ...Object.fromEntries(['listingKind', 'businessScene', 'parentProject', 'venueName', 'unitLocation', 'areaMin', 'areaMax', 'monthlyRentMin', 'monthlyRentMax', 'premisesConditions', 'introduction', 'operatingRequirements', 'coverImage', 'images'].filter(key => input[key] !== undefined).map(key => [key, input[key]])),
     opportunityType: input.opportunityType || 'leasing',
     title: input.title,
     city: input.city,

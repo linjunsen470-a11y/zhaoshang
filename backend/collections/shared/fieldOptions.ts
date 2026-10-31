@@ -1,8 +1,6 @@
 import commercialOptions from './commercialOptions.json'
 
-export const CITY_OPTIONS = [
-  { label: '广州', value: '广州' },
-]
+export const CITY_OPTIONS = commercialOptions.cities.map(value => ({ label: value, value }))
 
 export const DISTRICT_OPTIONS = commercialOptions.districts.map(value => ({ label: value, value }))
 export const BUSINESS_SCENE_OPTIONS = commercialOptions.scenes
@@ -12,7 +10,6 @@ export const PROJECT_TYPE_OPTIONS = [
   { label: '食堂档口', value: '食堂档口' },
   { label: '校园商业街', value: '校园商业街' },
   { label: '校内铺位', value: '校内铺位' },
-  { label: '校外临校铺位', value: '校外临校铺位' },
   { label: '校园服务点', value: '校园服务点' },
   { label: '店铺转让', value: '店铺转让' },
   { label: '其他', value: '其他' },
@@ -32,6 +29,14 @@ export const LEAD_STATUS_OPTIONS = [
   { label: '已结束', value: 'closed', tone: '#64748b' },
 ] as const
 
+export const LEAD_STATUS_HELP = '待联系：尚未联系；已联系：已沟通、继续跟进；已结束：不再跟进，不代表已成交。'
+export const PROPERTY_STATUS_HELP = '草稿、已下架不公开；开放中、即将开放、已满/已转会在小程序展示。选择状态后点击保存才生效。'
+
+export const OPPORTUNITY_TYPE_OPTIONS = [
+  { label: '招商（出租）', value: 'leasing' },
+  { label: '店铺转让', value: 'transfer' },
+] as const
+
 export const PROPERTY_STATUS_OPTIONS = [
   { label: '草稿', value: 'draft' },
   { label: '开放中', value: 'online' },
@@ -41,7 +46,7 @@ export const PROPERTY_STATUS_OPTIONS = [
 ] as const
 
 export const EQUIPMENT_PUBLICATION_OPTIONS = [
-  { label: '待整理', value: 'draft' },
+  { label: '未发布', value: 'draft' },
   { label: '已发布', value: 'online' },
   { label: '已下架', value: 'offline' },
 ] as const

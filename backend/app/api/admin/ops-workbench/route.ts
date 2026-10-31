@@ -2,10 +2,8 @@ import { publicCommercialWhere } from '../../../../lib/commercial'
 import type { Where } from 'payload'
 import { getAuthenticatedStaff } from '../../_shared/auth'
 import { absoluteUrl, getPayloadInstance, json } from '../../_shared/payloadApi'
-import { getProjectMissingFields } from '../../../../collections/Projects'
+import { getProjectMissingFields, REQUIRED_PROJECT_FIELDS } from '../../../../lib/cmsRules.mjs'
 import {
-  LEAD_CATEGORY_OPTIONS,
-  LEAD_STATUS_OPTIONS,
   LEAD_TYPE_LABELS,
   categoryForLeadType,
 } from '../../../../collections/shared/fieldOptions'
@@ -26,16 +24,16 @@ export async function GET() {
     const payload = await getPayloadInstance()
     const staleBefore = new Date(Date.now() - STALE_HOURS * 60 * 60 * 1000).toISOString()
 
-    const [newLeads, staleLeads, contactedLeads, closedLeads, convertedLeads, allLeadsPage, projectsPage, shareCandidates] = await Promise.all([
+    const [newLeads, staleLeads, projectsPage, shareCandidates] = await Promise.all([
       payload.find({
         collection: 'leads',
         where: { status: { equals: 'new' } },
-        sort: '-createdAt',
+        sort: 'createdAt',
         limit: TODO_LIMIT,
         depth: 0,
         overrideAccess: true,
       }),
-      payload.find({
+      payload.count({
         collection: 'leads',
         where: {
           and: [
@@ -43,38 +41,7 @@ export async function GET() {
             { createdAt: { less_than: staleBefore } },
           ],
         } as Where,
-        sort: 'createdAt',
-        limit: TODO_LIMIT,
-        depth: 0,
         overrideAccess: true,
-      }),
-      payload.find({
-        collection: 'leads',
-        where: { status: { equals: 'contacted' } },
-        limit: 1,
-        depth: 0,
-        overrideAccess: true,
-      }),
-      payload.find({
-        collection: 'leads',
-        where: { status: { equals: 'closed' } },
-        limit: 1,
-        depth: 0,
-        overrideAccess: true,
-      }),
-      payload.find({
-        collection: 'leads',
-        where: { generatedProject: { exists: true } } as Where,
-        limit: 1,
-        depth: 0,
-        overrideAccess: true,
-      }),
-      payload.find({
-        collection: 'leads',
-        limit: 500,
-        depth: 0,
-        overrideAccess: true,
-        sort: '-createdAt',
       }),
       payload.find({
         collection: 'projects',
@@ -92,40 +59,6 @@ export async function GET() {
         sort: '-updatedAt',
       }),
     ])
-
-    const totalLeads = newLeads.totalDocs + contactedLeads.totalDocs + closedLeads.totalDocs
-    const sampleDocs = allLeadsPage.docs
-    const sampleTruncated = allLeadsPage.totalDocs > sampleDocs.length
-
-    const funnel = {
-      submitted: totalLeads,
-      new: newLeads.totalDocs,
-      contacted: contactedLeads.totalDocs,
-      closed: closedLeads.totalDocs,
-      converted: convertedLeads.totalDocs,
-      byCategory: LEAD_CATEGORY_OPTIONS.map(cat => {
-        const docs = sampleDocs.filter(d => (cat.types as readonly string[]).includes(String(d.leadType)))
-        return {
-          category: cat.value,
-          label: cat.label,
-          total: docs.length,
-          new: docs.filter(d => d.status === 'new').length,
-          contacted: docs.filter(d => d.status === 'contacted').length,
-          closed: docs.filter(d => d.status === 'closed').length,
-        }
-      }),
-      byStatus: LEAD_STATUS_OPTIONS.map(s => ({
-        status: s.value,
-        label: s.label,
-        count: s.value === 'new'
-          ? newLeads.totalDocs
-          : s.value === 'contacted'
-            ? contactedLeads.totalDocs
-            : closedLeads.totalDocs,
-      })),
-      sampleSize: sampleDocs.length,
-      truncated: sampleTruncated,
-    }
 
     const projectRows = projectsPage.docs.map(doc => {
       const row = asRecord(doc)
@@ -161,6 +94,7 @@ export async function GET() {
         status: String(row.status || 'new'),
         createdAt: row.createdAt,
         businessType: String(row.businessType || ''),
+        isStale: Boolean(row.createdAt && row.createdAt < staleBefore),
       }
     }
 
@@ -177,11 +111,9 @@ export async function GET() {
           publicIncomplete: publicIncomplete.length,
         },
         newLeads: newLeads.docs.map(mapLeadTodo),
-        staleLeads: staleLeads.docs.map(mapLeadTodo),
         blockedProjects: blocked.slice(0, TODO_LIMIT),
         readyToPublish: readyDrafts.slice(0, TODO_LIMIT),
       },
-      funnel,
       quality: {
         scanned: projectRows.length,
         truncated: projectsPage.totalDocs > projectRows.length,
@@ -190,9 +122,7 @@ export async function GET() {
         blockedCount: blocked.length,
         readyToPublishCount: readyDrafts.length,
         publicIncompleteCount: publicIncomplete.length,
-        requiredFields: [
-          '房源标题', '封面图', '商业场景（旧待分类记录除外）', '区域', '费用说明', '客群说明', '详情图片',
-        ],
+        requiredFields: [...REQUIRED_PROJECT_FIELDS.map(field => field.label), '商业场景'],
         blocked: blocked.slice(0, 20),
         publicIncomplete: publicIncomplete.slice(0, 10),
       },

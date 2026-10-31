@@ -1,14 +1,17 @@
+import { assertSourceWrite, isTencentSource, SOURCE_FIELDS } from '../lib/tencent/propertyPolicy'
 import { commercialId, commercialScene, publicCommercialWhere, validateCommercial } from '../lib/commercial'
 import type { CollectionConfig } from 'payload'
 import { canManageProjects, isAdminUser, isStaffUser } from './shared/access'
 import {
   ADMIN_GROUPS,
-  BUSINESS_TYPE_OPTIONS,
   BUSINESS_SCENE_OPTIONS,
+  BUSINESS_TYPE_OPTIONS,
   LISTING_KIND_OPTIONS,
   CITY_OPTIONS,
   DISTRICT_OPTIONS,
   PROPERTY_STATUS_OPTIONS,
+  PROPERTY_STATUS_HELP,
+  OPPORTUNITY_TYPE_OPTIONS,
   PROJECT_TYPE_OPTIONS,
 } from './shared/fieldOptions'
 import { getProjectMissingFields } from '../lib/cmsRules.mjs'
@@ -37,7 +40,7 @@ export const Projects: CollectionConfig = {
     // are hidden via admin-theme.css; primary entry is /admin dashboard.
     useAsTitle: 'title',
     defaultColumns: ['title', 'opportunityType', 'status', 'district', 'feeText', 'isRecommended', 'updatedAt'],
-    description: '整理、修改并上下架小程序中的项目与铺位。',
+    description: '先填写基本资料，再选择公开状态并保存；选填信息可稍后补充。',
     listSearchableFields: ['title', 'schoolName', 'schoolAlias', 'venueName', 'addressText'],
     group: ADMIN_GROUPS.properties,
     components: {
@@ -64,18 +67,16 @@ export const Projects: CollectionConfig = {
     }],
     beforeChange: [
       async ({ data, originalDoc, operation, req }) => {
-        data.legacyUnclassified = req.context?.commercialMigration ? Boolean(data.legacyUnclassified) : Boolean(originalDoc?.legacyUnclassified)
+        assertSourceWrite(data, originalDoc, req.context?.tencentSync === true)
         data.listingKind = data.listingKind || originalDoc?.listingKind || 'unit'
-        if (data.businessScene === undefined && !originalDoc?.businessScene) {
-          data.businessScene = commercialScene({ ...(originalDoc || {}), ...data }) || null
-        }
         if (data.listingKind === 'unit' && !data.parentProject && operation === 'create' && req.query?.parentProject) {
           const parent = await req.payload.findByID({ collection: 'projects', id: String(req.query.parentProject), depth: 0, req })
           Object.assign(data, { parentProject: parent.id, businessScene: parent.businessScene, city: parent.city, district: parent.district })
         }
         const merged = { ...(originalDoc || {}), ...(data || {}) } as Record<string, unknown>
         const problem = validateCommercial(merged)
-        if (problem) throw new Error(problem)
+        const stopping = req.context?.tencentSync === true && originalDoc && data.status === 'offline' && Object.keys(data).every(key => ['status', 'tencentSync', 'listingKind'].includes(key))
+        if (problem && !stopping) throw new Error(problem)
         const parentId = commercialId(merged.parentProject)
         if (parentId) {
           if (String(parentId) === String(originalDoc?.id)) throw new Error('不能关联自身')
@@ -89,7 +90,7 @@ export const Projects: CollectionConfig = {
           const children = await req.payload.count({ collection: 'projects', where: { parentProject: { equals: originalDoc.id } }, overrideAccess: true, req })
           if (children.totalDocs) throw new Error('存在所属铺位，请先处理关联，再修改项目类型、场景或地区')
         }
-        if (PUBLIC_PROJECT_STATUSES.includes(merged.status as (typeof PUBLIC_PROJECT_STATUSES)[number]) && !merged.businessScene && !merged.legacyUnclassified) {
+        if (PUBLIC_PROJECT_STATUSES.includes(merged.status as (typeof PUBLIC_PROJECT_STATUSES)[number]) && !merged.businessScene) {
           throw new Error('新记录上架必须选择商业场景')
         }
         if (PUBLIC_PROJECT_STATUSES.includes(merged.status as (typeof PUBLIC_PROJECT_STATUSES)[number])) {
@@ -114,29 +115,11 @@ export const Projects: CollectionConfig = {
     ],
   },
   fields: [
-    { name: 'legacyUnclassified', access: { read: ({ req: { user } }) => isStaffUser(user) }, type: 'checkbox', defaultValue: false, admin: { hidden: true, readOnly: true } },
-    { name: 'listingKind', type: 'select', required: true, defaultValue: 'unit', label: '发布内容', options: LISTING_KIND_OPTIONS, index: true },
-    { name: 'businessScene', type: 'select', label: '商业场景', options: BUSINESS_SCENE_OPTIONS, index: true },
-    { name: 'parentProject', type: 'relationship', relationTo: 'projects', label: '所属项目', index: true, maxDepth: 1,
-      filterOptions: { listingKind: { equals: 'project' } },
-      admin: { condition: data => data?.listingKind !== 'project', description: '可留空作为独立铺位；所属项目下架后，关联铺位暂停公开。' } },
-    { name: 'venueName', type: 'text', label: '商业项目/位置名称', admin: { condition: data => data?.businessScene !== 'campus' } },
-    { name: 'unitLocation', type: 'text', label: '楼层/铺位位置', admin: { condition: data => data?.listingKind !== 'project' } },
-    { type: 'row', fields: [
-      { name: 'areaMin', type: 'number', min: 0, label: '招商面积下限（㎡）' },
-      { name: 'areaMax', type: 'number', min: 0, label: '招商面积上限（㎡）' },
-    ] },
-    { type: 'row', fields: [
-      { name: 'monthlyRentMin', type: 'number', min: 0, label: '基础月租下限（元/月）' },
-      { name: 'monthlyRentMax', type: 'number', min: 0, label: '基础月租上限（元/月）' },
-    ] },
-    { name: 'communityInfo', type: 'textarea', label: '周边客群与主要营业时段', admin: { condition: data => data?.businessScene === 'community' } },
-    { name: 'tourismInfo', type: 'textarea', label: '旺淡季、经营时段与常驻要求', admin: { condition: data => data?.businessScene === 'tourism' } },
-    { name: 'mallInfo', type: 'textarea', label: '个体/非连锁品牌准入及营业要求', admin: { condition: data => data?.businessScene === 'mall' } },
-    { name: 'introduction', type: 'textarea', label: '项目/铺位介绍' },
-    { name: 'operatingRequirements', type: 'textarea', label: '经营要求' },
-    { name: 'premisesConditions', type: 'textarea', label: '工程条件说明', admin: { description: '排烟、燃气、上下水、电力等；未确认的条件注明待核实。' } },
-
+    { name: 'emergencyHidden', type: 'checkbox', defaultValue: false, label: '紧急停止公开', admin: { position: 'sidebar', description: '腾讯文档同步不会解除；取消后按最新有效资料恢复。' }, access: { read: ({ req }) => isStaffUser(req.user) } },
+    { name: 'tencentSync', type: 'json', admin: { hidden: true }, access: { read: ({ req }) => isStaffUser(req.user) } },
+    { name: 'sourceRemark', type: 'textarea', label: '腾讯文档原备注', admin: { readOnly: true }, access: { read: ({ req }) => isStaffUser(req.user) } },
+    { name: 'sourcePropertyType', type: 'text', label: '来源空间类型', admin: { readOnly: true } },
+    { name: 'sourceBusinessText', type: 'text', label: '来源业态描述', admin: { readOnly: true } },
     {
       name: 'seedKey', access: { read: ({ req: { user } }) => isStaffUser(user) },
       type: 'text',
@@ -145,12 +128,17 @@ export const Projects: CollectionConfig = {
     },
     {
       type: 'collapsible',
-      label: '上架必填信息',
+      label: '1. 基本资料',
       admin: {
         initCollapsed: false,
-        description: '完成以下信息后即可直接上架，无需额外审核。',
+        description: '带 * 的内容保存时必填。公开前还需选好商业场景，核实图片与费用；保存草稿不会展示给客户。',
       },
       fields: [
+        { type: 'row', fields: [
+          { name: 'listingKind', type: 'select', required: true, defaultValue: 'unit', label: '录入对象', options: LISTING_KIND_OPTIONS, index: true,
+            admin: { description: '具体铺位：一间店或档口；项目招商：一个项目，后续可添加所属铺位。' } },
+          { name: 'businessScene', type: 'select', label: '物业场景', options: BUSINESS_SCENE_OPTIONS, index: true, admin: { description: '服务学校、工业园区、写字楼等封闭或半封闭物业的内部空间。' } },
+        ] },
         {
           name: 'coverImage',
           type: 'upload',
@@ -162,20 +150,23 @@ export const Projects: CollectionConfig = {
         {
           type: 'row',
           fields: [
-            { name: 'title', type: 'text', required: true, label: '房源标题' },
+            { name: 'title', type: 'text', required: true, label: '项目/铺位标题' },
             {
               name: 'opportunityType',
               type: 'select',
               required: true,
               defaultValue: 'leasing',
-              label: '房源业务类型',
-              options: [
-                { label: '招商铺位', value: 'leasing' },
-                { label: '店铺转让', value: 'transfer' },
-              ],
+              label: '招商还是转让',
+              options: [...OPPORTUNITY_TYPE_OPTIONS],
+              admin: { description: '项目招商请选择“招商（出租）”；转让仅用于具体铺位。' },
             },
           ],
         },
+        { name: 'parentProject', type: 'relationship', relationTo: 'projects', label: '所属项目（独立铺位留空）', index: true, maxDepth: 1,
+          filterOptions: { listingKind: { equals: 'project' } },
+          admin: { condition: data => data?.listingKind !== 'project', description: '仅在铺位属于已录入的项目时选择；项目下架后，所属铺位暂停公开。' } },
+        { name: 'venueName', type: 'text', label: '商业项目/位置名称', admin: { condition: data => data?.businessScene !== 'campus' } },
+        { name: 'unitLocation', type: 'text', label: '楼层/铺位位置', admin: { condition: data => data?.listingKind !== 'project' } },
         {
           type: 'row',
           fields: [
@@ -193,9 +184,9 @@ export const Projects: CollectionConfig = {
         {
           type: 'row',
           fields: [
-            { name: 'schoolName', type: 'text', label: '学校名称', admin: { condition: data => data?.businessScene === 'campus' } },
-            { name: 'schoolAlias', type: 'text', label: '学校简称', admin: { condition: data => data?.businessScene === 'campus' } },
-            { name: 'showFullSchoolName', type: 'checkbox', defaultValue: false, label: '显示完整学校名', admin: { condition: data => data?.businessScene === 'campus' } },
+            { name: 'schoolName', type: 'text', label: '学校名称（仅后台）', admin: { condition: data => data?.businessScene === 'campus', description: '小程序统一显示“城市 + 区域 + 某学校”，并替换文案中的学校名称。' } },
+            { name: 'schoolAlias', type: 'text', label: '学校简称（用于脱敏）', admin: { condition: data => data?.businessScene === 'campus' } },
+            { name: 'showFullSchoolName', type: 'checkbox', defaultValue: false, admin: { hidden: true } },
           ],
         },
         {
@@ -207,7 +198,7 @@ export const Projects: CollectionConfig = {
         {
           type: 'row',
           fields: [
-            { name: 'areaText', type: 'text', label: '面积', admin: { placeholder: '例如：15m²…' } },
+            { name: 'areaText', type: 'text', label: '面积展示文字', admin: { placeholder: '例如：约 15㎡', description: '给客户看的说明。用于筛选的数值在下方选填区填写。' } },
             {
               name: 'feeText',
               type: 'text',
@@ -237,9 +228,20 @@ export const Projects: CollectionConfig = {
     },
     {
       type: 'collapsible',
-      label: '展示增强信息',
-      admin: { initCollapsed: false },
+      label: '2. 面积、月租与经营信息（选填）',
+      admin: { initCollapsed: true, description: '数值用于小程序筛选。固定值的上下限填相同数字；范围填起止数值；未知时两栏都留空，不能只填一栏。' },
       fields: [
+        { type: 'row', fields: [
+          { name: 'areaMin', type: 'number', min: 0, label: '面积最小值（㎡）' },
+          { name: 'areaMax', type: 'number', min: 0, label: '面积最大值（㎡）' },
+        ] },
+        { type: 'row', fields: [
+          { name: 'monthlyRentMin', type: 'number', min: 0, label: '基础月租最小值（元/月）' },
+          { name: 'monthlyRentMax', type: 'number', min: 0, label: '基础月租最大值（元/月）' },
+        ] },
+        { name: 'introduction', type: 'textarea', label: '项目/铺位介绍' },
+        { name: 'operatingRequirements', type: 'textarea', label: '经营要求' },
+        { name: 'premisesConditions', type: 'textarea', label: '工程条件说明', admin: { description: '排烟、燃气、上下水、电力等；未确认的条件注明待核实。' } },
         { name: 'suitableBusiness', type: 'select', hasMany: true, label: '适合业态', options: BUSINESS_TYPE_OPTIONS },
         { name: 'unsuitableBusiness', type: 'select', hasMany: true, label: '不适合业态', options: BUSINESS_TYPE_OPTIONS },
         {
@@ -255,9 +257,9 @@ export const Projects: CollectionConfig = {
     },
     {
       type: 'collapsible',
-      label: '转让专属信息',
+      label: '3. 转让信息（选填）',
       admin: {
-        initCollapsed: false,
+        initCollapsed: true,
         condition: data => data?.opportunityType === 'transfer',
       },
       fields: [
@@ -301,13 +303,13 @@ export const Projects: CollectionConfig = {
     {
       name: 'status',
       type: 'select',
-      label: '房源状态',
+      label: '公开状态',
       options: [...PROPERTY_STATUS_OPTIONS],
       defaultValue: 'draft',
       required: true,
       admin: {
         position: 'sidebar',
-        description: '开放中、即将开放和已满/已转可公开。整项目已满时请检查子铺位状态；父项目下架时子铺位暂停公开。',
+        description: PROPERTY_STATUS_HELP,
       },
     },
     {
@@ -321,7 +323,7 @@ export const Projects: CollectionConfig = {
       name: 'sort',
       type: 'number',
       defaultValue: 0,
-      label: '排序权重',
+      label: '展示顺序',
       admin: {
         position: 'sidebar',
         description: '数值越大越靠前。',
@@ -339,3 +341,14 @@ export const Projects: CollectionConfig = {
   ],
   timestamps: true,
 }
+
+// Field update access makes native Payload editors read-only for source-owned data.
+function protectSourceFields(fields: CollectionConfig['fields']) {
+  for (const field of fields) {
+    if ('fields' in field) protectSourceFields(field.fields)
+    if ('name' in field && field.type !== 'ui' && SOURCE_FIELDS.includes(field.name)) {
+      field.access = { ...field.access, update: ({ doc, req }) => req.context?.tencentSync === true || !isTencentSource(doc) }
+    }
+  }
+}
+protectSourceFields(Projects.fields)

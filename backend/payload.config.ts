@@ -1,6 +1,7 @@
 import { buildConfig, type SharpDependency } from 'payload'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { zh } from '@payloadcms/translations/languages/zh'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import sharp from 'sharp'
@@ -22,15 +23,22 @@ if (!secret && process.env.NODE_ENV === 'production') {
 }
 
 export default buildConfig({
+  i18n: { fallbackLanguage: 'zh', supportedLanguages: { zh } },
   admin: {
     user: 'users',
     meta: {
-      title: '开店项目与铺位管理',
-      description: '快速整理、修改和上架商业项目和铺位',
+      title: '锦奕招商工作台',
+      description: '房源与客户咨询管理',
     },
     components: {
+      graphics: { Logo: '@/app/admin/components/BrandLogo' },
+      beforeLogin: ['@/app/admin/components/LoginIntro'],
       beforeNavLinks: ['@/app/admin/components/PrimaryNav'],
       views: {
+        tencentSync: {
+          Component: '@/app/admin/components/TencentSyncRoute',
+          path: '/workspace/sync',
+        },
         dashboard: {
           // No AdminWorkspaceShell — dashboard already has DefaultTemplate.
           Component: '@/app/admin/components/OpsWorkbenchRoute',
@@ -75,7 +83,7 @@ export default buildConfig({
   editor: lexicalEditor({}),
   secret: secret || 'your-fallback-dev-secret-for-local-demo',
   typescript: {
-    // Export explicit collection types without retroactively changing legacy Local API generics.
+    // Export explicit collection types for application code.
     declare: false,
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },

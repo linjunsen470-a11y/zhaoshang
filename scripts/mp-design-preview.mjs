@@ -35,13 +35,18 @@ fs.copyFileSync('scripts/mp-preview.html', path.join(output, 'index.html'));
 console.log('Built source-based design previews: ' + output);
 if (process.argv.includes('--serve')) http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
-  if (url.pathname === '/api/projects') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(projects)); return; }
+  if (url.searchParams.has('phase')) {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('此预览只支持当前源码');
+    return;
+  }
+  if (url.pathname === '/api/projects') { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify({ docs: projects, page: 1, totalDocs: projects.length, totalPages: 1, hasNextPage: false })); return; }
   let base = output;
   let pathname = url.pathname;
   if (pathname.startsWith('/images/')) base = root;
   if (pathname.startsWith('/source/')) {
     pathname = pathname.slice(7);
-    base = url.searchParams.get('phase') === 'before' ? path.resolve('test-results/visual-refresh/baseline-source') : root;
+    base = root;
   }
   const file = path.resolve(base, '.' + (pathname === '/' ? '/index.html' : decodeURIComponent(pathname)));
   if (!file.startsWith(base + path.sep)) { res.writeHead(403); res.end(); return; }

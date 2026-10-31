@@ -15,8 +15,10 @@
 .privacy-meta {
   font-size: 24rpx;
   color: var(--muted);
-  margin: 16rpx 0 40rpx;
+  margin: 12rpx 0;
 }
+
+.privacy-meta + .privacy-section { margin-top: 40rpx; }
 
 .privacy-section {
   margin-bottom: 32rpx;

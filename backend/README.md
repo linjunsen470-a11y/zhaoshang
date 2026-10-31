@@ -2,7 +2,9 @@
 
 Payload CMS 3 + Next.js 16 + PostgreSQL backend for campus and commercial listings.
 
-当前 demo 状态与验证限制见 [2026-10-16 审计](../docs/demo-prelaunch-audit-2026-10-16.md)。命令均在仓库根目录执行。
+当前文档入口见 [文档索引](../docs/README.md)。命令均在仓库根目录执行。
+
+2026-10-29 同步修复新增紧急停显、来源元数据和地区枚举；2026-10-30 已移除历史分类标记及旧格式转换。2026-10-31 本机演示库已更新结构并验证房源加载；其他数据库仍需按 [初始化说明](../docs/schema-setup.md) 单独准备，腾讯视图筛选仍待完成。详见 [同步修复记录](../docs/tencent-sync-fixes-2026-10-29.md)。
 
 ## Admin
 
@@ -10,17 +12,17 @@ Payload is the only admin interface. Workspace entry points:
 
 | 模块 | URL |
 |------|-----|
-| 运营工作台 | `/admin`（团队待办 + 咨询漏斗） |
+| 运营工作台 | `/admin`（日常入口 + 待联系咨询） |
 | 项目与铺位 | `/admin/collections/projects` |
 | 咨询收件箱 | `/admin/workspace/inquiries` |
-| 分享素材 | `/admin/workspace/share`（文案 / 真实小程序码 / 海报） |
-| 上架检查 | `/admin/workspace/quality`（资料是否齐全） |
 | 系统设置 | `/admin/workspace/system` |
 
 设备是否进入小程序公开列表：在咨询详情「处理编辑 → 设备公开设置」中配置。
 
+分享素材 `/admin/workspace/share`、上架检查 `/admin/workspace/quality` 从项目列表工具区进入；项目相关页面的导航会显示这两个次级入口。操作说明见 [CMS 上手指南](../docs/payload-cms-quickstart.md)。
+
 - Property workspace: URL-backed filters, table, quick-edit drawer, bulk publish controls.
-- Inquiry inbox: three handling states and one internal note; no CRM timeline or assignment workflow.
+- Inquiry inbox: three handling states and one internal note; both are always visible in the detail sidebar. “已结束” means no further follow-up, not a completed transaction.
 - Equipment workspace: independent public status and public description.
 - Roles: `admin` and `editor`.
 - Primary list for consultations is `/admin/workspace/inquiries`; 「完整详情」opens `/admin/collections/leads/:id`.
@@ -53,30 +55,9 @@ pnpm backend:seed
 
 ## Schema maintenance
 
-Payload `db push` can hang on interactive enum rename prompts leftover from the old CRM. For lead dual-view fields use the non-interactive helper:
+只维护当前 Schema，数据库初始化统一使用 `pnpm --dir backend schema:push`。不再提供旧 CRM、账号字段或商业字段转换脚本。已有本机数据先备份，正常启动保持 `PAYLOAD_DB_PUSH=false`。
 
-```bash
-pnpm --dir backend schema:ensure-leads
-```
-
-Full Payload push (choose **create** for new enums, not rename). Back up the target database first and run explicitly from the maintenance environment:
-
-```bash
-pnpm --dir backend schema:push
-```
-
-Compose 仅提供后端，没有 `db`、`migrate` 服务或 `schema` profile；数据库由 `DATABASE_URI` 指向外部 PostgreSQL。正常启动及镜像构建保持 `PAYLOAD_DB_PUSH=false`。
-
-商业字段与 Payload 认证字段升级分别见 [商业迁移说明](../docs/商业项目接入-迁移与发布说明.md) 和根目录 [README](../README.md#验证)。
-
-## Migration from the retired CRM admin
-
-```bash
-pnpm --dir backend migrate:property-cms
-pnpm --dir backend schema:ensure-leads
-```
-
-The migrate command creates timestamped backup tables and maps legacy states. Prefer `schema:ensure-leads` over interactive `push-schema` when only lead columns are missing.
+根目录 Compose 用于腾讯云，包含独立 PostgreSQL；本地开发使用 `backend/.env` 指定的数据库。发布见 [持续部署](../docs/ci-deployment.md)，初始化见 [数据库说明](../docs/schema-setup.md)。
 
 ## Security
 
@@ -85,7 +66,7 @@ The migrate command creates timestamped backup tables and maps legacy states. Pr
 - Public equipment images are served only when the parent equipment inquiry has been reviewed and published.
 - Transfer inquiry attachments may prefill a draft, but public properties must replace them with staff-reviewed media before publishing.
 - Public submissions and uploads use lightweight per-IP/per-openid rate limits; use a shared limiter if the service scales to multiple instances.
-- Public property reads only expose `online`, `coming`, and `full` records; child units also require a public parent project.
+- Public property reads only expose `online`, `coming`, and `full` records without emergency hiding; child units also require a public parent project without emergency hiding.
 - Admin APIs use the Payload session through `getAuthenticatedStaff()`.
 - Only `admin` can manage accounts or permanently delete content.
 - `PAYLOAD_SECRET` is mandatory in production; production WeChat auth must use `WECHAT_AUTH_MODE=wechat`.

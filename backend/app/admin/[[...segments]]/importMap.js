@@ -1,8 +1,11 @@
+import BrandLogo from '@/app/admin/components/BrandLogo'
+import LoginIntro from '@/app/admin/components/LoginIntro'
 import { default as default_4fd6cd6a13ca54f0423d17f636427cc5 } from '@/app/admin/components/ProjectEditHints'
 import { default as default_325caa2fbfcb7a7f2d1bada949bd74a1 } from '@/app/admin/components/PropertyWorkspace'
 import { default as default_190d5196cff995eea9a0acd8e10edcd7 } from '@/app/admin/components/InquiryContactBar'
 import { default as default_e7d9ed43db07c68d6068652a646f56db } from '@/app/admin/components/CustomerSnapshotField'
 import { default as default_b9acfcbfbba04d6e878bd5114b207a18 } from '@/app/admin/components/PrimaryNav'
+import { default as default_ad2e4052fcc532583d2867dda3dfef46 } from '@/app/admin/components/TencentSyncRoute'
 import { default as default_d2846e22b5fbb2d086c342d22f4b4131 } from '@/app/admin/components/OpsWorkbenchRoute'
 import { default as default_4398f26bc2fb68294376f20304cd80a0 } from '@/app/admin/components/QualityWorkspaceRoute'
 import { default as default_9d555cefd1713d68cc1858d49d35208c } from '@/app/admin/components/ShareWorkspaceRoute'
@@ -13,11 +16,14 @@ import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 
 /** @type import('payload').ImportMap */
 export const importMap = {
+  "@/app/admin/components/BrandLogo#default": BrandLogo,
+  "@/app/admin/components/LoginIntro#default": LoginIntro,
   "@/app/admin/components/ProjectEditHints#default": default_4fd6cd6a13ca54f0423d17f636427cc5,
   "@/app/admin/components/PropertyWorkspace#default": default_325caa2fbfcb7a7f2d1bada949bd74a1,
   "@/app/admin/components/InquiryContactBar#default": default_190d5196cff995eea9a0acd8e10edcd7,
   "@/app/admin/components/CustomerSnapshotField#default": default_e7d9ed43db07c68d6068652a646f56db,
   "@/app/admin/components/PrimaryNav#default": default_b9acfcbfbba04d6e878bd5114b207a18,
+  "@/app/admin/components/TencentSyncRoute#default": default_ad2e4052fcc532583d2867dda3dfef46,
   "@/app/admin/components/OpsWorkbenchRoute#default": default_d2846e22b5fbb2d086c342d22f4b4131,
   "@/app/admin/components/QualityWorkspaceRoute#default": default_4398f26bc2fb68294376f20304cd80a0,
   "@/app/admin/components/ShareWorkspaceRoute#default": default_9d555cefd1713d68cc1858d49d35208c,

@@ -1,17 +1,15 @@
+<import src="../../templates/loading.wxml" />
 <view class="container">
   <view class="leads-header" wx:if="{{phone}}">
     <view class="phone-tip">
-      <text class="phone-label">您的联系电话：</text>
+      <text class="phone-label">你的联系电话：</text>
       <text class="phone-number">{{phone}}</text>
     </view>
   </view>
   <view class="top-notice-bar" wx:if="{{phone && leadsList.length > 0}}">后续沟通以微信或电话为准，请保持联系方式畅通。</view>
   <view class="leads-body">
     <view class="loading-state" wx:if="{{loading}}">
-      <view class="skeleton">
-      </view>
-      <view class="skeleton">
-      </view>
+      <template is="loading-cards" data="{{kind: 'fields'}}" />
     </view>
     <view class="state-box" wx:elif="{{loadError}}">
       <text class="state-title">咨询记录加载失败</text>
@@ -23,9 +21,13 @@
         <view class="lead-card card e2e-lead-card" data-test="lead-card" wx:for="{{leadsList}}" wx:for-index="leadIndex" wx:key="id">
           <view class="lead-card-header flex justify-between align-start">
             <view class="lead-project-title ellipsis-2 e2e-lead-title {{item.projectId ? 'link-text' : ''}}" data-test="lead-title" bindtap="onGoToProject" data-id="{{item.projectId}}">{{item.projectTitle ? item.projectTitle : '自主提交需求'}}</view>
-            <view class="badge status-tag" style="color: {{item.statusInfo.color}}; background-color: {{item.statusInfo.bg}}; border: 1rpx solid {{item.statusInfo.color}}20">{{item.statusInfo.name}}</view>
+
           </view>
-          <view class="lead-specs">
+          <view class="lead-progress" aria-label="当前进度：{{item.statusInfo.name}}"><view class="progress-step reached"><view class="progress-line"></view><text>已提交</text></view><view class="progress-step {{item.statusInfo.step >= 2 ? 'reached' : ''}}"><view class="progress-line"></view><text>已联系</text></view><view class="progress-step {{item.statusInfo.step >= 3 ? 'reached' : ''}}"><view class="progress-line"></view><text>已结束</text></view></view>
+          <view class="lead-summary">{{item.leadTypeLabel}}<text wx:if="{{item.businessType}}"> · {{item.businessType}}</text></view>
+          <view class="lead-summary-time">{{item.formattedTime}}</view>
+          <button class="expand-details" bindtap="onToggleDetails" data-id="{{item.id}}" aria-expanded="{{item.expanded}}">{{item.expanded ? '收起详情' : '展开详情'}}<text class="ui-chevron {{item.expanded ? 'chevron-up' : 'ui-chevron-down'}}" aria-hidden="true"></text></button>
+          <view class="lead-specs" wx:if="{{item.expanded}}">
             <view class="spec-grid flex flex-wrap">
               <view class="spec-cell">
                 <text class="spec-lbl">需求类型：</text>
@@ -43,7 +45,7 @@
                 <text class="spec-lbl">区域：</text>
                 <text class="spec-val">{{item.regionPreference}}</text>
               </view>
-              <view class="spec-cell" wx:if="{{item.leadType === 'leasing' && item.businessScene === 'campus'}}">
+              <view class="spec-cell" wx:if="{{item.leadType === 'leasing' && item.businessScene === 'campus' && item.hasCampusExperience !== null && item.hasCampusExperience !== undefined}}">
                 <text class="spec-lbl">校园经营经验：</text>
                 <text class="spec-val">{{item.hasCampusExperience ? '有校园经验' : '暂无校园经验'}}</text>
               </view>
@@ -53,7 +55,7 @@
               <view class="detail-line" wx:if="{{item.transferDetails.feeText}}">面积费用：{{item.transferDetails.feeText}}</view>
               <view class="detail-line" wx:if="{{item.transferDetails.transferFee}}">转让费：{{item.transferDetails.transferFee}}</view>
               <view class="detail-line" wx:if="{{item.transferDetails.remainingTerm}}">剩余合同：{{item.transferDetails.remainingTerm}}</view>
-              <view class="detail-line">包含设备：{{item.transferDetails.includesEquipment ? '是' : '否/待定'}}</view>
+              <view class="detail-line" wx:if="{{item.transferDetails.includesEquipment !== null && item.transferDetails.includesEquipment !== undefined}}">包含设备：{{item.transferDetails.includesEquipment ? '是' : '否'}}</view>
             </view>
             <view class="spec-desc-row" wx:if="{{item.equipmentDetails}}">
               <view class="detail-line" wx:if="{{item.equipmentDetails.equipmentName}}">设备名称：{{item.equipmentDetails.equipmentName}}</view>
@@ -72,18 +74,18 @@
               </block>
             </view>
           </view>
-          <view class="lead-time-footer flex justify-between align-center">
+          <view class="lead-time-footer flex justify-between align-center" wx:if="{{item.expanded}}">
             <text class="lead-id-lbl">咨询编号：{{item.displayId || item.id}}</text>
             <text class="lead-time-lbl">提交于：{{item.formattedTime}}</text>
           </view>
-          <view class="lead-actions">
+          <view class="lead-actions" wx:if="{{item.expanded}}">
             <button class="btn btn-secondary lead-edit e2e-edit-lead" data-test="edit-lead" bindtap="onEditLead" data-id="{{item.id}}" data-type="{{item.leadType}}">编辑需求</button>
             <button class="lead-delete e2e-delete-lead" data-test="delete-lead" bindtap="onDeleteLead" data-id="{{item.id}}">删除</button>
           </view>
         </view>
       </view>
       <view class="empty-state" wx:else>
-        <text class="empty-icon">□</text>
+        <view class="empty-illustration"><image class="line-icon" src="/images/icons/leads.png" /></view>
         <text class="empty-title">暂无咨询记录</text>
         <text class="empty-desc">当前登录身份下还没有提交记录。</text>
         <navigator url="/pages/list/list" open-type="switchTab" class="btn btn-primary reset-btn">查看项目与铺位</navigator>

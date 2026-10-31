@@ -2,12 +2,15 @@ const commercial = require('../utils/commercial.js');
 const auth = require('./auth.js');
 const config = require('../config.js');
 const { normalizeAttachments } = require('../utils/attachment.js');
+const { projectText } = require('../utils/publicText.js');
 
 const now = Date.now();
 
 const SEED_PROJECTS = [
   {
     id: 'p1',
+    listingKind: 'unit',
+    businessScene: 'campus',
     opportunityType: 'leasing',
     title: '广州华商学院第一食堂二楼小吃档口',
     city: '广州',
@@ -25,8 +28,8 @@ const SEED_PROJECTS = [
     customerInfo: '覆盖约 1.2 万名在校师生，就餐高峰集中，适合高出餐效率品类。',
     cooperationMode: '纯租金模式，按年缴纳，押二付一。',
     viewingTimeText: '工作日 14:00-17:00，需提前一天预约。',
-    coverImage: '/images/shop-demo-food.png',
-    images: ['/images/shop-demo-food.png'],
+    coverImage: '/images/demo/campus.jpg',
+    images: ['/images/demo/campus.jpg'],
     status: 'online',
     isRecommended: true,
     sort: 100,
@@ -35,6 +38,8 @@ const SEED_PROJECTS = [
   },
   {
     id: 'p2',
+    listingKind: 'unit',
+    businessScene: 'campus',
     opportunityType: 'transfer',
     title: '华南师范大学石牌校区商业街茶饮店转让',
     city: '广州',
@@ -58,8 +63,8 @@ const SEED_PROJECTS = [
       remainingTerm: '18个月',
       expectedTransferFee: '12万元，可谈'
     },
-    coverImage: '/images/shop-demo-drink.png',
-    images: ['/images/shop-demo-drink.png'],
+    coverImage: '/images/demo/campus.jpg',
+    images: ['/images/demo/campus.jpg'],
     status: 'online',
     isRecommended: true,
     sort: 90,
@@ -69,42 +74,14 @@ const SEED_PROJECTS = [
 ];
 
 const commercialSeeds = [
-  { id: 'demo-community', listingKind: 'project', businessScene: 'community', venueName: '演示社区商业', title: '【演示】社区商业项目招商', areaMin: 30, areaMax: 180, monthlyRentMin: 3000, monthlyRentMax: 18000, communityInfo: '演示客群资料，非真实招商项目。' },
-  { id: 'demo-community-unit1', parentProject: 'demo-community', businessScene: 'community', title: '【演示】社区一层 A01 铺', areaMin: 50, areaMax: 50, monthlyRentMin: 5000, monthlyRentMax: 5000 },
-  { id: 'demo-community-unit2', parentProject: 'demo-community', businessScene: 'community', title: '【演示】社区一层 A02 铺', areaMin: 100, areaMax: 100 },
-  { id: 'demo-tourism', listingKind: 'project', businessScene: 'tourism', venueName: '演示文旅街区', title: '【演示】文旅街区常驻招商', areaMin: 20, areaMax: 80, tourismInfo: '节假日与淡季存在差异，常驻经营；所有数据为演示。' },
-  { id: 'demo-mall', listingKind: 'project', businessScene: 'mall', venueName: '演示购物中心', title: '【演示】购物中心项目招商', mallInfo: '可洽谈个体与非连锁品牌；准入条件待核实。' },
-  { id: 'demo-independent', businessScene: 'community', venueName: '演示临街铺位', title: '【演示】独立社区铺位', areaMin: 200, areaMax: 200, monthlyRentMin: 20000, monthlyRentMax: 20000 },
-].map((item, index) => ({ ...SEED_PROJECTS[0], listingKind: 'unit', schoolName: '', schoolAlias: '', projectType: '其他', city: '广州', district: '天河', customerInfo: '演示客群资料，需运营核实后录入真实项目', introduction: '仅用于功能验收，不代表真实招商', operatingRequirements: '条件待核实', feeText: '演示报价，附加费用需核实', areaText: '以实测为准', isRecommended: index === 0, sort: 50 - index, ...item }));
+  { id: 'demo-park', listingKind: 'project', businessScene: 'industrial_park', venueName: '黄埔某工业园区', title: '园区员工食堂招商', district: '黄埔', areaMin: 20, areaMax: 80, customerInfo: '面向园区在岗员工；班次、供餐人数与周末营业安排待核实。' },
+  { id: 'demo-park-unit', parentProject: 'demo-park', businessScene: 'industrial_park', venueName: '黄埔某工业园区', title: '园区食堂快餐档口', district: '黄埔', areaMin: 25, areaMax: 25, monthlyRentMin: 4500, monthlyRentMax: 4500, feeText: '基础租金 4500元/月；押金、管理费及结算方式待确认', suitableBusiness: ['快餐', '粉面'] },
+  { id: 'demo-office', businessScene: 'office', venueName: '天河某写字楼', title: '办公楼内咖啡轻餐铺', areaMin: 35, areaMax: 35, monthlyRentMin: 6500, monthlyRentMax: 6500, feeText: '基础租金 6500元/月；其他费用待确认', suitableBusiness: ['咖啡', '烘焙甜品'], customerInfo: '服务楼内办公人群；工作日早餐、午餐时段为主，实际人数待核实。' },
+].map((item, index) => ({ ...SEED_PROJECTS[0], listingKind: 'unit', businessScene: item.businessScene, schoolName: '', schoolAlias: '', projectType: '其他', city: '广州', district: '天河', customerInfo: '实际客群与营业时段待核实。', introduction: '饭堂与配套商铺招商，具体经营条件以现场确认为准。', operatingRequirements: '餐饮资质、营业时段与进场条件需进一步确认。', premisesConditions: '排烟、燃气与电力条件待核实。', cooperationMode: '费用和合同条款以顾问确认的资料为准。', viewingTimeText: '可先登记看铺意向，时间由顾问确认。', highlights: [], feeText: '费用面议，待进一步核实', areaText: '以实测为准', isRecommended: index === 1, sort: 50 - index, coverImage: '/images/demo/campus.jpg', images: ['/images/demo/campus.jpg'], ...item }));
 
 function initLocalStorage() {
   if (!wx.getStorageSync('local_projects')) wx.setStorageSync('local_projects', [...SEED_PROJECTS, ...commercialSeeds]);
-  const projects = wx.getStorageSync('local_projects');
-  if (Array.isArray(projects)) {
-    let changed = false;
-    const migrated = projects.map(project => {
-      const scene = commercial.sceneOf(project) || 'campus';
-      const demoImage = '/images/demo/' + scene + '.jpg';
-      const replaceLegacyImage = url => {
-        if (typeof url === 'string' && (/^https:\/\/images\.unsplash\.com\//i.test(url) || /^\/images\/shop-demo-/.test(url))) {
-          changed = true;
-          return demoImage;
-        }
-        return url;
-      };
-      const coverImage = replaceLegacyImage(project.coverImage);
-      const images = Array.isArray(project.images) ? [...new Set(project.images.map(replaceLegacyImage))] : project.images;
-      return { ...project, coverImage, images };
-    });
-    if (changed) wx.setStorageSync('local_projects', migrated);
-  }
   if (!wx.getStorageSync('local_leads')) wx.setStorageSync('local_leads', []);
-}
-
-function ensureProjectList(data) {
-  if (Array.isArray(data)) return data;
-  if (data && Array.isArray(data.docs)) return data.docs;
-  return [];
 }
 
 function createApiError(statusCode, payload) {
@@ -127,19 +104,20 @@ function wxRequest(options) {
 }
 
 function normalizeResponse(urlPath, payload, method = 'GET') {
-  if (urlPath === '/projects') return payload && !Array.isArray(payload) && Array.isArray(payload.docs) ? { ...payload, docs: payload.docs.map(commercial.decorate) } : ensureProjectList(payload).map(commercial.decorate);
+  if (urlPath === '/projects') return { ...payload, docs: payload.docs.map(commercial.decorate) };
   if (urlPath.startsWith('/projects/')) return payload ? commercial.decorate(payload) : payload;
   if ((urlPath === '/leads' || urlPath === '/equipments') && method === 'GET') {
     return (Array.isArray(payload) ? payload : []).map(item => ({
       ...item,
+      projectTitle: projectText(item.projectTitle),
       attachments: normalizeAttachments(item.attachments)
     }));
   }
   if (urlPath === '/leads' && payload) {
-    return { ...payload, attachments: normalizeAttachments(payload.attachments) };
+    return { ...payload, projectTitle: projectText(payload.projectTitle), attachments: normalizeAttachments(payload.attachments) };
   }
   if (urlPath.startsWith('/leads/') && payload) {
-    return { ...payload, attachments: normalizeAttachments(payload.attachments) };
+    return { ...payload, projectTitle: projectText(payload.projectTitle), attachments: normalizeAttachments(payload.attachments) };
   }
   return payload;
 }
@@ -150,7 +128,8 @@ async function request(options) {
     method = 'GET',
     data = {},
     auth: requiresAuth = false,
-    retried = false
+    retried = false,
+    forceRemote = false
   } = options;
   const appInstance = getApp() || {
     globalData: {
@@ -161,7 +140,7 @@ async function request(options) {
   };
   initLocalStorage();
 
-  if (appInstance.globalData.useLocalMock) {
+  if (appInstance.globalData.useLocalMock && !forceRemote) {
     return normalizeResponse(urlPath, localFallback(urlPath, method, data), method);
   }
   if (appInstance.globalData.configError || !appInstance.globalData.apiUrl) {
@@ -170,7 +149,7 @@ async function request(options) {
 
   const header = {};
   if (requiresAuth) {
-    const token = await auth.getAuthToken(retried);
+    const token = await auth.getAuthToken(retried, forceRemote);
     header.Authorization = `Bearer ${token}`;
   }
 
@@ -218,7 +197,7 @@ function localFallback(urlPath, method, requestData = {}) {
 
   if (urlPath.startsWith('/projects/') && method === 'GET') {
     const id = urlPath.substring('/projects/'.length);
-    return commercial.queryLocal(wx.getStorageSync('local_projects') || [], { ids: id })[0] || null;
+    return commercial.queryLocal(wx.getStorageSync('local_projects') || [], { ids: id }).docs[0] || null;
   }
 
   if (urlPath === '/leads' && method === 'GET') {
@@ -238,13 +217,13 @@ function localFallback(urlPath, method, requestData = {}) {
   }
 
   if (urlPath === '/leads' && method === 'POST') {
+    if (requestData.businessScene && !commercial.options.scenes.some(scene => scene.value === requestData.businessScene)) throw createApiError(400, { error: '请选择学校、工业园区或写字楼场景' });
     const leads = wx.getStorageSync('local_leads') || [];
     const projects = wx.getStorageSync('local_projects') || [];
     const maxId = leads.reduce((max, l) => {
-      const cleaned = String(l.id).replace(/^l_?/, '');
-      const num = parseInt(cleaned, 10);
+      const num = Number(l.id);
       return (!isNaN(num) && num > max) ? num : max;
-    }, 26000000);
+    }, 0);
     const nextId = String(maxId + 1);
 
     const newLead = {
@@ -328,11 +307,18 @@ function localFallback(urlPath, method, requestData = {}) {
     if (leads[index].submitterOpenId && leads[index].submitterOpenId !== openid) {
       throw createApiError(403, { error: '无权修改此线索' });
     }
+    if (requestData.businessScene && requestData.businessScene !== leads[index].businessScene && !commercial.options.scenes.some(scene => scene.value === requestData.businessScene)) {
+      throw createApiError(400, { error: '意向场景无效' });
+    }
 
     const allowed = ['name', 'phone', 'businessType', 'budgetRange', 'regionPreference', 'hasCampusExperience', 'transferDetails', 'equipmentDetails', 'renovationDetails', 'attachments', 'remark', 'businessScene'];
     const patch = {};
     allowed.forEach(key => {
-      if (requestData[key] !== undefined) patch[key] = requestData[key];
+      if (requestData[key] !== undefined) {
+        if (['transferDetails', 'equipmentDetails', 'renovationDetails'].includes(key) && requestData[key] && typeof requestData[key] === 'object') {
+          patch[key] = { ...(leads[index][key] || {}), ...requestData[key] };
+        } else patch[key] = requestData[key];
+      }
     });
 
     if (leads[index].projectId) delete patch.businessScene;
@@ -366,8 +352,9 @@ function localFallback(urlPath, method, requestData = {}) {
 }
 
 module.exports = {
-  getProjects: params => request({ url: '/projects', data: params }).then(ensureProjectList),
-  getProjectPage: params => request({ url: '/projects', data: { ...params, pagination: 'true' } }).then(data => Array.isArray(data) ? { docs: data, page: 1, totalDocs: data.length, totalPages: 1, hasNextPage: false } : data),
+  getWechatPhone: code => request({ url: '/auth/wechat-phone', method: 'POST', data: { code }, auth: true, forceRemote: true }),
+  getProjects: params => request({ url: '/projects', data: { limit: 100, ...params } }).then(data => data.docs),
+  getProjectPage: params => request({ url: '/projects', data: { ...params, view: 'card' } }),
   getProjectDetail: id => request({ url: `/projects/${id}` }),
   getLeads: () => request({ url: '/leads', auth: true }),
   getLead: id => request({ url: `/leads/${id}`, auth: true }),

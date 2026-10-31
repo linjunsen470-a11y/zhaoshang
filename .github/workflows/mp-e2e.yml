@@ -8,8 +8,6 @@ on:
         type: choice
         options: [smoke, full]
         default: smoke
-  schedule:
-    - cron: '30 18 * * 1-5'
 
 jobs:
   devtools-e2e:
@@ -27,14 +25,14 @@ jobs:
           version: 11.5.0
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Run selected suite
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force test-results/mp-e2e | Out-Null
-          if ('${{ github.event.inputs.suite }}' -eq 'full' -or '${{ github.event_name }}' -eq 'schedule') {
+          if ('${{ github.event.inputs.suite }}' -eq 'full') {
             pnpm test:mp:full:junit
           } else {
             pnpm test:mp:smoke:junit

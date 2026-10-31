@@ -40,7 +40,7 @@ App({
   callAdvisor(phoneNumber) {
     const phone = phoneNumber || this.globalData.advisorPhone || config.ADVISOR_PHONE;
     wx.showActionSheet({
-      itemList: [`呼叫顾问：${phone}`, '复制电话 (微信同号)'],
+      itemList: [`呼叫顾问：${phone}`, '复制电话'],
       success: (res) => {
         if (res.tapIndex === 0) {
           wx.makePhoneCall({
@@ -64,7 +64,7 @@ App({
             data: phone,
             success: () => {
               wx.showToast({
-                title: '已复制，可去微信添加好友',
+                title: '电话号码已复制',
                 icon: 'none',
                 duration: 2000
               });

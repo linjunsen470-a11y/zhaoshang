@@ -4,9 +4,11 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { FormEvent, useCallback, useEffect, useState } from 'react'
-import { BUSINESS_SCENE_OPTIONS, LISTING_KIND_OPTIONS, DISTRICT_OPTIONS, PROPERTY_STATUS_OPTIONS, PROJECT_TYPE_OPTIONS } from '@/collections/shared/fieldOptions'
+import { BUSINESS_SCENE_OPTIONS, LISTING_KIND_OPTIONS, DISTRICT_OPTIONS, OPPORTUNITY_TYPE_OPTIONS, PROPERTY_STATUS_OPTIONS, PROPERTY_STATUS_HELP, PROJECT_TYPE_OPTIONS } from '@/collections/shared/fieldOptions'
 
 type Property = {
+  sourceManaged?: boolean
+  emergencyHidden?: boolean
   id: string
   coverImage?: string
   title: string
@@ -53,19 +55,19 @@ export function PropertyWorkspace() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
-  const [search, setSearch] = useState(searchParams.get('q') || '')
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [editing, setEditing] = useState<Property | null>(null)
   const [saving, setSaving] = useState(false)
 
   const updateParams = useCallback((changes: Record<string, string | undefined>) => {
-    setLoading(true)
     const params = new URLSearchParams(queryString)
     for (const [key, value] of Object.entries(changes)) {
       if (value) params.set(key, value)
       else params.delete(key)
     }
     if (!('page' in changes)) params.delete('page')
+    if (params.toString() === queryString) return
+    setLoading(true)
     router.push(`${pathname}${params.size ? `?${params}` : ''}`)
   }, [pathname, queryString, router])
 
@@ -74,13 +76,7 @@ export function PropertyWorkspace() {
     setError('')
     try {
       const result = await readJson<ResponseData>(await fetch(`/api/admin/properties?${queryString}`, { signal }))
-      const quality = new URLSearchParams(queryString).get('quality')
-      const docs = !quality
-        ? result.docs
-        : result.docs.filter(item => quality === 'blocked'
-          ? Boolean(item.missingFields?.length)
-          : !item.missingFields?.length)
-      setData({ ...result, docs })
+      setData(result)
       setSelected(new Set())
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return
@@ -92,23 +88,9 @@ export function PropertyWorkspace() {
 
   useEffect(() => {
     const controller = new AbortController()
-    fetch(`/api/admin/properties?${queryString}`, { signal: controller.signal })
-      .then(response => readJson<ResponseData>(response))
-      .then(result => {
-        const quality = new URLSearchParams(queryString).get('quality')
-        const docs = !quality
-          ? result.docs
-          : result.docs.filter(item => quality === 'blocked'
-            ? Boolean(item.missingFields?.length)
-            : !item.missingFields?.length)
-        setData({ ...result, docs })
-        setSelected(new Set())
-        setError('')
-      })
-      .catch(err => { if (!(err instanceof DOMException && err.name === 'AbortError')) setError(err instanceof Error ? err.message : '房源加载失败，请重试') })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false) })
-    return () => controller.abort()
-  }, [queryString])
+    const timer = window.setTimeout(() => void load(controller.signal), 0)
+    return () => { window.clearTimeout(timer); controller.abort() }
+  }, [load])
 
   const allChecked = Boolean(data?.docs.length) && data?.docs.every(item => selected.has(item.id))
   useEffect(() => { if (!editing) return; const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setEditing(null) }; window.addEventListener('keydown', close); return () => window.removeEventListener('keydown', close) }, [editing])
@@ -139,6 +121,7 @@ export function PropertyWorkspace() {
   }
 
   const runBulk = async (values: Record<string, unknown>, label: string, destructive = false) => {
+    if (saving || loading) return
     const ids = [...selected]
     if (!ids.length) return
     if (destructive && !window.confirm(`确定要${label}选中的 ${ids.length} 套房源吗？`)) return
@@ -147,8 +130,12 @@ export function PropertyWorkspace() {
 
   const submitQuickEdit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!editing) return
+    if (!editing || saving) return
     const form = new FormData(event.currentTarget)
+    if (editing.sourceManaged) {
+      void patchProperties([editing.id], { sort: Number(form.get('sort') || 0), isRecommended: form.get('isRecommended') === 'on', emergencyHidden: form.get('emergencyHidden') === 'on' }, '后台运营设置已保存')
+      return
+    }
     void patchProperties([editing.id], {
       title: String(form.get('title') || ''),
       district: String(form.get('district') || ''),
@@ -158,6 +145,7 @@ export function PropertyWorkspace() {
       status: String(form.get('status') || 'draft'),
       sort: Number(form.get('sort') || 0),
       isRecommended: form.get('isRecommended') === 'on',
+      emergencyHidden: form.get('emergencyHidden') === 'on',
     }, '房源已保存')
   }
 
@@ -167,46 +155,58 @@ export function PropertyWorkspace() {
         <div>
           <p className="cms-eyebrow">房源中心</p>
           <h1>项目与铺位</h1>
-          <p>整理四类商业场景的项目招商和具体铺位。</p>
+          <p>管理整项目与具体铺位。新建后填写资料、选择公开状态并保存；需要推广时使用分享素材。</p>
         </div>
-        <Link className="cms-button cms-button--primary" href="/admin/collections/projects/create">新建房源</Link>
+        <div className="cms-row-actions">
+          <Link className="cms-button" href="/admin/workspace/quality">上架检查</Link>
+          <Link className="cms-button" href="/admin/workspace/share">分享素材</Link>
+          <Link className="cms-button cms-button--primary" href="/admin/collections/projects/create">新建项目/铺位</Link>
+        </div>
       </header>
 
       <section className="cms-toolbar" aria-label="房源筛选">
-        <form className="cms-search" onSubmit={event => { event.preventDefault(); updateParams({ q: search.trim() || undefined }) }}>
+        <form className="cms-search" onSubmit={event => { event.preventDefault(); updateParams({ q: String(new FormData(event.currentTarget).get('q') || '').trim() || undefined }) }}>
           <label className="cms-sr-only" htmlFor="property-search">搜索房源</label>
-          <input id="property-search" name="q" value={search} onChange={event => setSearch(event.target.value)} placeholder="搜索标题、项目、学校或地址…" autoComplete="off" />
+          <input id="property-search" name="q" key={searchParams.get('q') || ''} defaultValue={searchParams.get('q') || ''} placeholder="搜索标题、项目、学校或地址…" autoComplete="off" />
           <button className="cms-button" type="submit">搜索</button>
         </form>
-        <label><span>资料</span><select value={searchParams.get('quality') || ''} onChange={event => updateParams({ quality: event.target.value || undefined })}><option value="">全部</option><option value="blocked">还差资料</option><option value="ready">资料齐全</option></select></label>
-        <label><span>业务</span><select value={searchParams.get('opportunityType') || ''} onChange={event => updateParams({ opportunityType: event.target.value || undefined })}><option value="">全部</option><option value="leasing">招商铺位</option><option value="transfer">店铺转让</option></select></label>
         <label><span>场景</span><select value={searchParams.get('businessScene') || ''} onChange={event => updateParams({ businessScene: event.target.value || undefined, projectType: undefined })}><option value="">全部场景</option>{BUSINESS_SCENE_OPTIONS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
-        <label><span>发布内容</span><select value={searchParams.get('listingKind') || ''} onChange={event => updateParams({ listingKind: event.target.value || undefined })}><option value="">全部内容</option>{LISTING_KIND_OPTIONS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
-        <label><span>所属项目 ID</span><input key={searchParams.get('parentProject') || 'all'} defaultValue={searchParams.get('parentProject') || ''} placeholder="项目 ID，回车筛选" onKeyDown={event => { if (event.key === 'Enter') updateParams({ parentProject: event.currentTarget.value.trim() || undefined }) }} /></label>
-        <label><span>区域</span><select value={searchParams.get('district') || ''} onChange={event => updateParams({ district: event.target.value || undefined })}><option value="">全部</option>{DISTRICT_OPTIONS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
-        {searchParams.get('businessScene') === 'campus' ? <label><span>类型</span><select value={searchParams.get('projectType') || ''} onChange={event => updateParams({ projectType: event.target.value || undefined })}><option value="">全部</option>{PROJECT_TYPE_OPTIONS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label> : null}
-        <label><span>排序</span><select value={searchParams.get('sort') || '-updatedAt'} onChange={event => updateParams({ sort: event.target.value })}><option value="-updatedAt">最近修改</option><option value="-sort">推荐排序</option><option value="title">标题</option></select></label>
+        <label><span>区域</span><select value={searchParams.get('district') || ''} onChange={event => updateParams({ district: event.target.value || undefined })}><option value="">全部区域</option>{DISTRICT_OPTIONS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
       </section>
 
-      <nav className="cms-segments" aria-label="房源状态筛选">
+      <details className="cms-more-filters">
+        <summary>更多筛选与排序{['quality', 'opportunityType', 'listingKind', 'projectType', 'sort'].some(key => searchParams.has(key)) ? '（已设置）' : ''}</summary>
+        <div className="cms-toolbar">
+        <label><span>基本资料</span><select value={searchParams.get('quality') || ''} onChange={event => updateParams({ quality: event.target.value || undefined })}><option value="">全部</option><option value="blocked">必填未齐</option><option value="ready">必填已齐</option></select></label>
+        <label><span>业务</span><select value={searchParams.get('opportunityType') || ''} onChange={event => updateParams({ opportunityType: event.target.value || undefined })}><option value="">全部</option>{OPPORTUNITY_TYPE_OPTIONS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+        <label><span>录入对象</span><select value={searchParams.get('listingKind') || ''} onChange={event => updateParams({ listingKind: event.target.value || undefined })}><option value="">全部内容</option>{LISTING_KIND_OPTIONS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label>
+        {searchParams.get('businessScene') === 'campus' ? <label><span>类型</span><select value={searchParams.get('projectType') || ''} onChange={event => updateParams({ projectType: event.target.value || undefined })}><option value="">全部</option>{PROJECT_TYPE_OPTIONS.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select></label> : null}
+        <label><span>排序</span><select value={searchParams.get('sort') || '-updatedAt'} onChange={event => updateParams({ sort: event.target.value })}><option value="-updatedAt">最近修改</option><option value="-sort">推荐排序</option><option value="title">标题</option></select></label>
+        </div>
+      </details>
+
+      {searchParams.has('parentProject') ? <p className="cms-filter-context">当前仅查看“{data?.docs[0]?.parentProject?.title || '所选项目'}”的所属铺位。<button className="cms-button" type="button" onClick={() => updateParams({ parentProject: undefined })}>查看所有项目与铺位</button></p> : null}
+
+      <nav className="cms-segments" aria-label="公开状态筛选">
         <button className={!searchParams.get('status') ? 'is-active' : ''} type="button" onClick={() => updateParams({ status: undefined })}>全部</button>
         {PROPERTY_STATUS_OPTIONS.map(item => <button className={searchParams.get('status') === item.value ? 'is-active' : ''} type="button" key={item.value} onClick={() => updateParams({ status: item.value })}>{item.label}</button>)}
       </nav>
+      <p className="cms-help">“草稿、已下架”不公开；“开放中、即将开放、已满/已转”公开。<Link href={pathname}>清除全部筛选</Link></p>
 
-      {selected.size ? <section className="cms-bulk" aria-label="批量操作"><strong>已选 {selected.size} 套</strong><button type="button" onClick={() => void runBulk({ status: 'online' }, '上架')}>上架</button><button type="button" onClick={() => void runBulk({ status: 'offline' }, '下架', true)}>下架</button><button type="button" onClick={() => void runBulk({ isRecommended: true }, '设为推荐')}>设为推荐</button><button type="button" onClick={() => void runBulk({ isRecommended: false }, '取消推荐')}>取消推荐</button></section> : null}
+      {selected.size ? <section className="cms-bulk" aria-label="批量操作"><strong>已选 {selected.size} 条</strong><button type="button" disabled={saving || loading} onClick={() => void runBulk({ status: 'online' }, '上架')}>上架</button><button type="button" disabled={saving || loading} onClick={() => void runBulk({ status: 'offline' }, '下架', true)}>下架</button><button type="button" disabled={saving || loading} onClick={() => void runBulk({ isRecommended: true }, '设为推荐')}>设为推荐</button><button type="button" disabled={saving || loading} onClick={() => void runBulk({ isRecommended: false }, '取消推荐')}>取消推荐</button></section> : null}
       {error ? <div className="cms-alert" role="alert">{error}</div> : null}
       <div className="cms-live" aria-live="polite">{message}</div>
 
-      <section className="cms-panel">
+      <section className="cms-panel" aria-busy={loading}>
         {loading && !data ? <div className="cms-empty">房源加载中…</div> : data?.docs.length ? (
           <div className="cms-table-wrap">
             <table className="cms-table">
-              <thead><tr><th><input type="checkbox" aria-label="选择当前页全部房源" checked={allChecked} onChange={toggleAll} /></th><th>房源</th><th>业务/类型</th><th>区域</th><th>面积/费用</th><th>状态</th><th>更新</th><th>操作</th></tr></thead>
+              <thead><tr><th><input type="checkbox" aria-label="选择当前页全部记录" checked={allChecked} onChange={toggleAll} /></th><th>项目/铺位</th><th>业务/类型</th><th>区域</th><th>面积/费用</th><th>公开状态</th><th>更新</th><th>操作</th></tr></thead>
               <tbody>{data.docs.map(item => (
                 <tr key={item.id}>
                   <td><input type="checkbox" aria-label={`选择 ${item.title}`} checked={selected.has(item.id)} onChange={() => setSelected(current => { const next = new Set(current); if (next.has(item.id)) next.delete(item.id); else next.add(item.id); return next })} /></td>
                   <td><div className="cms-property"><div className="cms-property__image">{item.coverImage ? <Image src={item.coverImage} alt="" width={72} height={54} loading="lazy" unoptimized /> : <span>无图</span>}</div><div><Link href={`/admin/collections/projects/${item.id}`}>{item.title || '未命名房源'}</Link><small>{item.businessScene === 'campus' ? item.schoolName || '校园' : item.venueName || item.district || '待分类'}{item.isRecommended ? ' · 推荐' : ''}</small></div></div></td>
-                  <td>{item.opportunityType === 'transfer' ? '店铺转让' : '招商铺位'}<small>{LISTING_KIND_OPTIONS.find(kind => kind.value === item.listingKind)?.label || '具体铺位'} · {BUSINESS_SCENE_OPTIONS.find(scene => scene.value === item.businessScene)?.label || '待分类'}</small>{item.parentProject ? <Link href={`/admin/collections/projects?parentProject=${item.parentProject.id}`}>{item.parentProject.title}</Link> : null}</td>
+                  <td>{OPPORTUNITY_TYPE_OPTIONS.find(option => option.value === item.opportunityType)?.label || '未分类'}<small>{LISTING_KIND_OPTIONS.find(kind => kind.value === item.listingKind)?.label || '具体铺位'} · {BUSINESS_SCENE_OPTIONS.find(scene => scene.value === item.businessScene)?.label || '待分类'}</small>{item.parentProject ? <Link href={`/admin/collections/projects?parentProject=${item.parentProject.id}`}>{item.parentProject.title}</Link> : null}</td>
                   <td>{item.district || '待补'}</td>
                   <td>{item.areaText || (item.areaMin != null && item.areaMax != null ? `${item.areaMin}${item.areaMin === item.areaMax ? '' : `—${item.areaMax}`}㎡` : '面积待确认')}<small>{item.feeText || '费用待补'}</small></td>
                   <td>
@@ -220,7 +220,7 @@ export function PropertyWorkspace() {
                       </div>
                     ) : (
                       <div className="cms-gate-tags" style={{ marginTop: 6 }}>
-                        <span className="cms-gate-tag cms-gate-tag--ok">资料齐全</span>
+                        <span className="cms-gate-tag cms-gate-tag--ok">必填已齐</span>
                       </div>
                     )}
                   </td>
@@ -235,7 +235,39 @@ export function PropertyWorkspace() {
 
       {data && data.totalPages > 1 ? <nav className="cms-pagination" aria-label="房源分页"><span>共 {data.totalDocs} 套 · 第 {data.page}/{data.totalPages} 页</span><div><button type="button" disabled={data.page <= 1} onClick={() => updateParams({ page: String(data.page - 1) })}>上一页</button><button type="button" disabled={data.page >= data.totalPages} onClick={() => updateParams({ page: String(data.page + 1) })}>下一页</button></div></nav> : null}
 
-      {editing ? <div className="cms-drawer-backdrop"><aside className="cms-drawer" role="dialog" aria-modal="true" aria-labelledby="quick-edit-title"><header><div><p className="cms-eyebrow">快速修改</p><h2 id="quick-edit-title">{editing.title}</h2></div><button className="cms-icon-button" type="button" aria-label="关闭快速修改" onClick={() => setEditing(null)}>×</button></header><form onSubmit={submitQuickEdit} className="cms-form"><label>房源标题<input name="title" defaultValue={editing.title} required autoComplete="off" /></label><div className="cms-form-grid"><label>区域<select name="district" defaultValue={editing.district || ''}><option value="">请选择</option>{DISTRICT_OPTIONS.map(item => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label><label>房源状态<select name="status" defaultValue={editing.status}>{PROPERTY_STATUS_OPTIONS.map(item => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label></div><div className="cms-form-grid"><label>面积<input name="areaText" defaultValue={editing.areaText || ''} placeholder="例如：15m²…" autoComplete="off" /></label><label>排序权重<input name="sort" type="number" inputMode="numeric" defaultValue={editing.sort || 0} /></label></div><label>费用说明<input name="feeText" defaultValue={editing.feeText || ''} placeholder="例如：3 万元/年…" autoComplete="off" /></label><div className="cms-form-grid">{([['areaMin', '面积下限（㎡）'], ['areaMax', '面积上限（㎡）'], ['monthlyRentMin', '基础月租下限（元）'], ['monthlyRentMax', '基础月租上限（元）']] as const).map(([key, label]) => <label key={key}>{label}<input name={key} type="number" min="0" step="0.01" defaultValue={editing[key] ?? ''} placeholder="未知留空，固定值填写相同上下限" /></label>)}</div><p>基础月租不含未列明的附加费用，详细条款请填写费用说明。</p><label className="cms-checkbox"><input name="isRecommended" type="checkbox" defaultChecked={editing.isRecommended} />重点推荐</label><div className="cms-drawer__actions"><button className="cms-button" type="button" onClick={() => setEditing(null)}>取消</button><button className="cms-button cms-button--primary" type="submit" disabled={saving}>{saving ? '保存中…' : '保存修改'}</button></div></form></aside></div> : null}
+      {editing ? (
+        <div className="cms-drawer-backdrop">
+          <aside className="cms-drawer" role="dialog" aria-modal="true" aria-labelledby="quick-edit-title">
+            <header>
+              <div><p className="cms-eyebrow">快速修改</p><h2 id="quick-edit-title">{editing.title}</h2></div>
+              <button className="cms-icon-button" type="button" aria-label="关闭快速修改" onClick={() => setEditing(null)}>×</button>
+            </header>
+            <form onSubmit={submitQuickEdit} className="cms-form">
+              <p>{editing.sourceManaged ? '腾讯文档是资料主源，业务内容请在文档修改。' : ''}</p><label>项目/铺位标题<input name="title" disabled={editing.sourceManaged} defaultValue={editing.title} required autoComplete="off" /></label>
+              <div className="cms-form-grid">
+                <label>区域<select name="district" disabled={editing.sourceManaged} defaultValue={editing.district || ''}><option value="">请选择</option>{DISTRICT_OPTIONS.map(item => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
+                <label>公开状态<select name="status" disabled={editing.sourceManaged} defaultValue={editing.status}>{PROPERTY_STATUS_OPTIONS.map(item => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
+              </div>
+              <p className="cms-help">{PROPERTY_STATUS_HELP}</p>
+              <label>面积展示文字<input name="areaText" disabled={editing.sourceManaged} defaultValue={editing.areaText || ''} placeholder="例如：约 15㎡" autoComplete="off" /></label>
+              <label>费用说明<input name="feeText" disabled={editing.sourceManaged} defaultValue={editing.feeText || ''} placeholder="例如：3 万元/年，另收管理费" autoComplete="off" /></label>
+              <details className="cms-more-filters">
+                <summary>面积、月租与展示顺序（选填）</summary>
+                <div className="cms-form-grid">{([['areaMin', '面积最小值（㎡）'], ['areaMax', '面积最大值（㎡）'], ['monthlyRentMin', '基础月租最小值（元/月）'], ['monthlyRentMax', '基础月租最大值（元/月）']] as const).map(([key, label]) => <label key={key}>{label}<input name={key} disabled={editing.sourceManaged} type="number" min="0" step="0.01" defaultValue={editing[key] ?? ''} /></label>)}</div>
+                <p className="cms-help">数值用于筛选。固定值填相同上下限；未知时两栏都留空。月租不含附加费用，具体条款写在费用说明中。</p>
+                <label>展示顺序<input name="sort" type="number" inputMode="numeric" defaultValue={editing.sort || 0} /></label>
+                <label className="cms-checkbox"><input name="emergencyHidden" type="checkbox" defaultChecked={editing.emergencyHidden} />紧急停止公开（仅后台可解除）</label>
+                <label className="cms-checkbox"><input name="isRecommended" type="checkbox" defaultChecked={editing.isRecommended} />重点推荐</label>
+              </details>
+              <div className="cms-drawer__actions">
+                <Link className="cms-button" href={`/admin/collections/projects/${editing.id}`}>完整编辑</Link>
+                <button className="cms-button" type="button" onClick={() => setEditing(null)} disabled={saving}>取消</button>
+                <button className="cms-button cms-button--primary" type="submit" disabled={saving}>{saving ? '保存中…' : '保存修改'}</button>
+              </div>
+            </form>
+          </aside>
+        </div>
+      ) : null}
     </main>
   )
 }

@@ -1,37 +1,22 @@
 'use client'
 
-import { useDocumentInfo, useForm, useFormFields, useFormModified, useFormProcessing } from '@payloadcms/ui'
+import { useDocumentInfo, useForm, useFormFields, useFormModified } from '@payloadcms/ui'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { ShareMaterialPanel } from './ShareMaterialPanel'
+import { getProjectMissingFields } from '@/lib/cmsRules.mjs'
 
 function fieldValue(fields: Record<string, { value?: unknown }>, name: string) {
   return fields[name]?.value
 }
 
-function hasValue(value: unknown) {
-  return Array.isArray(value) ? value.length > 0 : value !== undefined && value !== null && value !== ''
-}
-
-const CHECKS = [
-  { key: 'title', label: '房源标题' },
-  { key: 'coverImage', label: '封面图' },
-  { key: 'businessScene', label: '商业场景' },
-  { key: 'district', label: '区域' },
-  { key: 'feeText', label: '费用说明' },
-  { key: 'customerInfo', label: '客群说明' },
-  { key: 'images', label: '详情图片' },
-] as const
-
 export function ProjectEditHints() {
   const { id } = useDocumentInfo()
-  const { submit, dispatchFields, setModified } = useForm()
+  const { dispatchFields, setModified } = useForm()
   const searchParams = useSearchParams()
   const parentId = searchParams.get('parentProject')
   const initializedParent = useRef<string | null>(null)
   const modified = useFormModified()
-  const processing = useFormProcessing()
   const fields = useFormFields(([allFields]) => allFields)
   const [message, setMessage] = useState('')
 
@@ -52,11 +37,8 @@ export function ProjectEditHints() {
     return () => controller.abort()
   }, [id, parentId, dispatchFields, setModified])
 
-  const checks = CHECKS.map(item => ({
-    ...item,
-    ok: hasValue(fieldValue(fields, item.key)) || (item.key === 'businessScene' && Boolean(fieldValue(fields, 'legacyUnclassified'))),
-  }))
-  const missing = checks.filter(item => !item.ok)
+  const values = Object.fromEntries(Object.entries(fields).map(([key, field]) => [key, field.value]))
+  const missing = getProjectMissingFields(values)
 
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
@@ -68,71 +50,24 @@ export function ProjectEditHints() {
     return () => window.removeEventListener('beforeunload', warn)
   }, [modified])
 
-  const saveStatus = async (status: 'online' | 'offline') => {
-    if (status === 'online' && missing.length) {
-      setMessage(`请先补充：${missing.map(item => item.label).join('、')}`)
-      return
-    }
-    setMessage('')
-    try {
-      await submit({ overrides: { status } })
-      setMessage(status === 'online' ? '房源已上架' : '房源已下架')
-    } catch {
-      setMessage('保存失败，请检查页面错误后重试')
-    }
-  }
-
-  const title = String(fieldValue(fields, 'title') || '')
-  const schoolName = String(fieldValue(fields, 'venueName') || fieldValue(fields, 'schoolName') || '')
-  const district = String(fieldValue(fields, 'district') || '')
-  const areaText = String(fieldValue(fields, 'areaText') || '')
-  const feeText = String(fieldValue(fields, 'feeText') || '')
-  const opportunityType = String(fieldValue(fields, 'opportunityType') || '')
-
   return (
     <div className="cms-editor-panel">
+      {String(values.seedKey || '').startsWith('tencent:') ? <section><h3>腾讯文档同步房源</h3><p>业务资料请在腾讯文档修改。后台保留推荐、排序、内部备注及紧急停止公开。</p><a href="https://docs.qq.com/desktop/" target="_blank" rel="noreferrer">打开腾讯文档</a></section> : null}
       <section>
-        <h3>上架前检查</h3>
-        <p>面积与月租请填相同上下限或完整范围，未知可留空。整项目面积指可招商单元范围。</p>
-        {id && fieldValue(fields, 'listingKind') === 'project' ? <><Link className="cms-button" href={`/admin/collections/projects/create?parentProject=${id}`}>新增所属铺位</Link><Link className="cms-button" href={`/admin/collections/projects?parentProject=${id}`}>查看所属铺位</Link><p>项目已满时请检查各铺位状态；下架项目将暂停展示关联铺位。</p></> : null}
+        <h3>填写与保存</h3>
+        <p>填完必填资料后，保留草稿或选择下方的公开状态，再点击页面的保存按钮。</p>
         <span className={`cms-status ${missing.length ? 'cms-status--draft' : 'cms-status--online'}`}>
-          {missing.length ? `还差 ${missing.length} 项` : '可以上架'}
+          {missing.length ? `还差 ${missing.length} 项必填` : '基本资料已填齐'}
         </span>
-        <ul>
-          {checks.map(item => (
-            <li key={item.key}>
-              <span>{item.label}</span>
-              <strong className={item.ok ? 'is-done' : ''}>{item.ok ? '完成' : '待补'}</strong>
-            </li>
-          ))}
-        </ul>
+        <p>{missing.length ? `待补：${missing.join('、')}。` : '请核实图片可公开、面积和月租范围正确，再上架。'}</p>
+        {modified ? <p className="cms-warning">有未保存的修改，当前选择尚未生效。</p> : null}
       </section>
 
       <div className="cms-editor-actions">
-        <button className="cms-button cms-button--primary" type="button" disabled={processing} onClick={() => void saveStatus('online')}>
-          {processing ? '保存中…' : '保存并上架'}
-        </button>
-        <button className="cms-button" type="button" disabled={processing} onClick={() => void saveStatus('offline')}>
-          保存并下架
-        </button>
-        <Link className="cms-button" href="/admin/collections/projects">返回房源列表</Link>
+        <Link className="cms-button" href="/admin/collections/projects">返回项目与铺位</Link>
       </div>
 
-      {id ? (
-        <ShareMaterialPanel
-          key={String(id)}
-          project={{
-            id,
-            title,
-            listingKind: String(fieldValue(fields, 'listingKind') || 'unit'),
-            schoolName,
-            district,
-            areaText,
-            feeText,
-            opportunityType,
-          }}
-        />
-      ) : null}
+      {id && fieldValue(fields, 'listingKind') === 'project' && !modified ? <section><h3>这个项目的铺位</h3><Link className="cms-button" href={`/admin/collections/projects/create?parentProject=${id}`}>新增所属铺位</Link><Link className="cms-button" href={`/admin/collections/projects?parentProject=${id}`}>查看所属铺位</Link><p>项目下架时，所属铺位也会暂停公开。</p></section> : null}
 
       <div className="cms-live" aria-live="polite">{message}</div>
     </div>

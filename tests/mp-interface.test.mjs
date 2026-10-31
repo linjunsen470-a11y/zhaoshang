@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import automator from 'miniprogram-automator';
-import { waitForData, waitForPage, withTimeout } from './e2e/harness.mjs';
+import { waitForData, waitForPage, withTimeout, readSystemInfo } from './e2e/harness.mjs';
 
 // One connection, no backend, and a backup before modifying local mock data.
 // Multi-scene submission and editing remain in the existing scene/full suites.
@@ -65,7 +65,7 @@ test('interface filter staging and inline form validation', { timeout: 90000 }, 
     assert.deepEqual(errors, []);
     const out = path.resolve(process.env.MP_E2E_ARTIFACT_DIR || 'test-results/visual-refresh/native-interface');
     fs.mkdirSync(out, { recursive: true });
-    fs.writeFileSync(path.join(out, 'runtime.json'), JSON.stringify({ completedAt: new Date().toISOString(), system: await mp.systemInfo(), errors }, null, 2));
+    fs.writeFileSync(path.join(out, 'runtime.json'), JSON.stringify({ completedAt: new Date().toISOString(), system: await readSystemInfo(mp), errors }, null, 2));
   } finally {
     if (backup) await withTimeout(mp.evaluate(backup => {
       getApp().globalData.useLocalMock = backup.mock;

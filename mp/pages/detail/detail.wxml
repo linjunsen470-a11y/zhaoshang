@@ -7,52 +7,69 @@
     <view class="skeleton text-skeleton short">
     </view>
   </view>
+  <view wx:elif="{{unavailable}}" class="state-box error-state">
+    <text class="state-title">该房源暂不可咨询</text>
+    <text class="state-desc">看看学校、园区或写字楼的其他房源，或让顾问帮你匹配。</text>
+    <button class="btn btn-primary" bindtap="onBrowseActive">查看可咨询房源</button>
+    <button class="btn btn-secondary" bindtap="onGeneralNeed">提交找铺需求</button>
+  </view>
   <view wx:elif="{{loadError}}" class="state-box error-state">
     <text class="state-title">暂时无法查看该房源</text>
     <text class="state-desc">请检查网络连接，或稍后重新查看。</text>
     <button class="btn btn-primary" bindtap="onRetryLoad">重新加载</button>
   </view>
   <block wx:else>
-    <view class="swiper-wrap" wx:if="{{project.images.length}}">
-      <swiper class="detail-swiper" circular="{{project.images.length > 1}}" autoplay="{{false}}" duration="300" bindchange="onSwiperChange">
-        <swiper-item wx:for="{{project.images}}" wx:key="*this" wx:for-index="imageIndex">
-          <image wx:if="{{!imageErrors[imageIndex]}}" class="swiper-image" src="{{item}}" mode="aspectFill" bindtap="onPreviewImage" binderror="onImageError" data-index="{{imageIndex}}" data-src="{{item}}" aria-label="查看房源图片" />
-          <view wx:else class="swiper-image image-fallback">
-            <image class="line-icon" src="/images/icons/shops.png" />
-            <text>图片暂不可用</text>
-          </view>
-        </swiper-item>
-      </swiper>
-      <text class="gallery-demo" wx:if="{{project.isDemoImage}}">摄影示意 · 非项目实拍</text>
-      <text class="swiper-count" wx:if="{{project.images.length > 1}}">{{currentImageIndex + 1}} / {{project.images.length}}</text>
+    <view class="gallery-frame">
+      <view class="swiper-wrap" wx:if="{{project.images.length}}">
+        <swiper class="detail-swiper" circular="{{project.images.length > 1}}" autoplay="{{false}}" duration="300" bindchange="onSwiperChange">
+          <swiper-item wx:for="{{project.images}}" wx:key="*this" wx:for-index="imageIndex">
+            <image wx:if="{{!imageErrors[imageIndex]}}" class="swiper-image" src="{{item}}" mode="aspectFill" bindtap="onPreviewImage" binderror="onImageError" data-index="{{imageIndex}}" data-src="{{item}}" aria-label="查看房源图片" />
+            <view wx:else class="swiper-image image-fallback">
+              <image class="line-icon" src="/images/icons/shops.png" />
+              <text>图片暂不可用</text>
+            </view>
+          </swiper-item>
+        </swiper>
+        <text class="swiper-count" wx:if="{{project.images.length > 1}}">{{currentImageIndex + 1}} / {{project.images.length}}</text>
+      </view>
+      <view wx:else class="swiper-wrap image-fallback">
+        <image class="line-icon" src="/images/icons/shops.png" />
+        <text>暂无项目实拍</text>
+      </view>
+      <button class="gallery-share" open-type="share" aria-label="分享房源" hover-class="tap-active">
+        <image class="share-icon" src="/images/icons/share.png" aria-hidden="true" />
+      </button>
     </view>
-    <view wx:else class="swiper-wrap image-fallback">
-      <image class="line-icon" src="/images/icons/shops.png" />
-      <text>暂无项目实拍</text>
-    </view>
+    <view class="detail-anchors"><button wx:for="{{anchors}}" wx:key="id" data-id="{{item.id}}" bindtap="onAnchorTap">{{item.label}}</button></view>
     <view class="detail-body">
+      <view class="availability-notice" wx:if="{{project.status === 'full'}}">
+        <view class="availability-title">该房源已租满 / 已转出</view>
+        <view>当前不再接受该房源的咨询，可继续查看同类空间。</view>
+        <button class="text-link" bindtap="onFindSimilar">查看同类可咨询房源 <text class="ui-chevron" aria-hidden="true"></text></button>
+      </view>
       <view class="title-tools">
         <view class="kicker e2e-project-status" data-test="project-status">
           <text>{{project.sceneLabel}} · {{project.kindLabel}}</text>
           <text class="badge badge-{{project.status}}">{{project.status === 'online' ? '招商中' : (project.status === 'coming' ? '即将开放' : (project.status === 'full' ? '已满/已转' : '已下架'))}}</text>
         </view>
-        <button class="share-text" open-type="share">分享</button>
+
       </view>
       <view class="project-title-large e2e-project-title" data-test="project-title">{{project.title}}</view>
-      <view class="key-figures">
+      <view class="key-figures" id="section-fees">
         <view class="fee-figure">
           <text class="figure-label">{{project.priceLabel}}</text>
-          <view class="rent-value">{{project.priceText}}</view>
+          <view class="rent-value"><block wx:if="{{project.priceAmount}}"><text class="price-number">{{project.priceAmount}}</text><text class="price-unit">{{project.priceUnit}}</text></block><text wx:else>{{project.priceText}}</text></view>
         </view>
         <view class="area-figure">
           <text class="figure-label">面积</text>
           <view class="area-value">{{project.areaRangeText}}</view>
         </view>
       </view>
-      <view class="fee-note" wx:if="{{project.feeText && project.feeText !== project.priceText}}">{{project.feeText}}</view>
+      <view class="fee-grid" wx:if="{{project.feeItems.length}}"><view class="fee-cell" wx:for="{{project.feeItems}}" wx:key="label"><text class="param-label">{{item.label}}</text><text>{{item.value}}</text></view></view>
+      <view class="fee-note" wx:if="{{project.feeRemainder && project.feeRemainder !== project.priceText}}">{{project.feeRemainder}}</view>
       <view class="rent-note" wx:if="{{project.priceLabel === '基础月租'}}">基础月租不含未列明的附加费用，具体费用请咨询确认。</view>
       <view class="update-lbl">更新于 {{formattedUpdateTime}}</view>
-      <view class="detail-section">
+      <view class="detail-section" id="section-space">
         <view class="section-label">空间信息</view>
         <view class="spec-grid">
           <view class="spec-cell" wx:if="{{project.placeDetail}}">
@@ -77,7 +94,7 @@
             <view class="param-label">所属项目</view>
             <view>{{project.parentProject.title}}</view>
           </view>
-          <text>›</text>
+          <text><text class="ui-chevron" aria-hidden="true"></text></text>
         </button>
         <button class="address-row" wx:if="{{project.addressText}}" bindtap="onCopyAddress">
           <view>
@@ -108,7 +125,7 @@
           </view>
         </view>
       </view>
-      <view class="detail-section" wx:if="{{project.operatingRequirements || project.suitableBusiness.length || project.unsuitableBusiness.length || project.premisesConditions}}">
+      <view class="detail-section" id="section-conditions" wx:if="{{project.operatingRequirements || project.suitableBusiness.length || project.unsuitableBusiness.length || project.premisesConditions}}">
         <view class="section-label">经营条件</view>
         <view class="prose-block" wx:if="{{project.suitableBusiness.length}}">
           <view class="minor-label">适合业态</view>
@@ -131,7 +148,7 @@
           <view class="desc-text">{{project.premisesConditions}}</view>
         </view>
       </view>
-      <view class="detail-section" wx:if="{{project.introduction || project.highlights.length || project.customerInfo || project.communityInfo || project.tourismInfo || project.mallInfo}}">
+      <view class="detail-section" id="section-intro" wx:if="{{project.introduction || project.highlights.length || project.customerInfo}}">
         <view class="section-label">项目介绍</view>
         <view class="prose-block" wx:if="{{project.introduction}}">
           <view class="desc-text">{{project.introduction}}</view>
@@ -144,18 +161,6 @@
           <view class="minor-label">客群说明</view>
           <view class="desc-text">{{project.customerInfo}}</view>
         </view>
-        <view class="prose-block" wx:if="{{project.businessScene === 'community' && project.communityInfo}}">
-          <view class="minor-label">社区客群与营业时段</view>
-          <view class="desc-text">{{project.communityInfo}}</view>
-        </view>
-        <view class="prose-block" wx:if="{{project.businessScene === 'tourism' && project.tourismInfo}}">
-          <view class="minor-label">旺淡季与经营要求</view>
-          <view class="desc-text">{{project.tourismInfo}}</view>
-        </view>
-        <view class="prose-block" wx:if="{{project.businessScene === 'mall' && project.mallInfo}}">
-          <view class="minor-label">品牌准入与营业要求</view>
-          <view class="desc-text">{{project.mallInfo}}</view>
-        </view>
       </view>
       <view class="detail-section" wx:if="{{project.listingKind === 'project'}}">
         <view class="section-label">可咨询铺位</view>
@@ -164,7 +169,7 @@
             <view class="unit-title">{{item.title}}</view>
             <view class="unit-meta">{{item.areaRangeText}} · {{item.priceLabel}} {{item.priceText}}</view>
           </view>
-          <text>›</text>
+          <text><text class="ui-chevron" aria-hidden="true"></text></text>
         </button>
         <view class="desc-text" wx:if="{{!units.length && !unitsLoading && !unitsError}}">具体铺位由顾问协助确认，可先咨询项目。</view>
         <view class="unit-meta" wx:if="{{unitsLoading}}">正在加载铺位…</view>
@@ -181,9 +186,11 @@
           <view class="desc-text">{{project.viewingTimeText}}</view>
         </view>
       </view>
+      <view class="advisor-card"><image class="line-icon" src="/images/icons/my.png" /><view class="advisor-copy"><view class="advisor-title">招商顾问</view><view class="advisor-desc">费用解答 · 需求匹配 · 看铺沟通</view></view><button bindtap="onCallAdvisor">联系顾问</button></view>
+      <view class="detail-section" wx:if="{{similarProjects.length || similarLoading || similarError}}"><view class="section-label">同场景房源</view><button class="unit-row" wx:for="{{similarProjects}}" wx:key="id" data-id="{{item.id}}" bindtap="onRelatedProject"><view class="unit-copy"><view class="unit-title">{{item.title}}</view><view class="unit-meta">{{item.areaRangeText}} · {{item.priceAmount || item.priceText}} {{item.priceUnit}}</view></view><text class="ui-chevron" aria-hidden="true"></text></button><view class="unit-meta" wx:if="{{similarLoading}}">正在匹配房源…</view><button class="text-link" wx:elif="{{similarError}}" bindtap="loadSimilar">重新加载相似房源</button></view>
     </view>
     <view class="bottom-action-bar">
-      <button class="icon-action" bindtap="onToggleFavorite" aria-label="{{isFavorited ? '取消收藏' : '收藏房源'}}">
+      <button class="icon-action {{isFavorited ? 'favorite-active' : ''}}" bindtap="onToggleFavorite" aria-label="{{isFavorited ? '取消收藏' : '收藏房源'}}">
         <image class="action-glyph" src="{{isFavorited ? '/images/icons/star-fill.png' : '/images/icons/star.png'}}" />
         <text>{{isFavorited ? '已收藏' : '收藏'}}</text>
       </button>
@@ -191,7 +198,11 @@
         <image class="action-glyph" src="/images/icons/phone.png" />
         <text>电话</text>
       </button>
-      <button class="btn btn-primary action-btn" wx:if="{{project.status === 'full' || project.status === 'offline'}}" disabled>{{project.status === 'full' ? '已满/已转' : '已下架'}}</button>
+      <button class="icon-action" open-type="share" aria-label="分享房源给合伙人">
+        <image class="action-glyph" src="/images/icons/share.png" />
+        <text>分享</text>
+      </button>
+      <button class="btn btn-primary action-btn" wx:if="{{project.status === 'full'}}" bindtap="onFindSimilar">找相似房源</button>
       <button class="btn btn-primary action-btn e2e-consult-button" data-test="consult-project" wx:else bindtap="onGoToConsult">{{project.listingKind === 'project' ? '咨询该项目' : '咨询该铺位'}}</button>
     </view>
   </block>

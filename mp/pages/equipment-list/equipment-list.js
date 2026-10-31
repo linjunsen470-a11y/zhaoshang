@@ -102,9 +102,28 @@ Page({
     getApp().callAdvisor();
   },
 
+  onCopyEquipment(e) {
+    const item = this.data.equipmentList.find(item => String(item.id) === String(e.currentTarget.dataset.id));
+    if (!item) return;
+    const details = item.equipmentDetails || {};
+    const summary = [
+      `【设备${item.tagText || '咨询'}】${details.equipmentName || item.businessType || '设备'}`,
+      `信息编号：${item.displayId || item.id}`,
+      details.specText && `数量规格：${details.specText}`,
+      `期望价格：${item.budgetRange || details.expectedPrice || '面议/待评估'}`,
+      item.regionPreference && `所在区域：${item.regionPreference}`
+    ].filter(Boolean).join('\n');
+    wx.setClipboardData({
+      data: summary,
+      success: () => wx.showToast({ title: '设备信息已复制，可发给顾问', icon: 'none' }),
+      fail: () => wx.showToast({ title: '复制失败，请重试', icon: 'none' })
+    });
+  },
+
   onPublishTap() {
+    const type = allowedValue(this.data.activeTab, ['equipment_sell', 'equipment_buy', 'equipment_recycle'], '');
     wx.navigateTo({
-      url: '/pages/equipment/equipment'
+      url: '/pages/equipment/equipment' + (type ? '?leadType=' + encodeURIComponent(type) : '')
     });
   }
 });

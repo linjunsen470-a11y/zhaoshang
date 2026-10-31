@@ -4,6 +4,7 @@ node_modules
 
 # Build output and caches
 .next
+.next-scene-test
 out
 build
 coverage
@@ -18,6 +19,7 @@ next-env.d.ts
 .env.*
 !.env.example
 media
+.tencent-sync
 uploads
 *.pem
 
