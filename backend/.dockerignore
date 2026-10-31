@@ -4,7 +4,7 @@ node_modules
 
 # Build output and caches
 .next
-.next-scene-test
+.next-*
 out
 build
 coverage
@@ -22,6 +22,18 @@ media
 .tencent-sync
 uploads
 *.pem
+*.key
+*.p12
+*.pfx
+*.dump
+*.sql.gz
+*.tar
+*.tar.gz
+backups
+scratch
+test-results
+playwright-report
+blob-report
 
 # Version control and container metadata
 .git

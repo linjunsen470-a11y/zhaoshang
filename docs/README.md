@@ -2,10 +2,9 @@
 
 更新日期：2026-10-31。文档中的历史测试结果仅适用于对应版本，不代表当前环境已部署。
 
-按当前清理要求，历史演示备份、旧源码快照、可重生成的编译产物，以及 `scratch/` 和 `test-results/` 中的历史截图、日志及临时文件已清理。历史验证结论仅记录当时情况，不代表当前验收结果。
-
 ## 当前开发与运维入口
 
+- [环境变量与仓库维护](configuration.md)：配置分工、密钥更新和免构建提交。
 - [持续部署与回退](ci-deployment.md)：GitHub Actions、Environment Secrets、云端备份与回退。
 - [员工后台调整](cms-employee-refresh-2026-10-31.md)：中文登录、账号权限、日期筛选及腾讯文档连接。
 
@@ -13,7 +12,7 @@
 - [后台说明](../backend/README.md)：Payload、权限及数据库维护。
 - [CMS 操作指南](payload-cms-quickstart.md)：日常运营操作。
 - [腾讯文档同步操作说明](腾讯文档同步-demo操作说明.md)：连接、主源规则及演示流程。
-- [同步修复记录](tencent-sync-fixes-2026-10-29.md)：代码变更、本机数据库修复及视图更新未完成的边界；运行前必读。
+- [同步修复记录](tencent-sync-fixes-2026-10-29.md)：代码变更、本机数据库修复及视图更新未完成的边界。
 - [数据库初始化](schema-setup.md)、[运营录入](商业项目接入-运营录入说明.md)：当前数据结构与录入约定。
 - [自动化测试](miniprogram-automation-test.md)、[上线清单](miniprogram-launch-checklist.md)：测试环境与上线验收。
 - [咨询表单说明](小程序咨询表单精简方案.md)：各类咨询首次提交的字段及后台处理。

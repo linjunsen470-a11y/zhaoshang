@@ -31,7 +31,6 @@ function encodeRouteValue(value) {
 
 module.exports = {
   allowedValue,
-  clipRouteValue,
   encodeRouteValue,
   safeDecode,
   safeIdentifier

@@ -71,3 +71,11 @@ miniprogram_npm/
 
 # Local deployment credentials
 deploy/local/
+
+# Database dumps, deployment archives, and local backup directories
+/backups/
+/backend/backups/
+*.dump
+*.sql.gz
+*.tar
+*.tar.gz

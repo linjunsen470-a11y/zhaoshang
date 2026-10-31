@@ -42,10 +42,6 @@
       },
       {
         "type": "folder",
-        "value": "admin"
-      },
-      {
-        "type": "folder",
         "value": "docs"
       }
     ],

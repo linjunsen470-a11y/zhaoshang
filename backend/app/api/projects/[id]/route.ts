@@ -7,7 +7,7 @@ type Args = {
   params: Promise<{ id: string }>
 }
 
-export async function GET(request: Request, { params }: Args) {
+export async function GET(_request: Request, { params }: Args) {
   const { id } = await params
   const payload = await getPayloadInstance()
 

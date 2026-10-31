@@ -9,6 +9,5 @@ function isPublicProject(project) {
 }
 
 module.exports = {
-  PUBLIC_PROJECT_STATUSES,
   isPublicProject
 };

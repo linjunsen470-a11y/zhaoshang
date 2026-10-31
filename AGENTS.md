@@ -19,7 +19,7 @@ Docs belong in `docs/`, including `docs/miniprogram-ux-audit.md` and `docs/paylo
 - `pnpm backend:build`: builds the backend from the repository root.
 - `pnpm backend:lint`: runs backend ESLint from the repository root.
 - `pnpm --dir backend install`: installs backend dependencies using the lockfile.
-- `docker compose up -d --build`: starts the cloud stack from immutable images; includes a private `db` service. CI builds and publishes images before SSH deployment.
+- `docker compose up -d`: starts the cloud stack from immutable images; includes a private `db` service. CI builds and publishes images before SSH deployment.
 - `pnpm test:ci`: runs client/backend unit tests; real HTTP contracts require explicit isolated-environment configuration.
 
 Open the mini-program with WeChat DevTools using `mp/project.config.json`.
