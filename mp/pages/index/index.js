@@ -1,4 +1,4 @@
-const { toggleFavorite } = require('../../utils/favorites.js');
+const { toggleFavorite, isFavorite } = require('../../utils/favorites.js');
 const api = require('../../services/api.js');
 const config = require('../../config.js');
 const { isPublicProject } = require('../../utils/project.js');
@@ -36,8 +36,8 @@ Page({
     if (this.data.recommendedList.length > 0 || this.data.latestList.length > 0) {
       const favs = wx.getStorageSync('favorites') || [];
       this.setData({
-        recommendedList: this.data.recommendedList.map(p => ({ ...p, isFav: favs.includes(p.id) })),
-        latestList: this.data.latestList.map(p => ({ ...p, isFav: favs.includes(p.id) }))
+        recommendedList: this.data.recommendedList.map(p => ({ ...p, isFav: isFavorite(favs, p.id) })),
+        latestList: this.data.latestList.map(p => ({ ...p, isFav: isFavorite(favs, p.id) }))
       });
     }
   },
@@ -63,7 +63,7 @@ Page({
     ]), requestTimeout])
       .then(([recommended, latest]) => {
         const favs = wx.getStorageSync('favorites') || [];
-        const prepare = rows => rows.filter(p => isPublicProject(p) && p.status !== 'full').map(p => ({ ...p, isFav: favs.includes(p.id) }));
+        const prepare = rows => rows.filter(p => isPublicProject(p) && p.status !== 'full').map(p => ({ ...p, isFav: isFavorite(favs, p.id) }));
         const recommendedList = prepare(recommended.docs);
         const recommendedIds = new Set(recommendedList.map(project => String(project.id)));
         this.setData({ recommendedList, latestList: prepare(latest.docs).filter(project => !recommendedIds.has(String(project.id))).slice(0, 4), loading: false, loadError: false });

@@ -1,7 +1,11 @@
+function isFavorite(favorites, id) {
+  return favorites.some(value => String(value) === String(id));
+}
+
 function toggleFavorite(id) {
   const saved = wx.getStorageSync('favorites');
   const favorites = Array.isArray(saved) ? saved : [];
-  const exists = favorites.some(value => String(value) === String(id));
+  const exists = isFavorite(favorites, id);
   wx.setStorageSync('favorites', exists
     ? favorites.filter(value => String(value) !== String(id))
     : favorites.concat(id));
@@ -9,4 +13,4 @@ function toggleFavorite(id) {
   return !exists;
 }
 
-module.exports = { toggleFavorite };
+module.exports = { toggleFavorite, isFavorite };

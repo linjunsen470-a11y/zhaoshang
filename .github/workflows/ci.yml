@@ -31,6 +31,7 @@ jobs:
       - id: plan
         env:
           GH_TOKEN: ${{ github.token }}
+          CI_BUILD_IMAGES: ${{ vars.CI_BUILD_IMAGES }}
         run: node scripts/ci-plan.mjs
 
   checks:

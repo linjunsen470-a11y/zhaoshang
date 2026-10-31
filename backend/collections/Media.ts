@@ -45,6 +45,7 @@ export const Media: CollectionConfig = {
       name: 'source',
       type: 'select',
       label: '来源',
+      defaultValue: 'admin',
       options: [
         { label: '演示种子数据', value: 'seed_demo' },
         { label: '线索附件', value: 'lead_attachment' },

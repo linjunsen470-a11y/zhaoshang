@@ -91,12 +91,12 @@ async function main() {
   if (state==='error') Object.assign(data,{loading:false,loadError:true,formLoadError:true});
   if (state==='empty') Object.assign(data,{projectList:[],equipmentList:[],leadsList:[],latestList:[],recommendedList:[],hasFilters:true});
   if (state==='filters') data.activeTab='more';
-  if (state==='invalid') data.fieldErrors={name:'请输入称呼',phone:'请输入正确的 11 位手机号',businessType:'请选择经营品类'};
+  if (state==='invalid') data.fieldErrors={phone:'请输入正确的 11 位手机号',privacy:'请先阅读并同意隐私政策'};
   if (state==='edit') data.showEditModal=true;
   if (state==='full') data.project.status='full';
   if (state==='missing') Object.assign(data.project,{images:[],coverImage:'',isDemoImage:false,title:'一个用于检查长标题与复杂费用排版的社区商业项目及临街铺位',priceText:'3000—18000元/月，另计物业管理费用'});
-  const shared = parse(await (await fetch('/source/templates/property.wxml')).text());
-  const templates = Object.fromEntries(shared.children.filter(n=>n.tag==='template').map(n=>[n.attrs.name,n]));
+  const shared = await Promise.all(['property', 'lead-form', 'loading'].map(async name => parse(await (await fetch(sourceUrl('templates/' + name + '.wxml'))).text())));
+  const templates = Object.fromEntries(shared.flatMap(tree => tree.children.filter(n=>n.tag==='template').map(n=>[n.attrs.name,n])));
   const markup = parse(await (await fetch(sourceUrl('pages/'+page+'/'+page+'.wxml'))).text());
   document.querySelector('#page-style').textContent = await css('app.wxss') + '\n' + await css('pages/'+page+'/'+page+'.wxss');
   const hasTabs = ['index','list','my'].includes(page);

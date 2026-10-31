@@ -77,7 +77,7 @@ test('remote requests refresh once after 401', async () => {
   const auth = {
     getAuthToken: async force => {
       authCalls.push(force);
-      return force ? 'fresh-token' : 'stale-token';
+      return authCalls.length > 1 ? 'fresh-token' : 'stale-token';
     },
     clearAuth() {},
   };
@@ -102,6 +102,6 @@ test('remote requests refresh once after 401', async () => {
 
   await api.getLeads();
   assert.equal(calls.length, 2);
-  assert.deepEqual(authCalls, [false, true]);
+  assert.deepEqual(authCalls, [false, false]);
   assert.equal(calls[1].header.Authorization, 'Bearer fresh-token');
 });

@@ -1,4 +1,4 @@
-const { toggleFavorite } = require('../../utils/favorites.js');
+const { toggleFavorite, isFavorite } = require('../../utils/favorites.js');
 const api = require('../../services/api.js');
 const config = require('../../config.js');
 const { rememberProject } = require('../../utils/recent.js');
@@ -118,7 +118,7 @@ Page({
 
   checkFavoriteStatus(id) {
     const favs = wx.getStorageSync('favorites') || [];
-    this.setData({ isFavorited: favs.includes(id) });
+    this.setData({ isFavorited: isFavorite(favs, id) });
   },
 
   onSwiperChange(e) {

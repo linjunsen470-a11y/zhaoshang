@@ -64,9 +64,10 @@ async function uploadImage(filePath, isRetry = false) {
     throw new Error(config.configError || '服务地址未配置');
   }
 
-  const token = await auth.getAuthToken(isRetry);
+  const token = await auth.getAuthToken(false);
   return new Promise((resolve, reject) => {
     wx.uploadFile({
+      timeout: 30000,
       url: `${config.apiUrl}/uploads/lead-image`,
       filePath,
       name: 'file',
@@ -84,7 +85,7 @@ async function uploadImage(filePath, isRetry = false) {
           return;
         }
         if (res.statusCode === 401 && !isRetry) {
-          auth.clearAuth();
+          auth.clearAuth(token);
           try {
             const retryResult = await uploadImage(filePath, true);
             resolve(retryResult);

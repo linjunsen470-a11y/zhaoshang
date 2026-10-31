@@ -1,6 +1,7 @@
 import type { AdminViewServerProps } from 'payload'
 import { DefaultTemplate } from '@payloadcms/next/templates'
 import React from 'react'
+import { redirect } from 'next/navigation'
 
 /**
  * Payload 3 does not assign templateType: 'default' for multi-segment custom
@@ -17,6 +18,7 @@ export function AdminWorkspaceShell({
   viewType,
 }: AdminViewServerProps & { children: React.ReactNode }) {
   const { locale, permissions, req, visibleEntities } = initPageResult
+  if (!req.user || !permissions?.canAccessAdmin) redirect('/admin/login')
 
   return (
     <DefaultTemplate

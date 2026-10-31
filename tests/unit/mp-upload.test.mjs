@@ -44,7 +44,7 @@ test('upload retries once with refreshed auth after 401', async () => {
   const auth = {
     getAuthToken: async force => {
       authCalls.push(force);
-      return force ? 'fresh' : 'stale';
+      return authCalls.length > 1 ? 'fresh' : 'stale';
     },
     clearAuth() {},
   };
@@ -54,7 +54,7 @@ test('upload retries once with refreshed auth after 401', async () => {
   assert.equal(files.length, 1);
   assert.equal(files[0].id, 'media-1');
   assert.equal(files[0].displayUrl, '/media/a.jpg');
-  assert.deepEqual(authCalls, [false, true]);
+  assert.deepEqual(authCalls, [false, false]);
   assert.equal(uploadCalls, 2);
 });
 

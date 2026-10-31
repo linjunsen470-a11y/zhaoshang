@@ -74,7 +74,7 @@ test('phone authorization reaches the real authenticated endpoint even while bus
   assert.equal(calls[0].url, 'https://unit.test/api/auth/wechat-phone');
   assert.equal(calls[0].header.Authorization, 'Bearer unit-token');
   assert.equal(calls[0].data.code, 'phone-code');
-  assert.deepEqual(authCalls, [[false, true], [true, true]]);
+  assert.deepEqual(authCalls, [[false, true], [false, true]]);
   assert.deepEqual(storage.getStorageSync('local_leads'), []);
 });
 

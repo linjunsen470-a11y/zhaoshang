@@ -77,16 +77,16 @@ Page({
     this.setData({ submitting: true });
     const request = this.data.isEditMode ? api.updateLead(this.data.leadId, payload) : api.submitLead(payload);
     request.then(res => {
-      this.setData({ submitting: false });
+      if (!this.data.isEditMode) this.setData({ submitting: false });
       if (this.data.isEditMode) {
-        wx.showToast({ title: '修改成功', icon: 'success', duration: 1500, success: () => setTimeout(() => wx.navigateBack(), 1500) });
+        this.finishEditing();
       } else {
         wx.navigateTo({ url: `/pages/success/success?projectId=${projectId || ''}&leadId=${res.id}` });
       }
     }).catch(err => {
       console.error(err);
       this.setData({ submitting: false });
-      wx.showModal({ title: this.data.isEditMode ? '修改失败' : '提交失败', content: '请稍后重试', showCancel: false });
+      wx.showModal({ title: this.data.isEditMode ? '修改失败' : '提交失败', content: err.message || '请稍后重试', showCancel: false });
     });
   }
 });

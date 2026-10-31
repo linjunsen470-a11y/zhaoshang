@@ -34,7 +34,14 @@ module.exports = Behavior({
     formLoading: false,
     formLoadError: false
   },
+  lifetimes: {
+    detached() { clearTimeout(this._navTimer); }
+  },
   methods: {
+    finishEditing() {
+      wx.showToast({ title: '修改成功', icon: 'success', duration: 1500 });
+      this._navTimer = setTimeout(() => wx.navigateBack(), 1500);
+    },
     initCommonData(options, onLeadLoaded) {
       this.setData({ privacyAccepted: hasPrivacyConsent() });
       const userInfo = wx.getStorageSync('userInfo') || (getApp().globalData && getApp().globalData.userInfo);

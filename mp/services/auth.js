@@ -14,6 +14,7 @@ function getAppConfig() {
 function wxLogin() {
   return new Promise((resolve, reject) => {
     wx.login({
+      timeout: 15000,
       success: res => {
         if (res.code) {
           resolve(res.code);
@@ -42,6 +43,7 @@ function postLogin(code, config) {
 
   return new Promise((resolve, reject) => {
     wx.request({
+      timeout: 15000,
       url: `${config.apiUrl}/auth/wechat-login`,
       method: 'POST',
       data: payload,
@@ -87,7 +89,8 @@ async function getAuthToken(forceRefresh = false, requireRemote = false) {
   return loginPromise;
 }
 
-function clearAuth() {
+function clearAuth(rejectedToken) {
+  if (rejectedToken && wx.getStorageSync('authToken') !== rejectedToken) return;
   wx.removeStorageSync('authToken');
   wx.removeStorageSync('authOpenId');
   wx.removeStorageSync('authTokenExpiresAt');

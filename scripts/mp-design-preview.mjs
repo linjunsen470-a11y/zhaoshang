@@ -17,7 +17,7 @@ const api = loadMiniProgramModule(path.join(root, 'services/api.js'), { globals 
 const projects = await api.getProjects({ public: true });
 storage.setStorageSync('userInfo', { nickname: '陈先生', phone: '13800000000' });
 storage.setStorageSync('local_leads', [
-  { id: 'visual-1', submitterOpenId: 'visual-review', name: '陈先生', phone: '13800000000', leadType: 'leasing', projectTitle: '【演示】社区商业项目招商', projectId: 'demo-community', businessType: '咖啡', budgetRange: '10-20万', regionPreference: '天河', status: 'contacted', remark: '希望选择临街、采光良好的空间，计划下月开业。', createdAt: Date.now() - 86400000 },
+  { id: 'visual-1', submitterOpenId: 'visual-review', name: '陈先生', phone: '13800000000', leadType: 'leasing', projectTitle: '园区员工食堂招商', projectId: 'demo-park', businessType: '咖啡', budgetRange: '10-20万', regionPreference: '天河', status: 'contacted', remark: '希望选择临街、采光良好的空间，计划下月开业。', createdAt: Date.now() - 86400000 },
   { id: 'visual-2', submitterOpenId: 'visual-review', name: '陈先生', phone: '13800000000', leadType: 'equipment_sell', businessType: '双门冷藏柜', budgetRange: '2800 元，可议', status: 'new', equipmentDetails: { equipmentName: '双门冷藏柜', specText: '双门 · 220V', equipmentCondition: '正常使用，九成新', expectedPrice: '2800 元，可议' }, regionPreference: '广州天河', equipmentPublication: { status: 'online', publicRemark: '可预约看设备，支持同城自提。' }, createdAt: Date.now() }
 ]);
 for (const name of pages) {
@@ -25,7 +25,7 @@ for (const name of pages) {
   loadMiniProgramModule(path.join(root, 'pages/' + name + '/' + name + '.js'), { globals: { ...globals, Page: value => { definition = value; } }, stubs: { '../../services/api.js': api } });
   const behaviors = definition.behaviors || [];
   const instance = { ...Object.assign({}, ...behaviors.map(b => b.methods)), ...definition, data: structuredClone(Object.assign({}, ...behaviors.map(b => b.data), definition.data)), setData(patch, callback) { Object.assign(this.data, patch); if (callback) callback(); } };
-  if (instance.onLoad) instance.onLoad(name === 'detail' ? { id: 'demo-community' } : {});
+  if (instance.onLoad) instance.onLoad(name === 'detail' ? { id: 'demo-park' } : {});
   if (instance.onShow) instance.onShow();
   await new Promise(resolve => setTimeout(resolve, 20));
   if (name === 'list') instance.data.moreGroups = loadMiniProgramModule(path.join(root, 'utils/projectFilters.js')).moreGroups(instance.data.filters);

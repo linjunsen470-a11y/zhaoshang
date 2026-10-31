@@ -28,13 +28,13 @@ test('my page uses the configured backend without exposing internal runtime cont
   assert.equal(page.onToggleDemoBackend, undefined);
 });
 
-function listPage() {
+function listPage(initialStorage = {}) {
   let definition;
   const requests = [];
   const navigations = [];
   let apiError;
   loadMiniProgramModule(path.resolve('mp/pages/list/list.js'), {
-    globals: { Page: value => { definition = value; }, console: { error() {} }, wx: { ...createStorage(), showToast() {}, navigateTo: options => navigations.push(options.url) } },
+    globals: { Page: value => { definition = value; }, console: { error() {} }, wx: { ...createStorage(initialStorage), showToast() {}, navigateTo: options => navigations.push(options.url) } },
     stubs: { '../../services/api.js': { getProjectPage: async params => { requests.push(params); if (apiError) throw apiError; return { docs: [], page: 1, hasNextPage: false }; } } }
   });
   const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } };
@@ -52,7 +52,8 @@ test('retired links fall back to current scenes and availability defaults respec
   assert.equal(requests.at(-1).available, 'true');
   page.setFilters({ favs: true });
   await page.loadProjects();
-  assert.equal(requests.at(-1).available, undefined);
+  assert.equal(requests.length, 1, 'empty favorites must not request all projects');
+  assert.equal(page.data.projectList.length, 0);
   page.setFilters({ status: 'full' });
   await page.loadProjects();
   assert.equal(requests.at(-1).status, 'full');
@@ -153,7 +154,7 @@ test('more filters are staged, cancellation discards changes and confirmation re
 });
 
 test('scene changes clear campus-only filters while preserving other filters and favorites scope', () => {
-  const { page, requests } = listPage();
+  const { page, requests } = listPage({ favorites: ['42'] });
   page.setFilters({ projectType: '食堂档口', district: '天河', favs: true });
   assert.equal(page.data.filters.businessScene, 'campus');
   page.onQuickFilter(event({ key: 'businessScene', value: 'office' }));
@@ -166,7 +167,7 @@ test('scene changes clear campus-only filters while preserving other filters and
   page.onResetFilters();
   assert.equal(page.data.isFavoritesOnly, true);
   assert.equal(page.data.hasFilters, false);
-  assert.equal(requests.at(-1).ids, '');
+  assert.equal(requests.at(-1).ids, '42');
 });
 
 test('resetting draft filters preserves primary filters and does not fetch until applied', () => {

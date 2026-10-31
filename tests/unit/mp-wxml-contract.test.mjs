@@ -8,6 +8,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
 const read = relative => fs.readFileSync(path.join(root, relative), 'utf8');
 
 test('critical WXML controls retain their user event bindings', () => {
+  assert.match(read('mp/pages/index/index.wxml'), /e2e-service-entry[^>]+wx:for="{{secondaryServices}}"/);
   assert.match(read('mp/pages/index/index.wxml'), /e2e-latest-card[^>]+bindtap="onProjectDetail"/);
   assert.match(read('mp/pages/index/index.wxml'), /e2e-search-button[^>]+bindtap="onSearch"/);
   assert.match(read('mp/pages/detail/detail.wxml'), /e2e-consult-button[^>]+bindtap="onGoToConsult"/);

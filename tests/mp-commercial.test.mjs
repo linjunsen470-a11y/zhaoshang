@@ -20,7 +20,7 @@ test('commercial scenes, pagination, retry, login refresh and local demo journey
     let home, list;
     if (process.env.COMMERCIAL_E2E_LOCAL_ONLY !== 'true') {
     home = await waitForPage(mp, 'pages/index/index');
-    assert.deepEqual((await home.data('categories')).map(s => s.id), ['campus', 'industrial_park', 'office']);
+    assert.deepEqual((await home.data('categories')).map(s => s.id), ['campus', 'workplace']);
     assert.ok((await home.data('recommendedList')).length <= 6);
     assert.ok((await home.data('latestList')).length <= 4);
 
@@ -36,7 +36,8 @@ test('commercial scenes, pagination, retry, login refresh and local demo journey
       const apply = await open(`/pages/apply/apply?projectId=${projects[0].id}`);
       await waitForData(apply, 'projectTitle', Boolean);
       assert.equal(await apply.data('businessScene'), scene);
-      assert.equal(Boolean(await apply.$('radio-group')), scene === 'campus');
+      assert.ok(await apply.$('#field-phone'));
+      assert.equal(await apply.$('radio-group'), null);
       console.log(`[commercial] ${scene}: list/detail/share/consultation form passed`);
     }
 

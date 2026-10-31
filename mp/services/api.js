@@ -138,9 +138,8 @@ async function request(options) {
       configError: config.CONFIG_ERROR
     }
   };
-  initLocalStorage();
-
   if (appInstance.globalData.useLocalMock && !forceRemote) {
+    initLocalStorage();
     return normalizeResponse(urlPath, localFallback(urlPath, method, data), method);
   }
   if (appInstance.globalData.configError || !appInstance.globalData.apiUrl) {
@@ -148,8 +147,9 @@ async function request(options) {
   }
 
   const header = {};
+  let token;
   if (requiresAuth) {
-    const token = await auth.getAuthToken(retried, forceRemote);
+    token = await auth.getAuthToken(false, forceRemote);
     header.Authorization = `Bearer ${token}`;
   }
 
@@ -170,7 +170,7 @@ async function request(options) {
   }
 
   if (res.statusCode === 401 && requiresAuth && !retried) {
-    auth.clearAuth();
+    auth.clearAuth(token);
     return request({ ...options, retried: true });
   }
 

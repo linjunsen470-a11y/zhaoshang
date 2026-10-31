@@ -101,7 +101,7 @@
   <view class="services-backdrop" bindtap="onCloseServices"></view>
   <view class="services-sheet" role="dialog" aria-modal="true" aria-label="更多服务">
     <view class="services-heading"><text>更多服务</text><button class="services-close" bindtap="onCloseServices" aria-label="关闭更多服务"><text class="ui-close" aria-hidden="true"></text></button></view>
-    <button class="service-item e2e-service-entry" data-test="service-entry" wx:for="{{services}}" wx:key="id" data-action="{{item.action}}" bindtap="onServiceTap" hover-class="action-pressed">
+    <button class="service-item e2e-service-entry" data-test="service-entry" wx:for="{{secondaryServices}}" wx:key="id" data-action="{{item.action}}" bindtap="onServiceTap" hover-class="action-pressed">
       <view class="service-copy"><view class="service-title">{{item.name}}</view><view class="service-desc">{{item.desc}}</view></view><text class="service-arrow" aria-hidden="true"><text class="ui-chevron" aria-hidden="true"></text></text>
     </button>
     <button class="services-cancel" bindtap="onCloseServices" hover-class="action-pressed">取消</button>

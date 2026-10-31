@@ -23,7 +23,7 @@ try {
   await timeout(mp.evaluate(() => { getApp().globalData.useLocalMock = true; return true; }), 'set demo mode');
   for (const name of pages) {
     console.log(`Opening ${name}`);
-    const query = name === 'detail' ? '?id=demo-community' : '';
+    const query = name === 'detail' ? '?id=demo-park' : '';
     const page = await timeout(mp.reLaunch(`/pages/${name}/${name}${query}`), `open ${name}`);
     for (let i = 0; i < 40 && await timeout(page.data('loading'), `read ${name}`) === true; i++) await new Promise(resolve => setTimeout(resolve, 150));
     await new Promise(resolve => setTimeout(resolve, 500));

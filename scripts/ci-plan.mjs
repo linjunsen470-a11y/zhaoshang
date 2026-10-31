@@ -14,7 +14,8 @@ const imageInput = path => deploymentFiles.has(path) || (
   && !['backend/.env.example', 'backend/eslint.config.mjs'].includes(path)
 );
 
-export function planChanges(eventName, changedPaths, releasePaths = changedPaths) {
+export function planChanges(eventName, changedPaths, releasePaths = changedPaths, buildImages = true) {
+  if (!buildImages) return { checks: eventName === 'workflow_dispatch' || changedPaths.some(path => !documentation(path)), images: false, release: false };
   if (eventName === 'workflow_dispatch') return { checks: true, images: true, release: true };
   const release = eventName === 'push' && releasePaths.some(imageInput);
   const images = eventName === 'pull_request' ? changedPaths.some(imageInput) : release;
@@ -55,6 +56,7 @@ async function main() {
   const eventName = process.env.GITHUB_EVENT_NAME;
   const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
   const head = process.env.GITHUB_SHA;
+  const buildImages = process.env.CI_BUILD_IMAGES !== 'false';
   let paths = [];
   let releasePaths = [];
   let releaseBase = null;
@@ -62,12 +64,14 @@ async function main() {
     paths = changedFiles(event.pull_request.base.sha, head);
   } else if (eventName === 'push') {
     paths = changedFiles(event.before, head);
-    releaseBase = await lastSuccessfulDeployment(process.env.GITHUB_REPOSITORY, process.env.GH_TOKEN, fetch, process.env.GITHUB_API_URL);
-    releasePaths = changedFiles(releaseBase, head);
+    if (buildImages) {
+      releaseBase = await lastSuccessfulDeployment(process.env.GITHUB_REPOSITORY, process.env.GH_TOKEN, fetch, process.env.GITHUB_API_URL);
+      releasePaths = changedFiles(releaseBase, head);
+    }
   } else if (eventName !== 'workflow_dispatch') {
     throw new Error('Unsupported CI event');
   }
-  const plan = planChanges(eventName, paths, releasePaths);
+  const plan = planChanges(eventName, paths, releasePaths, buildImages);
   appendFileSync(process.env.GITHUB_OUTPUT, Object.entries(plan).map(([key, value]) => `${key}=${value}\n`).join(''));
   const summary = `CI plan: ${JSON.stringify(plan)}; release baseline: ${releaseBase || 'full build'}\n`;
   console.log(summary.trim());

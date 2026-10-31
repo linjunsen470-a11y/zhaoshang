@@ -49,6 +49,8 @@ export function buildShareMaterial(project: ShareableProject) {
   return {
     path,
     headline: title,
+    area,
+    fee,
     copyText: lines.filter(Boolean).join('\n'),
     placeLabel,
     shortText: [title, placeLabel || district, fee].filter(Boolean).join(' · '),
@@ -232,8 +234,8 @@ export async function renderSharePoster(project: ShareableProject, miniProgramCo
   const meta = [
     { k: '位置', v: material.placeLabel },
     { k: '区域', v: (project.district || '').trim() },
-    { k: '面积', v: (project.areaText || '').trim() },
-    { k: '费用', v: (project.feeText || '').trim() },
+    { k: '面积', v: material.area },
+    { k: '费用', v: material.fee },
   ].filter(item => item.v)
 
   meta.forEach((item, index) => {

@@ -1,4 +1,4 @@
-const { toggleFavorite } = require('../../utils/favorites.js');
+const { toggleFavorite, isFavorite } = require('../../utils/favorites.js');
 const api = require('../../services/api.js');
 const config = require('../../config.js');
 const { recentIds } = require('../../utils/recent.js');
@@ -37,7 +37,7 @@ Page({
     }
     if (this.data.isRecentOnly || this.data.isFavoritesOnly) { this.loadProjects(); return; }
     const favorites = wx.getStorageSync('favorites') || [];
-    this.setData({ projectList: this.data.projectList.map(p => ({ ...p, isFav: favorites.includes(p.id) })).filter(p => !this.data.isFavoritesOnly || p.isFav) });
+    this.setData({ projectList: this.data.projectList.map(p => ({ ...p, isFav: isFavorite(favorites, p.id) })).filter(p => !this.data.isFavoritesOnly || p.isFav) });
   },
   setFilters(params) {
     const incoming = { ...params };
@@ -70,10 +70,15 @@ Page({
     if (this.data.isRecommendedOnly) params.recommended = 'true';
     if (this.data.isFavoritesOnly) params.ids = (wx.getStorageSync('favorites') || []).join(',');
     if (this.data.isRecentOnly) params.ids = recentIds().join(',');
+    if (params.ids === '') {
+      this.setData({ projectList: [], loading: false, loadingMore: false, page: 1, totalDocs: 0, hasNextPage: false });
+      if (callback) callback();
+      return Promise.resolve();
+    }
     return api.getProjectPage(params).then(result => {
       if (requestId !== this._requestId) return;
       const favorites = wx.getStorageSync('favorites') || [];
-      const items = result.docs.map(p => ({ ...p, isFav: favorites.includes(p.id) }));
+      const items = result.docs.map(p => ({ ...p, isFav: isFavorite(favorites, p.id) }));
       if (this.data.isRecentOnly) { const ids = recentIds(); items.sort((a, b) => ids.indexOf(String(a.id)) - ids.indexOf(String(b.id))); }
       const combined = append ? [...this.data.projectList, ...items] : items;
       const seen = new Set();

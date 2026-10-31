@@ -48,9 +48,9 @@ test('interface filter staging and inline form validation', { timeout: 90000 }, 
     const apply = await open('/pages/apply/apply?projectId=' + projects[0].id);
     await waitForData(apply, 'projectTitle', Boolean);
     await apply.callMethod('onSubmitForm');
-    assert.equal(await apply.data('focusField'), 'businessType');
-    assert.ok((await apply.data('fieldErrors')).businessType);
-    assert.ok(await apply.$('#field-businessType .field-error'));
+    assert.equal(await apply.data('focusField'), 'phone');
+    assert.ok((await apply.data('fieldErrors')).phone);
+    assert.ok(await apply.$('#field-phone .field-error'));
     await apply.setData({ name: '界面验收', phone: '12812345678', businessType: '咖啡', budgetRange: '5-10万', privacyAccepted: false });
     await apply.callMethod('onSubmitForm');
     assert.equal(await apply.data('focusField'), 'phone');

@@ -95,8 +95,8 @@ test('visual refresh supports discovery, favorites, history and consultation man
     assert.equal(await favorites.$('.sticky-header'), null);
     const apply = await open('/pages/apply/apply?projectId=' + project.id);
     await waitForData(apply, 'projectTitle', Boolean);
-    await call(apply, 'onChooseRegion', { detail: { value: '1' } });
-    assert.equal(await apply.data('regionPreference'), (await apply.data('regionOptions'))[1]);
+    await call(apply, 'onInputRegion', { detail: { value: '天河' } });
+    assert.equal(await apply.data('regionPreference'), '天河');
     await call(apply, 'onInputRemark', { detail: { value: '希望周末看铺' } });
     assert.match(await (await apply.$('.character-count')).text(), /6\s*\/\s*500/);
     await capture('apply');

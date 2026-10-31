@@ -29,6 +29,10 @@
       "page": "pages/privacy/privacy"
     },
     {
+      "action": "disallow",
+      "page": "pages/renovation/renovation"
+    },
+    {
       "action": "allow",
       "page": "*"
     }

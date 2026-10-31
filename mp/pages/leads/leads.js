@@ -39,6 +39,10 @@ Page({
   },
 
   onShow() {
+    if (this._previewingImage) {
+      this._previewingImage = false;
+      return;
+    }
     this.refreshLeads();
   },
 
@@ -97,7 +101,10 @@ Page({
     const current = e.currentTarget.dataset.url;
     const lead = this.data.leadsList.find(item => item.id === leadId);
     const urls = previewUrls((lead && lead.attachments) || []);
-    if (urls.length) wx.previewImage({ urls, current: urls.includes(current) ? current : urls[0] });
+    if (urls.length) {
+      this._previewingImage = true;
+      wx.previewImage({ urls, current: urls.includes(current) ? current : urls[0], fail: () => { this._previewingImage = false; } });
+    }
   },
 
   onEditLead(e) {

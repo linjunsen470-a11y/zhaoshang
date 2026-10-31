@@ -83,7 +83,7 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-CMD ["sh", "-c", "export LD_LIBRARY_PATH=$(find /app/node_modules -name 'libvips-*.so*' -exec dirname {} \\; | head -n 1) && node server.js"]
+CMD ["sh", "-c", "export LD_LIBRARY_PATH=$(find /app/node_modules -name 'libvips-*.so*' -exec dirname {} \\; | head -n 1) && exec node server.js"]
 
 # Gitee's image plugin selects stages through build arguments.
 FROM ${BUILD_TARGET} AS export

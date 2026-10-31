@@ -13,6 +13,9 @@ test('public copy names only the city and district school', () => {
   assert.equal(material.placeLabel, '广州白云某学校')
   assert.equal(material.copyText.includes('白云学院'), false)
   assert.equal(material.headline, '广州白云某学校档口')
+  const poster = buildShareMaterial({ id: 2, schoolName: '白云学院', city: '广州', district: '白云', areaText: '白云学院 20㎡', feeText: '白云学院标准 3000元/月' })
+  assert.equal(poster.area, '广州白云某学校 20㎡')
+  assert.equal(poster.fee, '广州白云某学校标准 3000元/月')
 })
 test('scene classification requires an explicit scene', () => {
   assert.equal(commercialScene({ projectType: '校园商业街' }), '')

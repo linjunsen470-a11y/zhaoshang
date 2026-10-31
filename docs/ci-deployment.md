@@ -16,6 +16,12 @@
 
 后续文档提交可以领先已部署镜像；不因更新验证记录重新构建或部署。下文的 `ecf929c` 等版本属于此前 GitHub 流程的历史记录。
 
+## 选择镜像构建渠道
+
+GitHub Repository Variable `CI_BUILD_IMAGES=false` 可关闭 GitHub 镜像构建与部署，并停止查询历史 Deployment 基线；代码检查仍按本次变更运行，手动触发只运行检查。未设置或不为 `false` 时保留现有 GitHub 发布流程。
+
+选择 Gitee 构建并手动部署时，先将此变量设为 `false`，等待已有 GitHub 发布任务结束，再运行 Gitee。不要让两边同时推送同一 SHA 标签。Gitee 仍是手动流水线，不会因此自动部署。重新启用 GitHub 后，旧成功 Deployment 基线可能触发一次补发，这是预期行为。本次代码修复没有修改远端变量。
+
 ## Gitee 镜像源验证
 
 GitHub 保持主仓库。需要通过 Gitee 验证时，先将目标提交同步到 Gitee，再手动运行 `.workflow/gitee-verify.yml`；该流水线不随同步自动发布，也不替换 `main` 上的 GitHub 发布流程。
