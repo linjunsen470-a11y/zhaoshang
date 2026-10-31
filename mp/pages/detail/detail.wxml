@@ -30,11 +30,12 @@
             </view>
           </swiper-item>
         </swiper>
+        <text class="swiper-tip" wx:if="{{project.images.length > 1}}">左右滑动 · 点击放大</text>
         <text class="swiper-count" wx:if="{{project.images.length > 1}}">{{currentImageIndex + 1}} / {{project.images.length}}</text>
       </view>
       <view wx:else class="swiper-wrap image-fallback">
         <image class="line-icon" src="/images/icons/shops.png" />
-        <text>暂无项目实拍</text>
+        <text>暂无图片</text>
       </view>
       <button class="gallery-share" open-type="share" aria-label="分享房源" hover-class="tap-active">
         <image class="share-icon" src="/images/icons/share.png" aria-hidden="true" />
@@ -187,7 +188,30 @@
         </view>
       </view>
       <view class="advisor-card"><image class="line-icon" src="/images/icons/my.png" /><view class="advisor-copy"><view class="advisor-title">招商顾问</view><view class="advisor-desc">费用解答 · 需求匹配 · 看铺沟通</view></view><button bindtap="onCallAdvisor">联系顾问</button></view>
-      <view class="detail-section" wx:if="{{similarProjects.length || similarLoading || similarError}}"><view class="section-label">同场景房源</view><button class="unit-row" wx:for="{{similarProjects}}" wx:key="id" data-id="{{item.id}}" bindtap="onRelatedProject"><view class="unit-copy"><view class="unit-title">{{item.title}}</view><view class="unit-meta">{{item.areaRangeText}} · {{item.priceAmount || item.priceText}} {{item.priceUnit}}</view></view><text class="ui-chevron" aria-hidden="true"></text></button><view class="unit-meta" wx:if="{{similarLoading}}">正在匹配房源…</view><button class="text-link" wx:elif="{{similarError}}" bindtap="loadSimilar">重新加载相似房源</button></view>
+      <view class="detail-section similar-section" wx:if="{{similarProjects.length || similarLoading || similarError}}">
+        <view class="similar-heading">
+          <view class="section-label">同场景房源</view>
+          <text class="similar-hint" wx:if="{{similarProjects.length > 1}}">左右滑动查看更多</text>
+        </view>
+        <scroll-view class="similar-scroll" scroll-x enhanced show-scrollbar="{{false}}" wx:if="{{similarProjects.length}}">
+          <view class="similar-track">
+            <view class="similar-card" wx:for="{{similarProjects}}" wx:key="id" data-id="{{item.id}}" bindtap="onRelatedProject" role="button" aria-label="查看{{item.title}}" hover-class="tap-active">
+              <view class="similar-media">
+                <image wx:if="{{item.coverImage && !item.coverImageError}}" class="similar-image" src="{{item.coverImage}}" mode="aspectFill" lazy-load="{{true}}" binderror="onSimilarCoverError" data-id="{{item.id}}" />
+                <view wx:else class="similar-image image-fallback"><image class="line-icon" src="/images/icons/shops.png" /><text>暂无图片</text></view>
+                <text class="similar-status" wx:if="{{item.status === 'coming'}}">即将开放</text>
+              </view>
+              <view class="similar-copy">
+                <view class="similar-title ellipsis-2">{{item.title}}</view>
+                <view class="similar-area ellipsis">{{item.areaRangeText}}</view>
+                <view class="similar-price"><text class="similar-price-label">{{item.priceLabel}}</text><block wx:if="{{item.priceAmount}}"><text class="price-number">{{item.priceAmount}}</text><text class="price-unit">{{item.priceUnit}}</text></block><text wx:else>{{item.priceSummary}}</text></view>
+              </view>
+            </view>
+          </view>
+        </scroll-view>
+        <view class="unit-meta" wx:if="{{similarLoading}}">正在匹配房源…</view>
+        <button class="text-link" wx:elif="{{similarError}}" bindtap="loadSimilar">重新加载相似房源</button>
+      </view>
     </view>
     <view class="bottom-action-bar">
       <button class="icon-action {{isFavorited ? 'favorite-active' : ''}}" bindtap="onToggleFavorite" aria-label="{{isFavorited ? '取消收藏' : '收藏房源'}}">

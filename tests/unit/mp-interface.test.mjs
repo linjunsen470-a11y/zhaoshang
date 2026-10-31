@@ -82,6 +82,57 @@ test('unavailable detail has a recovery state while request errors retain retry'
   assert.equal(page.data.loadError, true);
 });
 
+test('detail gallery previews the selected available image and similar cards recover from missing covers', async () => {
+  const storage = createStorage();
+  const previews = [];
+  const navigations = [];
+  let definition;
+  const project = {
+    id: 'current', status: 'online', businessScene: 'campus', title: '测试房源',
+    coverImage: '/cover.jpg', images: ['/first.jpg', '/second.jpg'],
+    suitableBusiness: [], unsuitableBusiness: [], highlights: []
+  };
+  loadMiniProgramModule(path.resolve('mp/pages/detail/detail.js'), {
+    globals: {
+      Page: value => { definition = value; },
+      wx: { ...storage, setNavigationBarTitle() {}, previewImage: options => previews.push(options), navigateTo: options => navigations.push(options.url) }
+    },
+    stubs: { '../../services/api.js': {
+      getProjectDetail: async () => project,
+      getProjectPage: async () => ({ docs: [project, { id: 2 }, { id: '3' }, { id: 4 }, { id: 5 }] })
+    } }
+  });
+  const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } };
+  page.data.projectId = 'current';
+  page.loadDetail('current');
+  await new Promise(resolve => setImmediate(resolve));
+
+  assert.equal(page.data.similarProjects.map(item => item.id).join(','), '2,3,4');
+  page.onSimilarCoverError(event({ id: '2' }));
+  assert.equal(page.data.similarProjects[0].coverImageError, true);
+  assert.equal(page.data.similarProjects[1].coverImageError, undefined);
+  page.onRelatedProject(event({ id: 2 }));
+  assert.equal(navigations[0], '/pages/detail/detail?id=2');
+
+  page.onSwiperChange({ detail: { current: 1 } });
+  assert.equal(page.data.currentImageIndex, 1);
+  page.onPreviewImage(event({ src: '/second.jpg' }));
+  assert.equal(previews[0].current, '/second.jpg');
+  assert.equal(previews[0].urls.join(','), '/first.jpg,/second.jpg');
+  page.onImageError(event({ index: 0 }));
+  page.onPreviewImage(event({ src: '/second.jpg' }));
+  assert.equal(previews[1].urls.join(','), '/second.jpg');
+  page.onPreviewImage(event({ src: '/first.jpg' }));
+  assert.equal(previews.length, 2);
+
+  project.images = [];
+  page.loadDetail('current');
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(page.data.project.images.join(','), '/cover.jpg');
+  assert.equal(page.data.currentImageIndex, 0);
+  assert.equal(page.data.imageErrors.length, 0);
+});
+
 test('more filters are staged, cancellation discards changes and confirmation requests once', async () => {
   const { page, requests } = listPage();
   page.onTabTap(event({ tab: 'more' }));

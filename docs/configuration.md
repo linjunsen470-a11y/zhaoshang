@@ -8,6 +8,7 @@
 | `backend/.env` | 本地 Next/Payload 开发，连接独立开发库 | 修改后重启本地开发进程 |
 | 服务器 `/opt/zhaoshang-test/.env` | 线上容器运行配置 | 在服务器修改，按需重新创建相应容器 |
 | GitHub Secrets / Variables | 镜像推送及 SSH 发布 | 在 GitHub 单独更新；不会自动读取本机 `.env` |
+| Gitee Go 仓库凭证 | 手动验证流水线向腾讯镜像仓库推送 | 在 Gitee 单独更新，凭证仅授权本项目；不会随 GitHub Secrets 或本机 `.env` 自动同步 |
 | CMS「腾讯文档同步 → 连接设置」 | 云端腾讯文档地址、Token 和工作表配置 | 保存到持久化同步卷，不随应用镜像替换 |
 
 两份 `.env.example` 分别对应根目录和后台开发环境。复制模板只用于首次配置，不要用模板覆盖已有密钥。文件使用 UTF-8，注释单独占行；含 `#`、空格等特殊字符的值应正确加引号。凭据不写入 Markdown、截图或日志。
@@ -21,6 +22,7 @@
 - **微信**：`WECHAT_APPID` 与小程序项目配置一致，AppSecret 属于该 AppID。`WECHAT_CODE_ENV_VERSION` 控制生成小程序码的目标版本，不控制客户端 API 地址；客户端地址在 `mp/config/environments.js`。
 - **腾讯文档**：根 `.env` 的 MCP 地址及 Token 仅供本机维护，不由 Compose 自动传入容器。云端在 CMS 配置。本地 `backend/.env` 中非空的 MCP 变量优先于 CMS 保存值；如需通过后台修改连接，先清除对应环境变量并重启。
 - **仓库**：`REGISTRY_HOST` 仅填主机名，`REGISTRY_IMAGE` 填完整仓库路径且不带标签。`REGISTRY_NAMESPACE` 仅便于查看，CI 使用完整路径。GitHub 变量、Secrets 的对应关系见 [持续部署说明](ci-deployment.md)。
+- **Gitee 验证**：根 `.env` 的 `GITEE_ACCESS_TOKEN` 仅供本机同步和维护，不提交到 Git，也不注入应用容器。流水线引用独立保存的腾讯仓库凭证；`NODE_IMAGE`、`ALPINE_MIRROR`、`PNPM_CONFIG_REGISTRY` 和 `BUILD_TARGET` 是公开构建参数，不是服务器运行配置。Gitee 当前未配置 SSH 自动部署。
 - **维护账号**：SSH 和 `CMS_ADMIN_*` 仅供本机维护使用，不注入应用容器。填写 CMS 账号不会创建或重置后台用户。CI 使用专用 SSH 密钥。
 
 ## 仓库卫生
@@ -28,6 +30,8 @@
 提交源码、锁文件、部署脚本和脱敏模板。`.env`、私钥、数据库 dump、媒体目录、同步凭据、构建缓存与测试产物由 `.gitignore` 排除。排除规则不会自动移除已经被 Git 跟踪的文件。
 
 临时验证脚本放 `scratch/`，测试输出放 `test-results/`。不要把真实运行数据当作冗余文件清理；不要用 `git clean -fdx` 清空工作区。页面入口、Next.js 约定文件、锁文件和仍被测试使用的 Mock 工具应保留。
+
+验证完成后，将必要的版本、结果和限制写入文档，再按明确路径清理下载工具、临时响应、失败日志和一次性脚本；已分享的验收截图可保留在忽略目录。清理分支前核对合并状态和 worktree，不以分支名称或创建时间判断是否可删除；保留其他工作尚未提交的修改。
 
 文档以根 README、本文、数据库说明和持续部署说明为当前入口；带日期的部署、迁移与验收记录只描述当时状态，不能替代当前命令。
 
@@ -37,7 +41,7 @@
 
 ```bash
 git commit -m "Tidy configuration and repository files [skip ci]"
-git push origin main
+git push origin HEAD
 ```
 
 根据 [GitHub 官方说明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs)，`[skip ci]` 跳过本次 push / pull_request 触发的 Actions，不会永久关闭工作流，也不阻止人工 `workflow_dispatch`。跳过后线上镜像仍是上一部署版本，这是预期结果。功能、依赖、权限或部署逻辑变更应正常运行 CI。

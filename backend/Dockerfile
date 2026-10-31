@@ -1,9 +1,15 @@
 # Dockerfile for Payload CMS + Next.js
-FROM node:24-alpine AS base
+ARG NODE_IMAGE=node:24-alpine
+ARG BUILD_TARGET=runner
+FROM ${NODE_IMAGE} AS base
+ARG ALPINE_MIRROR=https://dl-cdn.alpinelinux.org/alpine
+ARG PNPM_CONFIG_REGISTRY=https://registry.npmjs.org
+ARG COREPACK_NPM_REGISTRY=${PNPM_CONFIG_REGISTRY}
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+RUN sed -i "s|https://dl-cdn.alpinelinux.org/alpine|${ALPINE_MIRROR}|g" /etc/apk/repositories \
+  && apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Enable pnpm
@@ -78,4 +84,7 @@ ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
 CMD ["sh", "-c", "export LD_LIBRARY_PATH=$(find /app/node_modules -name 'libvips-*.so*' -exec dirname {} \\; | head -n 1) && node server.js"]
+
+# Gitee's image plugin selects stages through build arguments.
+FROM ${BUILD_TARGET} AS export
 

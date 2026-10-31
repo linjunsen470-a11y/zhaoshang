@@ -9,7 +9,7 @@ This repository has four main surfaces:
 - Root mock tooling: `server.js` runs the local Mock API and `data.json` stores mock data. The static `admin/` UI has been retired; Payload is the only admin.
 - Deployment tooling: `docker-compose.yml`, root `.env.example`, `backend/Dockerfile`, and `backend/.env.example` support production builds.
 
-Docs belong in `docs/`, including `docs/miniprogram-ux-audit.md` and `docs/payload-admin-ux-audit.md`. Deployment configuration is in `docker-compose.yml` and `.env.example`; `.github/workflows/ci.yml` and `deploy/deploy.sh` manage CI and deployment. See `docs/ci-deployment.md`.
+Docs belong in `docs/`, including `docs/miniprogram-ux-audit.md` and `docs/payload-admin-ux-audit.md`. Deployment configuration is in `docker-compose.yml` and `.env.example`; `.github/workflows/ci.yml` and `deploy/deploy.sh` manage CI and deployment. `.workflow/gitee-verify.yml` is a manual image-build verification workflow; GitHub remains the primary repository. See `docs/ci-deployment.md`.
 
 ## Build, Test, and Development Commands
 

@@ -8,15 +8,15 @@
 
 .property-media {
   position: relative;
-  flex: 0 0 200rpx;
-  width: 200rpx;
-  height: 200rpx;
+  flex: 0 0 220rpx;
+  width: 220rpx;
+  height: 220rpx;
 }
 
 .property-image {
   display: block;
-  width: 200rpx;
-  height: 200rpx;
+  width: 220rpx;
+  height: 220rpx;
   border-radius: 16rpx;
   background: var(--wash);
 }
@@ -47,30 +47,49 @@
 .property-kind {
   color: var(--muted);
   font-size: 22rpx;
-  margin-bottom: 4rpx;
+  margin-bottom: 2rpx;
 }
 
 .property-title {
   font-size: 28rpx;
   font-weight: 600;
-  line-height: 1.5;
+  line-height: 1.4;
   overflow-wrap: anywhere;
 }
 
 .property-location, .property-meta {
-  margin-top: 8rpx;
   color: var(--muted);
   font-size: 24rpx;
 }
 
+.property-location {
+  margin-top: 4rpx;
+}
+
+.property-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  min-width: 0;
+  margin-top: 4rpx;
+}
+
+.property-meta {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
 .property-tags {
   display: flex;
-  flex-wrap: wrap;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
   gap: 8rpx;
-  margin-top: 12rpx;
 }
 
 .property-tag {
+  flex: 0 1 auto;
+  min-width: 0;
   padding: 2rpx 8rpx;
   color: var(--muted);
   background: var(--wash);
@@ -79,7 +98,7 @@
 }
 
 .property-price {
-  margin-top: 16rpx;
+  margin-top: 8rpx;
   color: var(--pine);
   font-size: 28rpx;
   font-weight: 600;
