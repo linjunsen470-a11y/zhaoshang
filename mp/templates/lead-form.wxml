@@ -1,0 +1,59 @@
+<template name="lead-phone">
+  <view class="form-section">
+    <view class="form-card">
+      <view id="field-phone" class="form-item">
+        <label for="input-phone" class="item-label">手机号 <text class="required-mark">*</text></label>
+        <view class="phone-authorization">
+          <input id="input-phone" aria-label="手机号" class="item-input phone-input e2e-phone-input" data-test="lead-phone" type="number" maxlength="{{maxPhoneLength}}" placeholder="请输入手机号" value="{{phone}}" focus="{{focusField === 'phone'}}" bindinput="onInputPhone" disabled="{{phoneAuthorizing || submitting}}" />
+          <button class="phone-authorize-btn" open-type="getPhoneNumber" aria-label="授权获取微信手机号" bindgetphonenumber="onGetPhoneNumber" loading="{{phoneAuthorizing}}" disabled="{{phoneAuthorizing || submitting}}">微信授权获取</button>
+        </view>
+        <view class="phone-hint">用于本次咨询及跟进，信息处理方式详见隐私政策。</view>
+        <view class="field-error" wx:if="{{fieldErrors.phone}}">{{fieldErrors.phone}}</view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<template name="lead-optional">
+  <view class="form-section">
+    <view class="form-section-title">补充信息（选填）</view>
+    <view class="form-card">
+      <view class="form-item">
+        <label for="input-remark" class="item-label">补充说明</label>
+        <textarea id="input-remark" aria-label="补充说明" class="item-textarea e2e-remark-input" data-test="lead-remark-input" maxlength="{{maxRemarkLength}}" placeholder="可简单说说您的需求" bindinput="onInputRemark" value="{{remark}}" />
+        <view class="character-count">{{remark.length}} / {{maxRemarkLength}}</view>
+      </view>
+      <view class="form-item">
+        <label for="input-name" class="item-label">怎么称呼您（选填）</label>
+        <input id="input-name" aria-label="称呼" class="item-input e2e-name-input" data-test="lead-name" type="text" maxlength="{{maxNameLength}}" placeholder="例如：陈先生" bindinput="onInputName" value="{{name}}" />
+      </view>
+      <view class="form-item" wx:if="{{showRegion}}">
+        <label for="input-regionPreference" class="item-label">意向区域或学校（选填）</label>
+        <input id="input-regionPreference" aria-label="意向区域或学校" class="item-input e2e-region-input" data-test="lead-region" type="text" maxlength="{{maxRegionLength}}" placeholder="例如：天河或某学校" bindinput="onInputRegion" value="{{regionPreference}}" />
+      </view>
+      <view class="form-item border-none" wx:if="{{allowImages}}">
+        <view class="item-label">补充图片（选填）<text class="label-hint">最多 6 张</text></view>
+        <view class="attachment-grid">
+          <view class="attachment-card" wx:for="{{attachments}}" wx:key="id">
+            <view wx:if="{{item.imageError}}" class="attachment-img attachment-fallback">图片暂不可用</view>
+            <image wx:else binderror="onAttachmentError" data-index="{{index}}" class="attachment-img" src="{{item.displayUrl}}" mode="aspectFill" bindtap="onPreviewAttachment" data-url="{{item.displayUrl}}" />
+            <button aria-label="移除图片" class="attachment-remove" bindtap="onRemoveImage" data-index="{{index}}"><text class="ui-close" aria-hidden="true"></text></button>
+          </view>
+          <view role="button" aria-label="添加图片" class="upload-tile" bindtap="onChooseImages" wx:if="{{attachments.length < 6}}">
+            <text class="upload-plus">+</text>
+            <text class="upload-hint">{{uploadingImages ? '上传中' : '添加图片'}}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<template name="lead-privacy">
+  <view id="field-privacy" class="privacy-consent e2e-privacy-consent" data-test="privacy-consent" wx:if="{{!isEditMode}}" bindtap="onTogglePrivacy">
+    <checkbox aria-label="已阅读并同意隐私政策" checked="{{privacyAccepted}}" color="#204C3C" />
+    <text class="privacy-text">我已阅读并同意</text>
+    <text class="privacy-link" catchtap="onGoPrivacy">《隐私政策》</text>
+  </view>
+  <view class="field-error privacy-error" wx:if="{{fieldErrors.privacy}}">{{fieldErrors.privacy}}</view>
+</template>

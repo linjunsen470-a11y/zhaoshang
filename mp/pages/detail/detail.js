@@ -1,5 +1,6 @@
 const { toggleFavorite } = require('../../utils/favorites.js');
 const api = require('../../services/api.js');
+const config = require('../../config.js');
 const { rememberProject } = require('../../utils/recent.js');
 const { isPublicProject } = require('../../utils/project.js');
 const { encodeRouteValue, safeIdentifier } = require('../../utils/navigation.js');
@@ -165,11 +166,11 @@ Page({
   },
 
   onShareTimeline() {
-    return { title: this.data.project ? this.data.project.title : '饭堂与商铺', query: 'id=' + encodeRouteValue(this.data.projectId), ...(this.data.project && this.data.project.coverImage ? { imageUrl: this.data.project.coverImage } : {}) };
+    return { title: this.data.project ? this.data.project.title : config.APP_NAME, query: 'id=' + encodeRouteValue(this.data.projectId), ...(this.data.project && this.data.project.coverImage ? { imageUrl: this.data.project.coverImage } : {}) };
   },
   onShareAppMessage() {
     return {
-      title: this.data.project ? `饭堂与商铺：${this.data.project.title}` : '饭堂与商铺招租服务',
+      title: this.data.project ? `${config.APP_NAME}：${this.data.project.title}` : `${config.APP_NAME} · 商铺招租`,
       path: `/pages/detail/detail?id=${encodeRouteValue(this.data.projectId)}`,
       ...(this.data.project && this.data.project.coverImage ? { imageUrl: this.data.project.coverImage } : {})
     };

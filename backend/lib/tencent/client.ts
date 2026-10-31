@@ -24,7 +24,8 @@ export function unwrapToolResult(result: Record<string, unknown>): Record<string
 export async function connectDocs(config: SyncConfig): Promise<DocsClient> {
   if (!config.endpoint) throw new Error('请先在后台填写腾讯文档 MCP 连接地址')
   const client = new Client({ name: 'zhaoshang-demo-sync', version: '1.0.0' })
-  const headers = config.token ? { Authorization: `Bearer ${config.token}` } : undefined
+  const official = new URL(config.endpoint).origin === 'https://docs.qq.com'
+  const headers = config.token ? { Authorization: official ? config.token : `Bearer ${config.token}` } : undefined
   const transport = config.transport === 'sse'
     ? new SSEClientTransport(new URL(config.endpoint), { requestInit: { headers }, eventSourceInit: { fetch: (url, init) => fetch(url, { ...init, headers: { ...Object.fromEntries(new Headers(init?.headers)), ...headers } }) } })
     : new StreamableHTTPClientTransport(new URL(config.endpoint), { requestInit: { headers } })

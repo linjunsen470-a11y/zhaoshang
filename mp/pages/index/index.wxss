@@ -9,13 +9,18 @@
 }
 
 .brand-line {
-  color: var(--muted);
-  font-size: 24rpx;
+  display: flex;
+  align-items: center;
+  gap: 14rpx;
 }
 
+.brand-mark { display: flex; align-items: center; justify-content: center; width: 48rpx; height: 48rpx; border-radius: 12rpx; background: var(--pine); color: #fff; font-size: 26rpx; font-weight: 600; }
+.brand-name { color: var(--pine); font-size: 28rpx; font-weight: 600; }
+.brand-service { color: var(--muted); font-size: 22rpx; }
+
 .home-title {
-  margin-top: 14rpx;
-  font-size: 40rpx;
+  margin-top: 22rpx;
+  font-size: 39rpx;
   line-height: 1.4;
   font-weight: 600;
   letter-spacing: -1rpx;

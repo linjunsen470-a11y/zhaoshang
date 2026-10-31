@@ -1,9 +1,13 @@
 <import src="../../templates/property.wxml" />
 <view class="container">
   <view class="masthead">
-    <view class="brand-line">饭堂与商铺 · 招租服务</view>
-    <view class="home-title">为你的生意，找对经营场所</view>
-    <view class="home-subtitle">专注学校、园区与写字楼等封闭或半封闭物业</view>
+    <view class="brand-line">
+      <view class="brand-mark" aria-hidden="true">锦</view>
+      <text class="brand-name">{{appName}}</text>
+      <text class="brand-service">商业空间招商服务</text>
+    </view>
+    <view class="home-title">好生意，从合适的铺位开始</view>
+    <view class="home-subtitle">校园 · 园区 · 写字楼的餐饮与配套商铺</view>
     <view class="search-bar">
       <image class="search-icon" src="/images/icons/search.png" />
       <input class="e2e-search-input" data-test="home-search-input" aria-label="搜索区域、场所或经营品类" placeholder="搜区域、场所或经营品类" confirm-type="search" bindconfirm="onSearch" bindinput="onSearchInput" value="{{searchKeyword}}" />

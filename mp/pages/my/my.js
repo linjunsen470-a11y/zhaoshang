@@ -12,6 +12,11 @@ Page({
       phone: ''
     },
     favoriteCount: 0, recentCount: 0, leadCount: null,
+    companyName: config.COMPANY_NAME,
+    appName: config.APP_NAME,
+    maxNameLength: config.MAX_NAME_LENGTH,
+    maxPhoneLength: config.MAX_PHONE_LENGTH,
+    miniProgramIcpNumber: config.MINIPROGRAM_ICP_NUMBER,
     showEditModal: false,
     editNickname: '',
     editPhone: '',
@@ -27,8 +32,8 @@ Page({
       this.setData({
         userInfo: {
           ...this.data.userInfo,
-          nickname: localInfo.nickname || this.data.userInfo.nickname,
-          phone: localInfo.phone || this.data.userInfo.phone
+          nickname: localInfo.nickname || '',
+          phone: localInfo.phone || ''
         }
       });
     } else {
@@ -46,6 +51,10 @@ Page({
 
   onNicknameInput(e) {
     this.setData({ editNickname: clip(e.detail.value, config.MAX_NAME_LENGTH) });
+  },
+
+  onProfilePhoneInput(e) {
+    this.setData({ editPhone: clip(e.detail.value, config.MAX_PHONE_LENGTH) });
   },
 
   async onGetProfilePhone(e) {
@@ -71,12 +80,8 @@ Page({
     if (this.data.phoneAuthorizing) return;
     const { editNickname, editPhone } = this.data;
 
-    if (!editNickname) {
-      wx.showToast({ title: '请先选择微信昵称', icon: 'none' });
-      return;
-    }
     if (!validatePhone(editPhone)) {
-      wx.showToast({ title: '请授权获取微信手机号', icon: 'none' });
+      wx.showToast({ title: '请输入有效手机号或使用微信授权', icon: 'none' });
       return;
     }
 
@@ -122,8 +127,8 @@ Page({
 
   onShowAbout() {
     wx.showModal({
-      title: '关于饭堂与商铺招租服务',
-      content: '专注学校、工业园区、写字楼等封闭或半封闭物业，为经营者匹配饭堂档口与配套商铺，并提供需求登记、看铺沟通和顾问跟进服务。版本：v1.0.0',
+      title: `关于${config.APP_NAME}`,
+      content: `${config.COMPANY_NAME}运营。专注学校、工业园区、写字楼等物业的饭堂档口与配套商铺，为经营者提供需求登记和咨询对接服务。版本：v1.0.0`,
       showCancel: false,
       confirmText: '我知道了'
     });

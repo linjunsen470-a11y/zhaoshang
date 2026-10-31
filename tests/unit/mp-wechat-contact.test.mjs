@@ -90,11 +90,34 @@ test('explicit phone authorization can log in remotely without changing the loca
   assert.equal(app.globalData.useLocalMock, true);
 });
 
-test('all contact surfaces offer WeChat nickname selection and phone consent without a phone text field', () => {
-  for (const name of ['apply', 'transfer', 'equipment', 'renovation', 'my']) {
+test('all consultation forms and profile offer manual and authorized phone entry', () => {
+  const shared = fs.readFileSync(path.resolve('mp/templates/lead-form.wxml'), 'utf8');
+  assert.match(shared, /id="input-phone"[^>]+bindinput="onInputPhone"/);
+  assert.match(shared, /open-type="getPhoneNumber"[^>]+bindgetphonenumber="onGetPhoneNumber"/);
+  for (const name of ['apply', 'transfer', 'equipment', 'renovation']) {
     const source = fs.readFileSync(path.resolve(`mp/pages/${name}/${name}.wxml`), 'utf8');
-    assert.match(source, /type="nickname"/);
-    assert.match(source, /open-type="getPhoneNumber"[^>]+bindgetphonenumber=/);
-    assert.doesNotMatch(source, /<input[^>]+(?:id="(?:input|profile)-phone"|bindinput="onInputPhone"|bindinput="onPhoneInput")/);
+    assert.match(source, /<template is="lead-phone"/);
   }
+  const profile = fs.readFileSync(path.resolve('mp/pages/my/my.wxml'), 'utf8');
+  assert.match(profile, /id="profile-phone"[^>]+bindinput="onProfilePhoneInput"/);
+  assert.match(profile, /open-type="getPhoneNumber"[^>]+bindgetphonenumber="onGetProfilePhone"/);
+});
+
+test('manual number works without a name and survives a declined authorization', async () => {
+  let behavior;
+  const storage = createStorage();
+  const app = { globalData: { userInfo: {} } };
+  load('utils/formBehavior.js', {
+    globals: { Behavior: value => { behavior = value; return value; }, getApp: () => app, wx: { ...storage, showToast() {}, pageScrollTo() {} } },
+    stubs: { '../services/api.js': {}, '../services/upload.js': {} }
+  });
+  const page = { ...behavior.methods, data: { ...structuredClone(behavior.data), requiredFields: [], privacyAccepted: true }, setData(patch) { Object.assign(this.data, patch); } };
+  page.onInputPhone({ detail: { value: '12812345678' } });
+  assert.equal(page.validateCommonForm(), false);
+  page.onInputPhone({ detail: { value: '13812345678' } });
+  await page.onGetPhoneNumber({ detail: { errMsg: 'getPhoneNumber:fail user deny' } });
+  assert.equal(page.data.phone, '13812345678');
+  assert.equal(page.validateCommonForm(), true);
+  page.saveUserInfo();
+  assert.equal(storage.getStorageSync('userInfo').phone, '13812345678');
 });

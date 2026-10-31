@@ -5,8 +5,8 @@ import { ADMIN_GROUPS } from './shared/fieldOptions'
 export const Users: CollectionConfig = {
   slug: 'users',
   labels: {
-    plural: '管理员',
-    singular: '管理员',
+    plural: '用户管理',
+    singular: '用户',
   },
   auth: true,
   admin: {
@@ -15,7 +15,7 @@ export const Users: CollectionConfig = {
     group: ADMIN_GROUPS.system,
     useAsTitle: 'displayName',
     defaultColumns: ['displayName', 'email', 'role'],
-    description: '后台登录账号。管理员可管理账号与删除数据，编辑可维护房源、咨询和设备。',
+    description: '管理员负责账号与系统设置；普通用户负责房源、咨询和设备。',
   },
   access: {
     create: ({ req: { user } }) => isAdminUser(user),
@@ -41,9 +41,9 @@ export const Users: CollectionConfig = {
     {
       name: 'displayName',
       type: 'text',
-      label: '显示名称',
+      label: '姓名',
       admin: {
-        description: '招商顾问姓名，用于跟进记录展示。',
+        description: '填写员工姓名。',
       },
     },
     {
@@ -53,7 +53,7 @@ export const Users: CollectionConfig = {
       defaultValue: 'editor',
       options: [
         { label: '管理员', value: 'admin' },
-        { label: '内容编辑', value: 'editor' },
+        { label: '普通用户', value: 'editor' },
       ],
       admin: {
         position: 'sidebar',

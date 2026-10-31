@@ -57,7 +57,7 @@ export function buildLeadSnapshot(source: Record<string, unknown>, capturedAt = 
     businessType: typeof source.businessType === 'string' ? source.businessType : '',
     budgetRange: typeof source.budgetRange === 'string' ? source.budgetRange : '',
     regionPreference: typeof source.regionPreference === 'string' ? source.regionPreference : '',
-    hasCampusExperience: Boolean(source.hasCampusExperience),
+    hasCampusExperience: typeof source.hasCampusExperience === 'boolean' ? source.hasCampusExperience : undefined,
     remark: typeof source.remark === 'string' ? source.remark : '',
     projectId: relationId(source.project ?? source.projectId),
     transferDetails: Object.keys(transfer).length ? transfer : undefined,

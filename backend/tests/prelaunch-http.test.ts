@@ -93,6 +93,31 @@ test('prelaunch HTTP security and attachment lifecycle', { timeout: 240_000 }, a
     assert.equal((await post('/leads', { remark: 'x'.repeat(70_000) }, owner)).status, 413)
   })
 
+  await t.test('unnamed transfer keeps unasked answers unknown and preserves staff details during edit', async () => {
+    const response = await post('/leads', { leadType: 'transfer', phone: '13812345678', transferDetails: { locationText: '广州天河' } }, owner)
+    assert.equal(response.status, 201)
+    const created = await response.json()
+    const id = String(created.id)
+    leads.push(id)
+    assert.equal(created.name, '')
+    assert.equal(created.hasCampusExperience, null)
+    assert.equal(created.transferDetails.includesEquipment, null)
+    const original = await payload.findByID({ collection: 'leads', id, overrideAccess: true })
+    assert.equal(original.name, null)
+    const snapshot = original.customerSnapshot as Record<string, unknown>
+    assert.notEqual(snapshot.hasCampusExperience, false)
+    await payload.update({ collection: 'leads', id, data: { transferDetails: { locationText: '广州天河', feeText: '月租待核', includesEquipment: true } }, overrideAccess: true })
+    const edited = await post(`/leads/${id}`, { name: '', phone: '13812345678', transferDetails: { locationText: '广州番禺' } }, owner, 'PUT')
+    assert.equal(edited.status, 200)
+    const updated = await edited.json()
+    assert.equal(updated.name, '')
+    assert.equal(updated.transferDetails.locationText, '广州番禺')
+    assert.equal(updated.transferDetails.feeText, '月租待核')
+    assert.equal(updated.transferDetails.includesEquipment, true)
+    const saved = await payload.findByID({ collection: 'leads', id, overrideAccess: true })
+    assert.deepEqual(saved.customerSnapshot, original.customerSnapshot)
+  })
+
   let attachment: { id: string; url: string }
   let leadId = ''
   await t.test('actual upload previews with signed URL; bare file and altered signatures are denied', async () => {

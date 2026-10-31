@@ -262,12 +262,20 @@ const server = http.createServer(async (req, res) => {
         const rawBody = await readBody(req);
         const userFields = pickLeadUserFields(rawBody);
         const payload = normalizeLead(userFields, data.projects);
-        if (!payload.name || !payload.phone) {
-          sendJSON({ error: '称呼和手机号为必填项' }, 400);
+        if (!payload.phone) {
+          sendJSON({ error: '手机号为必填项' }, 400);
           return;
         }
         if (!/^1[3-9]\d{9}$/.test(payload.phone)) {
           sendJSON({ error: '手机号格式不正确' }, 400);
+          return;
+        }
+        if (payload.leadType === 'transfer' && !String(payload.transferDetails?.locationText || '').trim()) {
+          sendJSON({ error: '请填写店铺所在城市或区域' }, 400);
+          return;
+        }
+        if (['equipment_sell', 'equipment_buy', 'equipment_recycle'].includes(payload.leadType) && !String(payload.equipmentDetails?.equipmentName || '').trim()) {
+          sendJSON({ error: '请填写设备名称' }, 400);
           return;
         }
         if (payload.projectId) {
@@ -299,6 +307,11 @@ const server = http.createServer(async (req, res) => {
         const updateFields = pickLeadUserFields(await readBody(req));
         delete updateFields.projectId;
         if (data.leads[index].projectId) delete updateFields.businessScene;
+        for (const key of ['transferDetails', 'equipmentDetails', 'renovationDetails']) {
+          if (updateFields[key] && typeof updateFields[key] === 'object') {
+            updateFields[key] = { ...(data.leads[index][key] || {}), ...updateFields[key] };
+          }
+        }
         data.leads[index] = {
           ...data.leads[index],
           ...updateFields,

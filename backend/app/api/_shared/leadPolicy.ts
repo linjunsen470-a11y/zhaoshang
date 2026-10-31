@@ -9,25 +9,45 @@ export const MINI_PROGRAM_LEAD_TYPES = [
   'renovation_consult',
 ]
 
+type StableLeadFields = {
+  leadType?: unknown
+  sourceChannel?: unknown
+  project?: unknown
+  businessScene?: unknown
+  transferDetails?: unknown
+  equipmentDetails?: unknown
+  renovationDetails?: unknown
+}
+
 function sanitizeLeadUserFields(
   input: Record<string, unknown>,
   submitterOpenId: string,
-  stable?: { leadType?: unknown; sourceChannel?: unknown; project?: unknown; businessScene?: unknown },
+  stable?: StableLeadFields,
 ) {
+  const transferFields = ['locationText', 'feeText', 'transferFee', 'remainingTerm', 'includesEquipment']
+  const equipmentFields = ['equipmentName', 'specText', 'equipmentCondition', 'expectedPrice']
+  const renovationFields = ['shopArea', 'renovationType', 'designStyle', 'budgetText', 'expectedStartDate']
+  const mergeGroup = (key: 'transferDetails' | 'equipmentDetails' | 'renovationDetails', fields: string[]) => {
+    const incoming = pickGroup(input[key], fields)
+    if (!incoming) return undefined
+    return stable ? { ...pickGroup(stable[key], fields), ...incoming } : incoming
+  }
+  const transferDetails = mergeGroup('transferDetails', transferFields)
+  if (!stable && transferDetails && transferDetails.includesEquipment === undefined) transferDetails.includesEquipment = null
   return {
     submitterOpenId,
     leadType: stable?.leadType || input.leadType || 'leasing',
     sourceChannel: stable?.sourceChannel || 'mini_program',
-    name: typeof input.name === 'string' ? input.name.trim() : input.name,
+    name: typeof input.name === 'string' ? input.name.trim() || null : input.name,
     phone: input.phone,
     businessType: input.businessType,
     businessScene: stable?.project ? stable.businessScene : (input.businessScene === undefined && stable ? undefined : input.businessScene || null),
     budgetRange: input.budgetRange,
     regionPreference: input.regionPreference,
-    hasCampusExperience: input.hasCampusExperience === undefined ? (stable ? undefined : false) : input.hasCampusExperience,
-    transferDetails: pickGroup(input.transferDetails, ['locationText', 'feeText', 'transferFee', 'remainingTerm', 'includesEquipment']),
-    equipmentDetails: pickGroup(input.equipmentDetails, ['equipmentName', 'specText', 'equipmentCondition', 'expectedPrice']),
-    renovationDetails: pickGroup(input.renovationDetails, ['shopArea', 'renovationType', 'designStyle', 'budgetText', 'expectedStartDate']),
+    hasCampusExperience: input.hasCampusExperience === undefined ? (stable ? undefined : null) : input.hasCampusExperience,
+    transferDetails,
+    equipmentDetails: mergeGroup('equipmentDetails', equipmentFields),
+    renovationDetails: mergeGroup('renovationDetails', renovationFields),
     attachments: relationIds(input.attachments),
     remark: input.remark,
     project: stable ? toDatabaseId(stable.project) : toDatabaseId(input.project || input.projectId),
@@ -50,7 +70,7 @@ export function sanitizeLeadCreateInput(input: Record<string, unknown>, submitte
 export function sanitizeLeadUpdateInput(
   input: Record<string, unknown>,
   submitterOpenId: string,
-  stable: { leadType?: unknown; sourceChannel?: unknown; project?: unknown; businessScene?: unknown },
+  stable: StableLeadFields,
 ) {
   return sanitizeLeadUserFields(input, submitterOpenId, stable)
 }
@@ -81,7 +101,7 @@ const LEAD_GROUP_LIMITS: Record<string, number> = {
 }
 
 export function validateLeadUserInput(input: Record<string, unknown>): string | null {
-  if (input.name !== undefined && (typeof input.name !== 'string' || !input.name.trim())) return '称呼不能为空'
+  if (input.name !== undefined && typeof input.name !== 'string') return '称呼格式无效'
   if (input.hasCampusExperience !== undefined && typeof input.hasCampusExperience !== 'boolean') return '校园经营经验格式无效'
   if (input.businessScene && !commercialOptions.scenes.some(item => item.value === input.businessScene)) return '意向场景无效'
   for (const [key, limit] of Object.entries(LEAD_TEXT_LIMITS)) {
@@ -117,5 +137,14 @@ export function validateLeadUserInput(input: Record<string, unknown>): string | 
     if (includesEquipment !== undefined && typeof includesEquipment !== 'boolean') return `${groupName}.includesEquipment 格式无效`
   }
 
+  return null
+}
+
+
+export function validateLeadCreateRequirements(input: Record<string, unknown>): string | null {
+  const leadType = String(input.leadType || 'leasing')
+  const details = (value: unknown) => value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {}
+  if (leadType === 'transfer' && !String(details(input.transferDetails).locationText || '').trim()) return '请填写店铺所在城市或区域'
+  if (['equipment_sell', 'equipment_buy', 'equipment_recycle'].includes(leadType) && !String(details(input.equipmentDetails).equipmentName || '').trim()) return '请填写设备名称'
   return null
 }

@@ -38,8 +38,8 @@ test('isolated backend lead API contract', { skip: !enabled }, async t => {
   await t.test('public projects expose only public statuses', async () => {
     const { response, payload } = await request('/projects?public=true', { token: '' });
     assert.equal(response.status, 200);
-    assert.ok(Array.isArray(payload));
-    assert.ok(payload.every(project => ['online', 'coming', 'full'].includes(project.status)));
+    assert.ok(Array.isArray(payload.docs));
+    assert.ok(payload.docs.every(project => ['online', 'coming', 'full'].includes(project.status)));
   });
 
   const leadTypes = [
@@ -62,7 +62,9 @@ test('isolated backend lead API contract', { skip: !enabled }, async t => {
           budgetRange: '5-10万',
           regionPreference: '自动化测试区',
           remark: runId,
-          projectId: projectId || undefined,
+          projectId: leadType === 'leasing' ? projectId || undefined : undefined,
+          transferDetails: leadType === 'transfer' ? { locationText: '自动化测试区' } : undefined,
+          equipmentDetails: leadType.startsWith('equipment_') ? { equipmentName: '自动化设备' } : undefined,
           status: 'closed',
           assignedTo: 1,
         },

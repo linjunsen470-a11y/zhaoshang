@@ -16,7 +16,7 @@ const workingFields: CollectionConfig['fields'] = [
   {
     type: 'row',
     fields: [
-      { name: 'name', type: 'text', required: true, label: '客户称呼' },
+      { name: 'name', type: 'text', label: '客户称呼' },
       { name: 'phone', type: 'text', required: true, label: '联系电话' },
     ],
   },

@@ -1,3 +1,6 @@
+// Leave empty until the competent authority has issued the website ICP number.
+const SITE_ICP_NUMBER = '';
+
 /**
  * 广州锦奕咨询服务有限公司 - 官网基础交互脚本
  * 纯原生 JavaScript，无任何第三方库
@@ -19,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('click', (e) => {
       if (!toggleBtn.contains(e.target) && !navMenu.contains(e.target)) {
         navMenu.classList.remove('open');
+        toggleBtn.setAttribute('aria-expanded', 'false');
       }
     });
   }
@@ -27,5 +31,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const yearSpan = document.getElementById('current-year');
   if (yearSpan) {
     yearSpan.textContent = new Date().getFullYear();
+  }
+
+  // The website number and the mini-program number are separate service records.
+  const icp = document.getElementById('site-icp');
+  if (icp && SITE_ICP_NUMBER) {
+    const link = document.createElement('a');
+    link.href = 'https://beian.miit.gov.cn/';
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.textContent = SITE_ICP_NUMBER;
+    icp.appendChild(link);
   }
 });

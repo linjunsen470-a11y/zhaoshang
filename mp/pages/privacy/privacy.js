@@ -1,6 +1,10 @@
+const config = require('../../config.js');
+
 Page({
   data: {
-    updatedAt: '2026-10-25'
+    updatedAt: '2026-10-31',
+    companyName: config.COMPANY_NAME,
+    contactPhone: config.ADVISOR_PHONE
   },
 
   onGoBack() {

@@ -8,8 +8,6 @@ on:
         type: choice
         options: [smoke, full]
         default: smoke
-  schedule:
-    - cron: '30 18 * * 1-5'
 
 jobs:
   devtools-e2e:
@@ -34,7 +32,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force test-results/mp-e2e | Out-Null
-          if ('${{ github.event.inputs.suite }}' -eq 'full' -or '${{ github.event_name }}' -eq 'schedule') {
+          if ('${{ github.event.inputs.suite }}' -eq 'full') {
             pnpm test:mp:full:junit
           } else {
             pnpm test:mp:smoke:junit

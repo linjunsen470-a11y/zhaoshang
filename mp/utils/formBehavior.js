@@ -1,12 +1,10 @@
 const api = require('../services/api.js');
 const upload = require('../services/upload.js');
-const { districts } = require('../config/commercial.js');
 const { authorizeWechatPhone, rememberContact } = require('./wechatContact.js');
 const { normalizeAttachments, previewUrls } = require('./attachment.js');
 const {
   clip,
   validatePhone,
-  validateName,
   validatePrivacyConsent,
   rememberPrivacyConsent,
   hasPrivacyConsent,
@@ -16,8 +14,11 @@ const {
 
 module.exports = Behavior({
   data: {
-    regionOptions: districts,
     maxRemarkLength: config.MAX_REMARK_LENGTH,
+    maxNameLength: config.MAX_NAME_LENGTH,
+    maxPhoneLength: config.MAX_PHONE_LENGTH,
+    maxRegionLength: config.MAX_REGION_LENGTH,
+    maxTextLength: config.MAX_TEXT_LENGTH,
     name: '',
     phone: '',
     phoneAuthorizing: false,
@@ -34,13 +35,6 @@ module.exports = Behavior({
     formLoadError: false
   },
   methods: {
-    onChooseRegion(e) {
-      const region = this.data.regionOptions[Number(e.detail.value)];
-      if (!region) return;
-      this.clearFieldError('regionPreference');
-      this.setData({ regionPreference: region });
-    },
-
     initCommonData(options, onLeadLoaded) {
       this.setData({ privacyAccepted: hasPrivacyConsent() });
       const userInfo = wx.getStorageSync('userInfo') || (getApp().globalData && getApp().globalData.userInfo);
@@ -56,8 +50,8 @@ module.exports = Behavior({
         loadLeadForEdit(api, options.leadId, lead => {
           this.setData({
             formLoading: false,
-            name: lead.name,
-            phone: lead.phone,
+            name: lead.name || '',
+            phone: lead.phone || '',
             remark: lead.remark || '',
             attachments: normalizeAttachments(lead.attachments)
           });
@@ -69,6 +63,11 @@ module.exports = Behavior({
     onInputName(e) {
       this.clearFieldError('name');
       this.setData({ name: clip(e.detail.value, config.MAX_NAME_LENGTH) });
+    },
+
+    onInputPhone(e) {
+      this.clearFieldError('phone');
+      this.setData({ phone: clip(e.detail.value, config.MAX_PHONE_LENGTH) });
     },
 
     async onGetPhoneNumber(e) {
@@ -153,16 +152,14 @@ module.exports = Behavior({
         wx.showToast({ title: '请先重新加载咨询信息', icon: 'none' });
         return false;
       }
-      const { name, phone, uploadingImages, isEditMode } = this.data;
+      const { phone, uploadingImages, isEditMode } = this.data;
       if (uploadingImages) {
         wx.showToast({ title: '图片仍在上传', icon: 'none' });
         return false;
       }
       const errors = {};
       (this.data.requiredFields || []).forEach(field => { if (!String(this.data[field.key] || '').trim()) errors[field.key] = field.message; });
-      const nameError = validateName(name);
-      if (nameError) errors.name = nameError;
-      if (!validatePhone(phone)) errors.phone = '请授权获取微信手机号';
+      if (!validatePhone(phone)) errors.phone = '请输入有效手机号或使用微信授权';
       if (!isEditMode) {
         const privacyError = validatePrivacyConsent(this.data.privacyAccepted);
         if (privacyError) {

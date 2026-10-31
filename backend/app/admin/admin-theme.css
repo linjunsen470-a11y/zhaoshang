@@ -523,3 +523,16 @@ button[type='submit'].btn--style-primary:hover { border-color: var(--cms-primary
   .cms-contact-bar__hint { display: block; margin-left: 0; margin-top: 4px; }
 }
 @media (prefers-reduced-motion: reduce) { .cms-page *, .cms-page *::before, .cms-page *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; } }
+
+/* A small branded entry; authentication stays with Payload. */
+.cms-brand { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 24px; font-weight: 650; color: var(--cms-text); }
+.cms-brand__mark { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 12px; background: var(--cms-primary); color: #fff; font-size: 26px; }
+.cms-brand small { display: block; margin-top: 5px; font-size: 13px; font-weight: 400; color: var(--cms-muted); letter-spacing: 2px; }
+.login__brand { margin-bottom: 32px; }
+.cms-login-intro { text-align: center; margin-bottom: 26px; }
+.cms-login-intro h1 { font-size: 24px; margin: 0 0 10px; }
+.cms-login-intro p { color: var(--cms-muted); font-size: 14px; }
+.login .input { border-radius: 8px; }
+.cms-sync-config summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
+.cms-sync-config[open] summary { margin-bottom: 20px; }
+.cms-toolbar input[type='date'] { min-height: 38px; padding: 7px 10px; border: 1px solid var(--cms-border); border-radius: 6px; color: var(--cms-text); background: var(--cms-surface); }

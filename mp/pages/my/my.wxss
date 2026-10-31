@@ -182,5 +182,13 @@
 .edit-modal-box { animation: sheet-in 200ms ease-out; }
 
 .profile-phone-authorization { display: flex; align-items: center; gap: 16rpx; }
-.profile-phone-value { flex: 1; min-width: 0; font-size: 26rpx; overflow-wrap: anywhere; }
+.profile-phone-input { box-sizing: border-box; flex: 1 1 140rpx; min-width: 0; width: 0; padding-top: 0; padding-bottom: 0; line-height: 88rpx; }
 .profile-phone-authorization .btn { flex-shrink: 0; font-size: 24rpx; padding: 16rpx; }
+
+.operator-info {
+  margin: 32rpx 0;
+  color: var(--muted);
+  font-size: 24rpx;
+  line-height: 1.8;
+  text-align: center;
+}

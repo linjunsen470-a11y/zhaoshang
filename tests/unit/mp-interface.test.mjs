@@ -3,12 +3,13 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { createStorage, loadMiniProgramModule } from '../helpers/load-cjs.mjs';
 
-test('local backend switch changes only the develop environment and keeps mock data intact', () => {
+test('develop uses the cloud API, retains mock data and leaves release configuration explicit', () => {
   let version = 'develop';
   const storage = createStorage({ local_projects: [{ id: 'keep-local' }] });
   const config = loadMiniProgramModule(path.resolve('mp/config/index.js'), { globals: { wx: { ...storage, getAccountInfoSync: () => ({ miniProgram: { envVersion: version } }) } } });
-  assert.equal(config.refreshRuntimeConfig().USE_LOCAL_MOCK, true);
-  storage.setStorageSync('demo_backend_enabled', true);
+  assert.equal(config.refreshRuntimeConfig().USE_LOCAL_MOCK, false);
+  assert.equal(config.API_URL, 'https://api.cqwushi.com/api');
+  assert.equal(config.ALLOW_DEV_OPEN_ID, false);
   assert.equal(config.refreshRuntimeConfig().USE_LOCAL_MOCK, false);
   assert.equal(storage.getStorageSync('local_projects')[0].id, 'keep-local');
   version = 'release';
@@ -16,15 +17,14 @@ test('local backend switch changes only the develop environment and keeps mock d
   assert.equal(config.CONFIG_ERROR.includes('服务地址未配置'), true);
 });
 
-test('my page keeps saved connection settings without exposing internal runtime controls', () => {
-  const storage = createStorage({ demo_backend_enabled: true });
+test('my page uses the configured backend without exposing internal runtime controls', () => {
+  const storage = createStorage();
   const app = { globalData: { userInfo: {}, useLocalMock: false } };
   let definition;
   loadMiniProgramModule(path.resolve('mp/pages/my/my.js'), { globals: { Page: value => { definition = value; }, getApp: () => app, wx: { ...storage, getAccountInfoSync: () => ({ miniProgram: { envVersion: 'develop' } }), showToast() {} } } });
   const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } };
   page.onShow();
   assert.equal(app.globalData.useLocalMock, false);
-  assert.equal(storage.getStorageSync('demo_backend_enabled'), true);
   assert.equal(page.onToggleDemoBackend, undefined);
 });
 
@@ -211,7 +211,7 @@ test('home service sheet opens and closes and dispatches all three service route
   assert.equal(page.data.showServices, false);
 });
 
-test('general workplace request defaults to unrestricted scene and shows the selection hint', () => {
+test('general workplace request leaves the scene unspecified and preserves an explicit scene', () => {
   let definition;
   loadMiniProgramModule(path.resolve('mp/pages/apply/apply.js'), {
     globals: { Page: value => { definition = value; }, getApp: () => ({}), wx: { ...createStorage(), setNavigationBarTitle() {} }, Behavior: value => value },
@@ -220,11 +220,8 @@ test('general workplace request defaults to unrestricted scene and shows the sel
   const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); }, initCommonData() {} };
   page.onLoad({ sceneGroup: 'workplace' });
   assert.equal(page.data.businessScene, '');
-  assert.equal(page.data.sceneIndex, 0);
-  assert.equal(page.data.workplaceHint, true);
   page.onLoad({ businessScene: 'office' });
   assert.equal(page.data.businessScene, 'office');
-  assert.equal(page.data.workplaceHint, false);
 });
 
 test('form validation reports all fields, locates the first visible error and blocks duplicate submission', () => {
@@ -238,7 +235,7 @@ test('form validation reports all fields, locates the first visible error and bl
   assert.equal(page.validateCommonForm(), false);
   assert.equal(page.data.focusField, 'businessType');
   assert.equal(scrolls[0].selector, '#field-businessType');
-  assert.ok(page.data.fieldErrors.name);
+  assert.equal(page.data.fieldErrors.name, undefined);
   assert.ok(page.data.fieldErrors.phone);
   assert.ok(page.data.fieldErrors.privacy);
   Object.assign(page.data, { businessType: '咖啡', name: '陈先生', phone: '13812345678', privacyAccepted: true });
@@ -255,21 +252,4 @@ test('photo provenance metadata is retained and real API photos are preserved', 
   const commercial = loadMiniProgramModule(path.resolve('mp/utils/commercial.js'));
   assert.equal(commercial.decorate({ coverImage: '/images/demo/mall.jpg' }).isDemoImage, true);
   assert.equal(commercial.decorate({ coverImage: 'https://example.test/real.jpg' }).isDemoImage, false);
-});
-
-test('clearing the consultation form requires confirmation and keeps its project context', () => {
-  let definition, modal;
-  loadMiniProgramModule(path.resolve('mp/pages/apply/apply.js'), {
-    globals: { Page: value => { definition = value; }, Behavior: value => value, wx: { ...createStorage(), showModal: options => { modal = options; }, showToast() {} } },
-    stubs: { '../../services/api.js': {}, '../../utils/formBehavior.js': {} }
-  });
-  const page = { ...definition, data: { ...structuredClone(definition.data), name: '陈先生', projectId: 'project-1', projectTitle: '示例项目' }, setData(patch) { Object.assign(this.data, patch); } };
-  page.onClearForm();
-  assert.equal(page.data.name, '陈先生');
-  modal.success({ confirm: false });
-  assert.equal(page.data.name, '陈先生');
-  modal.success({ confirm: true });
-  assert.equal(page.data.name, '');
-  assert.equal(page.data.projectId, 'project-1');
-  assert.equal(page.data.projectTitle, '示例项目');
 });

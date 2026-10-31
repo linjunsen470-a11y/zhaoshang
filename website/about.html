@@ -21,7 +21,7 @@
       </a>
 
       <nav>
-        <ul class="nav-menu">
+        <ul id="nav-menu" class="nav-menu">
           <li><a href="index.html" class="nav-link">首页</a></li>
           <li><a href="services.html" class="nav-link">主营业务</a></li>
           <li><a href="about.html" class="nav-link active">关于我们</a></li>
@@ -31,7 +31,7 @@
 
       <a href="contact.html" class="header-cta">业务咨询</a>
 
-      <button class="nav-toggle" aria-label="切换导航菜单">
+      <button class="nav-toggle" type="button" aria-label="切换导航菜单" aria-controls="nav-menu" aria-expanded="false">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="3" y1="12" x2="21" y2="12"></line>
           <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -62,7 +62,7 @@
             在实体商业与青年创业蓬勃发展的背景下，公司敏锐洞悉传统商业空间招商周期长、信息不对称、中小商户选址盲目以及闲置经营资产流通不畅等痛点。锦奕咨询以“连接优质空间与优秀创业者”为使命，聚焦校园商业街区、社区商业中心与创意园区的点位去化与业态繁荣。
           </p>
           <p>
-            公司深度融合“线下顾问严谨调研”与“线上小程序高效互联”，通过自主研发的轻量化招商数字化系统，实现了商业铺位与二手优质设备的真实展示、合规核验与快速跟进，为广大商户与业主降低决策成本，提高交易效率。
+            公司关注商业铺位、饭堂档口和商用设备的信息对接，并正在准备小程序服务。
           </p>
         </div>
 
@@ -107,8 +107,8 @@
               </svg>
             </div>
             <div>
-              <div class="info-label">主营业务范畴</div>
-              <div class="info-val">商务咨询服务、招商策划咨询、场地选址顾问、商业设备流转咨询</div>
+              <div class="info-label">统一社会信用代码</div>
+              <div class="info-val">91440118MAKQHD3D0X</div>
             </div>
           </div>
 
@@ -119,8 +119,8 @@
               </svg>
             </div>
             <div>
-              <div class="info-label">服务准则</div>
-              <div class="info-val">真实房源 · 客观评估 · 规范合同 · 持续跟进</div>
+              <div class="info-label">成立日期与经营范围</div>
+              <div class="info-val">2026年10月27日成立。商务服务业，具体经营项目以国家企业信用信息公示系统公示为准。</div>
             </div>
           </div>
         </div>
@@ -140,12 +140,12 @@
       <div class="features-grid">
         <div class="feature-card">
           <h3 class="feature-title">严选与求真</h3>
-          <p class="feature-desc">所有点位与设备信息均由专业顾问实地踏勘与严格核实，坚决杜绝虚假与模糊信息，确保每一次咨询都有实据可依。</p>
+          <p class="feature-desc">重视信息核实与清晰沟通，具体项目情况以实地了解及双方确认的信息为准。</p>
         </div>
 
         <div class="feature-card">
           <h3 class="feature-title">敏捷与数字化</h3>
-          <p class="feature-desc">依托轻快的小程序矩阵，随时随地发布与检索招商需求，让信息在买方、卖方与顾问之间毫秒级流转，显著缩短决策周期。</p>
+          <p class="feature-desc">持续完善信息展示与咨询服务，让商户和项目方更方便地沟通需求。</p>
         </div>
 
         <div class="feature-card">
@@ -156,7 +156,7 @@
     </div>
   </section>
 
-  <!-- 页脚 (ICP 备案严格合规) -->
+  <!-- 页脚 -->
   <footer class="site-footer">
     <div class="container">
       <div class="footer-top">
@@ -179,8 +179,7 @@
           <div class="footer-heading">联系方式</div>
           <ul class="footer-links">
             <li>地址：广州市增城区宁西街香山大道55号之二506单元</li>
-            <li>咨询电话：详见联系页面</li>
-            <li>工作时间：周一至周五 09:00 - 18:00</li>
+            <li>咨询电话：<a href="tel:17322251752">17322251752（邱先生）</a></li>
           </ul>
         </div>
       </div>
@@ -189,14 +188,7 @@
         <p>
           Copyright © <span id="current-year">2026</span> 广州锦奕咨询服务有限公司 版权所有
         </p>
-        <p>
-          <span class="icp-badge">
-            <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备XXXXXXXX号-1</a>
-          </span>
-          <span class="icp-badge">
-            本站内容已依法依规通过工业和信息化部ICP备案审查
-          </span>
-        </p>
+        <p><span id="site-icp" class="icp-badge"></span></p>
       </div>
     </div>
   </footer>

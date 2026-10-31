@@ -36,6 +36,9 @@ importers:
       '@payloadcms/richtext-lexical':
         specifier: ^3.90.2
         version: 3.90.2(@faceless-ui/modal@3.0.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@faceless-ui/scroll-info@2.0.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@payloadcms/next@3.90.2(@types/react@19.2.17)(graphql@16.14.2)(monaco-editor@0.55.1)(next@16.3.8(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.93.3))(payload@3.90.2(patch_hash=baf451e836b4e2d73f36355bd18ecb3bdddec8660a6d93b4575fc2caf7d6f0ca)(graphql@16.14.2)(typescript@5.9.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3))(@types/react@19.2.17)(monaco-editor@0.55.1)(next@16.3.8(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.93.3))(payload@3.90.2(patch_hash=baf451e836b4e2d73f36355bd18ecb3bdddec8660a6d93b4575fc2caf7d6f0ca)(graphql@16.14.2)(typescript@5.9.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)(yjs@13.6.31)
+      '@payloadcms/translations':
+        specifier: 3.90.2
+        version: 3.90.2
       '@payloadcms/ui':
         specifier: ^3.90.2
         version: 3.90.2(@types/react@19.2.17)(monaco-editor@0.55.1)(next@16.3.8(@babel/core@7.29.7)(@types/node@20.19.43)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.93.3))(payload@3.90.2(patch_hash=baf451e836b4e2d73f36355bd18ecb3bdddec8660a6d93b4575fc2caf7d6f0ca)(graphql@16.14.2)(typescript@5.9.3))(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(typescript@5.9.3)

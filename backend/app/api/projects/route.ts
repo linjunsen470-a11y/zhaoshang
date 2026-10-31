@@ -9,12 +9,18 @@ import { getAuthenticatedStaff } from '../_shared/auth'
 import { readJsonObject, jsonInputError } from '../_shared/requestInput'
 
 export async function GET(request: Request) {
-  const payload = await getPayloadInstance()
   const { searchParams } = new URL(request.url)
-  const staff = await getAuthenticatedStaff('projects')
-  const showPublicOnly = !staff || searchParams.get('public') === 'true'
+  let conditions
   try {
-    const conditions = commercialFilters(searchParams)
+    conditions = commercialFilters(searchParams)
+  } catch (error) {
+    return json({ error: error instanceof Error ? error.message : '筛选无效' }, 400)
+  }
+
+  try {
+    const payload = await getPayloadInstance()
+    const staff = await getAuthenticatedStaff('projects')
+    const showPublicOnly = !staff || searchParams.get('public') === 'true'
     if (showPublicOnly) conditions.push(publicCommercialWhere())
     const result = await payload.find({
       collection: 'projects',
@@ -38,7 +44,8 @@ export async function GET(request: Request) {
     }) : docs
     return json({ docs: output, page: result.page, totalPages: result.totalPages, totalDocs: result.totalDocs, hasNextPage: result.hasNextPage })
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : '查询失败' }, 400)
+    console.error('[GET /api/projects] query failed', error)
+    return json({ error: '项目列表暂时无法加载，请稍后重试' }, 500)
   }
 }
 

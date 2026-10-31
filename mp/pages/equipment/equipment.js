@@ -9,102 +9,44 @@ const EQUIPMENT_LEAD_TYPES = ['equipment_sell', 'equipment_buy', 'equipment_recy
 Page({
   behaviors: [formBehavior],
   data: {
-    requiredFields: [{ key: 'equipmentName', message: '请填写设备名称' }],
-    leadType: 'equipment_sell',
-    equipmentName: '',
-    specText: '',
-    equipmentCondition: '',
-    budgetRange: '',
-    regionPreference: ''
+    requiredFields: [{ key: 'leadType', message: '请选择设备需求类型' }, { key: 'equipmentName', message: '请填写设备名称' }],
+    leadType: '',
+    equipmentName: ''
   },
-
   onLoad(options) {
-    this.initCommonData({ ...options, leadId: safeIdentifier(options.leadId) }, lead => {
-      const details = lead.equipmentDetails || {};
-      this.setData({
-        leadType: allowedValue(lead.leadType, EQUIPMENT_LEAD_TYPES, 'equipment_sell'),
-        equipmentName: details.equipmentName || lead.businessType || '',
-        specText: details.specText || '',
-        equipmentCondition: details.equipmentCondition || '',
-        budgetRange: details.expectedPrice || lead.budgetRange || '',
-        regionPreference: lead.regionPreference || ''
-      });
+    const leadId = safeIdentifier(options.leadId);
+    if (!leadId) this.setData({ leadType: allowedValue(options.leadType, EQUIPMENT_LEAD_TYPES, '') });
+    this.initCommonData({ ...options, leadId }, lead => {
+      this.setData({ leadType: allowedValue(lead.leadType, EQUIPMENT_LEAD_TYPES, ''), equipmentName: (lead.equipmentDetails && lead.equipmentDetails.equipmentName) || '' });
     });
   },
-
   onTypeTap(e) {
     if (this.data.isEditMode) return;
-    this.setData({ leadType: allowedValue(e.currentTarget.dataset.type, EQUIPMENT_LEAD_TYPES, this.data.leadType) });
+    this.clearFieldError('leadType');
+    this.setData({ leadType: allowedValue(e.currentTarget.dataset.type, EQUIPMENT_LEAD_TYPES, '') });
   },
-  onInputEquipmentName(e) { this.clearFieldError('equipmentName'); this.setData({ equipmentName: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
-  onInputSpec(e) { this.setData({ specText: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
-  onInputCondition(e) { this.setData({ equipmentCondition: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
-  onInputBudget(e) { this.setData({ budgetRange: clip(e.detail.value, config.MAX_TEXT_LENGTH) }); },
-  onInputRegion(e) { this.clearFieldError('regionPreference'); this.setData({ regionPreference: clip(e.detail.value, config.MAX_REGION_LENGTH) }); },
-
+  onInputEquipmentName(e) {
+    this.clearFieldError('equipmentName');
+    this.setData({ equipmentName: clip(e.detail.value, config.MAX_TEXT_LENGTH) });
+  },
   onSubmitForm() {
     if (!this.validateCommonForm()) return;
-
-    const { leadType, name, phone, equipmentName, specText, equipmentCondition, budgetRange, regionPreference, remark, attachments } = this.data;
-
-    if (!equipmentName) {
-      wx.showToast({ title: '请填写设备名称', icon: 'none' });
-      return;
-    }
-
+    const { leadType, name, phone, equipmentName, remark, attachments } = this.data;
+    const payload = {
+      leadType, sourceChannel: 'mini_program', name, phone, businessType: equipmentName, remark,
+      equipmentDetails: { equipmentName }, attachments: attachmentIds(attachments)
+    };
     this.saveUserInfo();
     this.setData({ submitting: true });
-    const payload = {
-      leadType,
-      sourceChannel: 'mini_program',
-      name,
-      phone,
-      businessType: equipmentName,
-      budgetRange: budgetRange || '待评估',
-      regionPreference,
-      remark: remark || undefined,
-      equipmentDetails: {
-        equipmentName,
-        specText,
-        equipmentCondition,
-        expectedPrice: budgetRange
-      },
-      attachments: attachmentIds(attachments)
-    };
-
-    if (this.data.isEditMode) {
-      api.updateLead(this.data.leadId, payload)
-        .then(res => {
-          this.setData({ submitting: false });
-          wx.showToast({
-            title: '修改成功',
-            icon: 'success',
-            duration: 1500,
-            success: () => {
-              setTimeout(() => {
-                wx.navigateBack();
-              }, 1500);
-            }
-          });
-        }).catch(err => {
-          console.error(err);
-          this.setData({ submitting: false });
-          wx.showModal({
-            title: '修改失败',
-            content: err.message || '请稍后重试',
-            showCancel: false
-          });
-        });
-    } else {
-      api.submitEquipment(payload).then(res => {
-        this.saveUserInfo();
-        this.setData({ submitting: false });
-        wx.navigateTo({ url: `/pages/success/success?leadId=${res.id}` });
-      }).catch(err => {
-        console.error(err);
-        this.setData({ submitting: false });
-        wx.showModal({ title: '提交失败', content: '请稍后重试', showCancel: false });
-      });
-    }
+    const request = this.data.isEditMode ? api.updateLead(this.data.leadId, payload) : api.submitEquipment(payload);
+    request.then(res => {
+      this.setData({ submitting: false });
+      if (this.data.isEditMode) wx.showToast({ title: '修改成功', icon: 'success', duration: 1500, success: () => setTimeout(() => wx.navigateBack(), 1500) });
+      else wx.navigateTo({ url: `/pages/success/success?leadId=${res.id}` });
+    }).catch(err => {
+      console.error(err);
+      this.setData({ submitting: false });
+      wx.showModal({ title: this.data.isEditMode ? '修改失败' : '提交失败', content: '请稍后重试', showCancel: false });
+    });
   }
 });

@@ -4,6 +4,8 @@ import { readJsonObject, jsonInputError } from '../../_shared/requestInput'
 import { getPayloadInstance, json } from '../../_shared/payloadApi'
 import { leadTypesForCategory } from '@/collections/shared/fieldOptions'
 
+import { inquiryTimeFilters } from '@/lib/inquiryFilters'
+
 const VALID_STATUSES = new Set(['new', 'contacted', 'closed'])
 
 function relation(value: unknown) {
@@ -24,7 +26,10 @@ export async function GET(request: Request) {
 
     const payload = await getPayloadInstance()
     const { searchParams } = new URL(request.url)
-    const conditions: Where[] = []
+    let timeFilters: ReturnType<typeof inquiryTimeFilters>
+    try { timeFilters = inquiryTimeFilters(searchParams) }
+    catch (error) { return json({ error: error instanceof Error ? error.message : '日期无效' }, 400) }
+    const conditions: Where[] = [...timeFilters.where]
     const q = searchParams.get('q')?.trim().slice(0, 80)
     const status = searchParams.get('status')
     const leadType = searchParams.get('leadType')
@@ -59,7 +64,7 @@ export async function GET(request: Request) {
       where: conditions.length ? { and: conditions } : undefined,
       page,
       limit: 25,
-      sort: '-createdAt',
+      sort: timeFilters.sort,
       depth: 1,
       overrideAccess: true,
     })
@@ -89,15 +94,7 @@ export async function GET(request: Request) {
     })
   } catch (err) {
     console.error('[GET /api/admin/inquiries]', err)
-    const message = err instanceof Error ? err.message : '咨询列表加载失败'
-    // Surface schema drift clearly for local ops
-    if (/column .* does not exist|relation .* does not exist/i.test(message)) {
-      return json({
-        error: '数据库结构未同步（缺少字段）。请在 backend 执行：pnpm schema:push',
-        detail: message,
-      }, 500)
-    }
-    return json({ error: message }, 500)
+    return json({ error: '咨询暂时无法加载，请稍后重试。' }, 500)
   }
 }
 

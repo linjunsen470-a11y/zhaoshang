@@ -1,0 +1,130 @@
+name: CI and deploy
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+        with:
+          version: 11.5.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            backend/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --dir backend install --frozen-lockfile
+      - run: pnpm test:ci
+      - run: pnpm --dir backend test:cms
+      - run: pnpm backend:lint
+      - name: Check deployment scripts
+        run: |
+          bash -n deploy/deploy.sh deploy/check.sh
+          shellcheck deploy/deploy.sh deploy/check.sh
+
+  images:
+    needs: checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.names.outputs.image }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - id: names
+        env:
+          REPOSITORY: ${{ github.repository }}
+        run: echo "image=ghcr.io/${REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build application
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: backend
+          target: runner
+          push: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+          tags: ${{ steps.names.outputs.image }}:${{ github.sha }}
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha,scope=payload
+          cache-to: type=gha,scope=payload,mode=max
+      - name: Build maintenance and sync tools
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: backend
+          target: tools
+          push: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
+          tags: ${{ steps.names.outputs.image }}-tools:${{ github.sha }}
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: |
+            type=gha,scope=payload
+            type=gha,scope=tools
+          cache-to: type=gha,scope=tools,mode=max
+
+  deploy:
+    needs: images
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: tencent-test
+    permissions:
+      contents: read
+      packages: read
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+      DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
+      PUBLIC_URL: ${{ vars.PUBLIC_URL }}
+      IMAGE: ${{ needs.images.outputs.image }}
+      REGISTRY_USER: ${{ github.actor }}
+      REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Deploy over SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$DEPLOY_PATH" =~ ^/opt/[a-zA-Z0-9/_-]+$ && "$DEPLOY_PATH" != *..* ]]
+          [[ "$DEPLOY_HOST" =~ ^[a-zA-Z0-9.-]+$ && "$DEPLOY_USER" =~ ^[a-zA-Z0-9_-]+$ && "$DEPLOY_PORT" =~ ^[0-9]+$ ]]
+          [[ "$PUBLIC_URL" =~ ^https://[a-zA-Z0-9.-]+$ ]]
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+          ssh_args=(-i ~/.ssh/deploy_key -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 -o ServerAliveInterval=15)
+          destination="$DEPLOY_USER@$DEPLOY_HOST"
+          release="$DEPLOY_PATH/releases/$GITHUB_SHA"
+          ssh "${ssh_args[@]}" -p "$DEPLOY_PORT" "$destination" "mkdir -p '$release'"
+          scp "${ssh_args[@]}" -P "$DEPLOY_PORT" deploy/deploy.sh deploy/check.sh docker-compose.yml "$destination:$release/"
+          printf '%s\n' "$REGISTRY_TOKEN" | ssh "${ssh_args[@]}" -p "$DEPLOY_PORT" "$destination" \
+            "bash '$release/deploy.sh' '$DEPLOY_PATH' '$GITHUB_SHA' '$REGISTRY_USER' '$IMAGE' '$PUBLIC_URL'"
+          echo "Deployed commit $GITHUB_SHA to $PUBLIC_URL" >> "$GITHUB_STEP_SUMMARY"
+      - name: Remove temporary SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

@@ -78,7 +78,7 @@ export function OpsWorkbenchView() {
         <div>
           <p className="cms-eyebrow">团队运营</p>
           <h1>运营工作台</h1>
-          <p>先录入项目与铺位，再处理客户咨询。日常工作从下面三个入口开始。</p>
+          <p>管理房源，跟进客户。</p>
         </div>
         <button className="cms-button" type="button" disabled={loading} onClick={refresh}>
           {loading ? '刷新中…' : '刷新数据'}
@@ -86,11 +86,10 @@ export function OpsWorkbenchView() {
       </header>
 
       {error ? <div className="cms-alert" role="alert">{error}</div> : null}
-      <p className="cms-help">Demo 协作入口：<Link href="/admin/workspace/sync">腾讯文档同步</Link>，查看房源导入和客户回写结果。</p>
       <section className="cms-start-grid" aria-label="日常操作">
-        <Link className="cms-settings-card" href="/admin/collections/projects/create"><h2>1. 录入项目与铺位</h2><p>填基本资料，选公开状态，再保存。整项目与独立铺位在同一处管理。</p><span>新建记录 →</span></Link>
-        <Link className="cms-settings-card" href="/admin/workspace/inquiries?status=new"><h2>2. 处理客户咨询</h2><p>查看客户需求，电话联系后更新处理状态，必要时写一条内部备注。</p><span>查看待联系 →</span></Link>
-        <Link className="cms-settings-card" href="/admin/workspace/share"><h2>3. 分享已公开记录</h2><p>上架后生成文案和小程序码。尚未公开的记录先到项目列表补充资料。</p><span>打开分享素材 →</span></Link>
+        <Link className="cms-settings-card" href="/admin/collections/projects/create"><h2>录入房源</h2><p>添加项目或铺位，保存并上架。</p><span>新建记录 →</span></Link>
+        <Link className="cms-settings-card" href="/admin/workspace/inquiries?status=new"><h2>客户咨询</h2><p>查看需求，记录联系进度。</p><span>查看待联系 →</span></Link>
+        <Link className="cms-settings-card" href="/admin/workspace/share"><h2>分享房源</h2><p>获取分享文案和小程序码。</p><span>打开分享素材 →</span></Link>
       </section>
       {loading && !data ? <div className="cms-empty">工作台加载中…</div> : null}
 

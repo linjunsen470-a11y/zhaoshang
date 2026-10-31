@@ -121,8 +121,9 @@ Page({
   },
 
   onPublishTap() {
+    const type = allowedValue(this.data.activeTab, ['equipment_sell', 'equipment_buy', 'equipment_recycle'], '');
     wx.navigateTo({
-      url: '/pages/equipment/equipment'
+      url: '/pages/equipment/equipment' + (type ? '?leadType=' + encodeURIComponent(type) : '')
     });
   }
 });

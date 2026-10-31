@@ -86,7 +86,7 @@ export function CustomerSnapshotField() {
         <Row label="意向场景" value={BUSINESS_SCENE_OPTIONS.find(item => item.value === snapshot.businessScene)?.label || '不限/历史未填写'} />
         <Row label="预算/期望价格" value={snapshot.budgetRange} />
         <Row label="意向区域" value={snapshot.regionPreference} />
-        {snapshot.businessScene === 'campus' ? <Row label="校园经营经验" value={snapshot.hasCampusExperience ? '有' : '未勾选'} /> : null}
+        {snapshot.businessScene === 'campus' ? <Row label="校园经营经验" value={typeof snapshot.hasCampusExperience === 'boolean' ? (snapshot.hasCampusExperience ? '有' : '无') : '未填写'} /> : null}
         <Row label="关联房源 ID" value={snapshot.projectId != null ? String(snapshot.projectId) : ''} />
         <Row label="用户补充说明" value={snapshot.remark} />
         <Row label="附件数量" value={snapshot.attachmentIds?.length ? `${snapshot.attachmentIds.length} 个` : '无'} />
@@ -100,7 +100,7 @@ export function CustomerSnapshotField() {
             <Row label="面积与费用" value={String(transfer.feeText || '')} />
             <Row label="转让费预期" value={String(transfer.transferFee || '')} />
             <Row label="剩余合同期" value={String(transfer.remainingTerm || '')} />
-            <Row label="包含设备" value={transfer.includesEquipment ? '是' : '否'} />
+            <Row label="包含设备" value={typeof transfer.includesEquipment === 'boolean' ? (transfer.includesEquipment ? '是' : '否') : '未填写'} />
           </dl>
         </section>
       ) : null}

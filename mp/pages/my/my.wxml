@@ -4,7 +4,7 @@
       <image src="/images/icons/my.png" class="user-avatar" />
     </view>
     <view class="user-info flex-1">
-      <view class="user-name">{{userInfo.nickname || '欢迎来到饭堂与商铺'}}</view>
+      <view class="user-name">{{userInfo.nickname || '欢迎来到' + appName}}</view>
       <view class="user-phone">{{userInfo.phone || '完善联系方式，咨询更省心'}}</view>
     </view>
     <button class="edit-btn" bindtap="onEditProfile">编辑</button>
@@ -39,23 +39,27 @@
     </button>
     <button class="menu-item" bindtap="onShowAbout">
       <image class="line-icon" src="/images/icons/info.png" />
-      <text class="menu-text">关于饭堂与商铺</text>
+      <text class="menu-text">关于{{appName}}</text>
       <text class="menu-arrow"><text class="ui-chevron" aria-hidden="true"></text></text>
     </button>
+  </view>
+  <view class="operator-info">
+    <view>运营主体：{{companyName}}</view>
+    <view wx:if="{{miniProgramIcpNumber}}">{{miniProgramIcpNumber}}</view>
   </view>
   <view class="edit-modal-mask" wx:if="{{showEditModal}}" catchtouchmove="noop">
     <view class="edit-modal-box">
       <view class="modal-title">编辑联系信息</view>
-      <view class="modal-desc">选择微信昵称并授权手机号，之后咨询时自动带入。</view>
+      <view class="modal-desc">填写或授权手机号，之后咨询时自动带入。称呼可不填。</view>
       <view class="modal-form-item">
-        <label class="modal-label" for="profile-name">微信昵称</label>
-        <input id="profile-name" type="nickname" class="modal-input" aria-label="微信昵称" maxlength="20" placeholder="点此选择微信昵称" bindinput="onNicknameInput" bindblur="onNicknameInput" value="{{editNickname}}" />
+        <label class="modal-label" for="profile-name">称呼（选填）</label>
+        <input id="profile-name" type="text" class="modal-input" aria-label="称呼" maxlength="{{maxNameLength}}" placeholder="例如：陈先生" bindinput="onNicknameInput" value="{{editNickname}}" />
       </view>
       <view class="modal-form-item">
         <label class="modal-label">手机号码</label>
         <view class="profile-phone-authorization">
-          <text class="profile-phone-value">{{editPhone || '使用微信绑定的手机号'}}</text>
-          <button class="btn btn-secondary" open-type="getPhoneNumber" aria-label="授权获取微信手机号" bindgetphonenumber="onGetProfilePhone" loading="{{phoneAuthorizing}}" disabled="{{phoneAuthorizing}}">{{editPhone ? '重新授权' : '微信授权获取'}}</button>
+          <input id="profile-phone" type="number" class="modal-input profile-phone-input" aria-label="手机号" maxlength="{{maxPhoneLength}}" placeholder="请输入手机号" bindinput="onProfilePhoneInput" value="{{editPhone}}" disabled="{{phoneAuthorizing}}" />
+          <button class="btn btn-secondary" open-type="getPhoneNumber" aria-label="授权获取微信手机号" bindgetphonenumber="onGetProfilePhone" loading="{{phoneAuthorizing}}" disabled="{{phoneAuthorizing}}">微信授权获取</button>
         </view>
       </view>
       <view class="modal-actions">

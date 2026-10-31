@@ -32,12 +32,10 @@ function validateEnvironment(envVersion, environment) {
 function buildRuntime(envVersion) {
   const environment = ENVIRONMENTS[envVersion] || ENVIRONMENTS.develop;
   const validation = validateEnvironment(envVersion, environment);
-  let demoBackend = false;
-  try { demoBackend = envVersion === 'develop' && wx.getStorageSync('demo_backend_enabled') === true; } catch (_) {}
   return {
     ENV_VERSION: envVersion,
     API_URL: validation.apiUrl,
-    USE_LOCAL_MOCK: Boolean(environment.useLocalMock) && !demoBackend,
+    USE_LOCAL_MOCK: Boolean(environment.useLocalMock),
     ALLOW_DEV_OPEN_ID: Boolean(environment.allowDevOpenId),
     DEV_OPEN_ID: environment.allowDevOpenId ? 'dev-openid-local' : '',
     CONFIG_ERROR: validation.error,
@@ -57,7 +55,11 @@ module.exports = {
   ...runtime,
   validateEnvironment,
   refreshRuntimeConfig,
-  ADVISOR_PHONE: '18888888888',
+  APP_NAME: '锦奕找铺',
+  COMPANY_NAME: '广州锦奕咨询服务有限公司',
+  ADVISOR_PHONE: '17322251752',
+  // Fill with the actual mini-program ICP number after approval (for example, 粤ICP备…号-1X).
+  MINIPROGRAM_ICP_NUMBER: '',
   MAX_NAME_LENGTH: 20,
   MAX_PHONE_LENGTH: 11,
   MAX_REGION_LENGTH: 50,

@@ -68,3 +68,6 @@ miniprogram_npm/
 *.key
 *.p12
 *.pfx
+
+# Local deployment credentials
+deploy/local/

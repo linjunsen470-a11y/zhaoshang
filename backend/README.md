@@ -4,7 +4,7 @@ Payload CMS 3 + Next.js 16 + PostgreSQL backend for campus and commercial listin
 
 当前文档入口见 [文档索引](../docs/README.md)。命令均在仓库根目录执行。
 
-2026-10-29 同步修复新增紧急停显、来源元数据和地区枚举；2026-10-30 已移除历史分类标记及旧格式转换。数据库结构尚未同步，运行前按 [初始化说明](../docs/schema-setup.md) 准备环境；腾讯视图筛选仍待完成。详见 [同步修复记录](../docs/tencent-sync-fixes-2026-10-29.md)。
+2026-10-29 同步修复新增紧急停显、来源元数据和地区枚举；2026-10-30 已移除历史分类标记及旧格式转换。2026-10-31 本机演示库已更新结构并验证房源加载；其他数据库仍需按 [初始化说明](../docs/schema-setup.md) 单独准备，腾讯视图筛选仍待完成。详见 [同步修复记录](../docs/tencent-sync-fixes-2026-10-29.md)。
 
 ## Admin
 
@@ -57,7 +57,7 @@ pnpm backend:seed
 
 只维护当前 Schema，数据库初始化统一使用 `pnpm --dir backend schema:push`。不再提供旧 CRM、账号字段或商业字段转换脚本。已有本机数据先备份，正常启动保持 `PAYLOAD_DB_PUSH=false`。
 
-Compose 仅提供后端，连接外部 PostgreSQL；详细步骤见 [数据库初始化](../docs/schema-setup.md)。
+根目录 Compose 用于腾讯云，包含独立 PostgreSQL；本地开发使用 `backend/.env` 指定的数据库。发布见 [持续部署](../docs/ci-deployment.md)，初始化见 [数据库说明](../docs/schema-setup.md)。
 
 ## Security
 

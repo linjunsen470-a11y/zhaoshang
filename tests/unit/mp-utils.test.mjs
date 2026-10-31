@@ -23,7 +23,6 @@ test('form helpers enforce limits, phone format and privacy consent', () => {
   });
 
   assert.equal(form.clip('  abc  ', 2), 'ab');
-  assert.equal(form.validateName(''), '请先选择微信昵称');
   assert.equal(form.validatePhone('13812345678'), true);
   assert.equal(form.validatePhone('12812345678'), false);
   assert.match(form.validatePrivacyConsent(false), /隐私政策/);

@@ -314,7 +314,11 @@ function localFallback(urlPath, method, requestData = {}) {
     const allowed = ['name', 'phone', 'businessType', 'budgetRange', 'regionPreference', 'hasCampusExperience', 'transferDetails', 'equipmentDetails', 'renovationDetails', 'attachments', 'remark', 'businessScene'];
     const patch = {};
     allowed.forEach(key => {
-      if (requestData[key] !== undefined) patch[key] = requestData[key];
+      if (requestData[key] !== undefined) {
+        if (['transferDetails', 'equipmentDetails', 'renovationDetails'].includes(key) && requestData[key] && typeof requestData[key] === 'object') {
+          patch[key] = { ...(leads[index][key] || {}), ...requestData[key] };
+        } else patch[key] = requestData[key];
+      }
     });
 
     if (leads[index].projectId) delete patch.businessScene;

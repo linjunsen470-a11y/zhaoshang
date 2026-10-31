@@ -6,6 +6,7 @@ const { options } = require('../../utils/commercial.js');
 
 Page({
   data: {
+    appName: config.APP_NAME,
     searchKeyword: '',
     secondaryServices: [
       { id: 'transfer', name: '委托转让', desc: '登记信息，协助联系意向方', icon: '/images/icons/transfer.png', action: 'transfer' },
@@ -155,8 +156,8 @@ Page({
     this.setData({ [`${listName}[${index}].coverImageError`]: true });
   },
 
-  onShareAppMessage() { return { title: '饭堂与商铺 · 为你的生意找对经营场所', path: '/pages/index/index' }; },
-  onShareTimeline() { return { title: '饭堂与商铺 · 学校、园区与写字楼招租服务' }; },
+  onShareAppMessage() { return { title: `${config.APP_NAME} · 校园、园区与写字楼商铺`, path: '/pages/index/index' }; },
+  onShareTimeline() { return { title: `${config.APP_NAME} · 校园、园区与写字楼商铺` }; },
   onToggleFav(e) {
     const id = e.currentTarget.dataset.id;
     const isFav = toggleFavorite(id);

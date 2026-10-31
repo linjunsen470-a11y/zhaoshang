@@ -20,12 +20,6 @@ function validatePhone(phone) {
   return config.PHONE_PATTERN.test(String(phone || '').trim());
 }
 
-function validateName(name) {
-  const value = clip(name, config.MAX_NAME_LENGTH);
-  if (!value) return '请先选择微信昵称';
-  return '';
-}
-
 function getLeadTypeLabel(leadType) {
   return LEAD_TYPE_LABELS[leadType] || leadType || '咨询';
 }
@@ -65,7 +59,6 @@ function loadLeadForEdit(api, leadId, onSuccess, onFail) {
 module.exports = {
   clip,
   validatePhone,
-  validateName,
   getLeadTypeLabel,
   hasPrivacyConsent,
   rememberPrivacyConsent,

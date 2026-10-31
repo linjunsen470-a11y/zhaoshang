@@ -57,7 +57,7 @@ export async function POST(_: Request, { params }: Args) {
         transferInfo: {
           currentBusiness: String(lead.businessType || ''),
           remainingTerm: String(details.remainingTerm || ''),
-          includesEquipment: Boolean(details.includesEquipment),
+          includesEquipment: typeof details.includesEquipment === 'boolean' ? details.includesEquipment : null,
           expectedTransferFee: String(details.transferFee || ''),
         },
         status: 'draft',

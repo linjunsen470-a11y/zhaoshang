@@ -35,6 +35,7 @@ type Inquiry = {
 type ResponseData = { docs: Inquiry[]; page: number; totalPages: number; totalDocs: number }
 
 const formatter = new Intl.DateTimeFormat('zh-CN', {
+  timeZone: 'Asia/Shanghai',
   year: 'numeric',
   month: '2-digit',
   day: '2-digit',
@@ -152,7 +153,7 @@ export function InquiryInboxView() {
         <div>
           <p className="cms-eyebrow">客户咨询</p>
           <h1>咨询收件箱</h1>
-          <p>查看客户需求，联系后改处理状态、写内部备注。普通跟进用“快速处理”，修正资料用“查看详情”。</p>
+          <p>查看客户需求，记录联系进度。</p>
         </div>
       </header>
 
@@ -226,6 +227,21 @@ export function InquiryInboxView() {
           </select>
         </label>
       </section>
+
+      <form className="cms-toolbar" key={`${searchParams.get('from')}-${searchParams.get('to')}`} onSubmit={event => {
+        event.preventDefault()
+        const form = new FormData(event.currentTarget)
+        updateParams({ from: String(form.get('from') || ''), to: String(form.get('to') || '') })
+      }}>
+        <label><span>开始日期</span><input type="date" name="from" aria-label="开始日期" defaultValue={searchParams.get('from') || ''} /></label>
+        <label><span>结束日期</span><input type="date" name="to" aria-label="结束日期" defaultValue={searchParams.get('to') || ''} /></label>
+        <button className="cms-button" type="submit">按日期筛选</button>
+        <label><span>提交时间排序</span><select value={searchParams.get('sort') || 'desc'} onChange={event => updateParams({ sort: event.target.value })}>
+          <option value="desc">最新在前（降序）</option><option value="asc">最早在前（升序）</option>
+        </select></label>
+        <button className="cms-button" type="button" onClick={() => updateParams({ q: undefined, status: undefined, leadType: undefined, category: undefined, from: undefined, to: undefined, sort: undefined })}>清空筛选</button>
+        <small className="cms-help">按北京时间，包含结束日期当天。</small>
+      </form>
 
       {error ? <div className="cms-alert" role="alert">{error}</div> : null}
       <div className="cms-live" aria-live="polite">{message}</div>

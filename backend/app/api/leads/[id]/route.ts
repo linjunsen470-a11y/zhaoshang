@@ -105,6 +105,9 @@ export async function PUT(request: Request, { params }: Args) {
         sourceChannel: lead.sourceChannel,
         project: lead.project,
         businessScene: lead.businessScene,
+        transferDetails: lead.transferDetails,
+        equipmentDetails: lead.equipmentDetails,
+        renovationDetails: lead.renovationDetails,
       }),
       overrideAccess: true,
     })

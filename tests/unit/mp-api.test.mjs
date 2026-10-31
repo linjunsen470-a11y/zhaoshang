@@ -51,6 +51,16 @@ test('local mock lead CRUD is isolated by current openid', async () => {
   assert.equal((await api.getLeads()).length, 0);
 });
 
+test('local edits preserve omitted equipment and transfer details', async () => {
+  const { api } = makeLocalApi();
+  const created = await api.submitEquipment({ leadType: 'equipment_sell', phone: '13812345678', equipmentDetails: { equipmentName: '冷柜', specText: '双门' } });
+  await api.updateLead(created.id, { equipmentDetails: { equipmentName: '冷藏柜' } });
+  const edited = await api.getLead(created.id);
+  assert.equal(edited.equipmentDetails.equipmentName, '冷藏柜');
+  assert.equal(edited.equipmentDetails.specText, '双门');
+  assert.equal(edited.name, undefined);
+});
+
 test('consultation project titles hide internal labels without rewriting customer text or stored snapshots', async () => {
   const lead = { id: 'l1', projectTitle: '【演示】示例商务楼咖啡铺', remark: '测试设备尺寸后再联系', customerSnapshot: { projectTitle: '【演示】示例商务楼咖啡铺' } };
   const { api, storage } = makeLocalApi({ local_projects: [], local_leads: [lead] });

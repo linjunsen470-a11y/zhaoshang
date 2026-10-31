@@ -48,11 +48,11 @@
 | `pnpm launch:check` | 未通过，9 项阻塞 | 返回非零退出码，符合当前未配置状态；不输出密钥 |
 | `git diff --check` | 通过 | 只有 Windows LF/CRLF 提示，无空白错误 |
 
-小程序测试证据保存在本地忽略目录 `test-results/prelaunch/`。开发者工具的合法域名校验处于关闭状态，因此这里的成功不能证明公众平台域名或真机权限已经配置。
+当时的小程序测试证据已于 2026-10-31 清理。开发者工具当时的合法域名校验处于关闭状态，因此这里的成功不能证明公众平台域名或真机权限已经配置。
 
 独立演示测试可用 `pnpm test:mp:local` 复跑；本轮四个提交场景与两个导航场景分组验证通过，没有将未通过的 `test:mp:commercial` 改记为整条通过。浏览器测试线索、图片探针及各 HTTP 测试自行创建的 fixtures 已清理；商业专项的样本保留在独立测试库用于复测。
 
-Docker 验收可复跑：先构建 `docker build -t zhaoshang-audit:20261012 backend`，再运行 `node scripts/test-docker-prelaunch.mjs`。脚本需要 Docker、本地 PostgreSQL 及上述独立测试库，使用 3110 端口和专用容器/卷，结束后删除其创建的审计容器与卷。凭据仅在内存中处理，测试登录 Token 为临时审计密钥签发；不等同于真实微信 code 登录验收。Docker Desktop 和原 PostgreSQL 容器保持运行，审计镜像保留供复测。
+旧的固定日期 Docker 审计脚本已移除；当前构建和上线检查统一由 [GitHub Actions](ci-deployment.md) 执行。
 
 ## 尚未解决的交互验收项
 

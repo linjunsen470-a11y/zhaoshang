@@ -11,6 +11,7 @@ export {
   sanitizeLeadCreateInput,
   sanitizeLeadUpdateInput,
   validateLeadUserInput,
+  validateLeadCreateRequirements,
 } from './leadPolicy'
 
 export const ALL = '全部'
@@ -129,7 +130,7 @@ function mapTransferInfo(value: unknown) {
     currentBusiness: stringValue(info.currentBusiness),
     monthlyRent: stringValue(info.monthlyRent),
     remainingTerm: stringValue(info.remainingTerm),
-    includesEquipment: booleanValue(info.includesEquipment),
+    includesEquipment: typeof info.includesEquipment === 'boolean' ? info.includesEquipment : null,
     expectedTransferFee: stringValue(info.expectedTransferFee),
     contractTransferAllowed: stringValue(info.contractTransferAllowed),
   }
@@ -142,7 +143,7 @@ function mapTransferDetails(value: unknown) {
     feeText: stringValue(details.feeText),
     transferFee: stringValue(details.transferFee),
     remainingTerm: stringValue(details.remainingTerm),
-    includesEquipment: booleanValue(details.includesEquipment),
+    includesEquipment: typeof details.includesEquipment === 'boolean' ? details.includesEquipment : null,
   }
 }
 
@@ -243,7 +244,7 @@ export async function mapLeads(docs: Doc[]) {
       businessScene: stringValue(doc.businessScene),
       budgetRange: stringValue(doc.budgetRange),
       regionPreference: stringValue(doc.regionPreference),
-      hasCampusExperience: booleanValue(doc.hasCampusExperience),
+      hasCampusExperience: typeof doc.hasCampusExperience === 'boolean' ? doc.hasCampusExperience : null,
       transferDetails: mapTransferDetails(doc.transferDetails),
       equipmentDetails: mapEquipmentDetails(doc.equipmentDetails),
       renovationDetails: mapRenovationDetails(doc.renovationDetails),

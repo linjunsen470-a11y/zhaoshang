@@ -26,20 +26,14 @@ test('mini-program leasing smoke journey', { timeout: 120_000 }, async () => {
     const title = String(await apply.data('projectTitle'));
     console.log('[smoke] application form loaded');
     recordStage(context, 'application-form-loaded');
-    const submit = await apply.$('.e2e-submit-lead');
     await apply.callMethod('onSubmitForm');
     assert.equal((await miniProgram.currentPage()).path, 'pages/apply/apply', 'empty form must not submit');
 
-    await (await apply.$('.e2e-name-input')).input('自动化测试用户');
-    // Inject fixture numbers for lead validation; native phone authorization is covered separately.
-    await apply.setData({ phone: '12812345678' });
+    await (await apply.$('.e2e-phone-input')).input('12812345678');
     await apply.callMethod('onSubmitForm');
     assert.equal((await miniProgram.currentPage()).path, 'pages/apply/apply', 'invalid phone must not submit');
 
-    await apply.setData({ phone: '13812345678' });
-    await (await apply.$('.e2e-business-picker')).trigger('change', { value: 2 });
-    await (await apply.$('.e2e-budget-picker')).trigger('change', { value: 1 });
-    await (await apply.$('.e2e-region-input')).input('自动化测试区域');
+    await (await apply.$('.e2e-phone-input')).input('13812345678');
     const remark = `smoke-${Date.now()}`;
     await (await apply.$('.e2e-remark-input')).input(remark);
     await apply.callMethod('onSubmitForm');
@@ -71,6 +65,7 @@ test('mini-program leasing smoke journey', { timeout: 120_000 }, async () => {
     const createdLead = await createdResponse.json();
     assert.equal(createdLead.projectTitle, title);
     assert.equal(createdLead.remark, remark);
+    assert.equal(createdLead.name, '');
     console.log('[smoke] created lead verified through API');
     recordStage(context, 'created-lead-verified');
 
@@ -84,7 +79,6 @@ test('mini-program leasing smoke journey', { timeout: 120_000 }, async () => {
         businessType: createdLead.businessType,
         budgetRange: createdLead.budgetRange,
         regionPreference: createdLead.regionPreference,
-        hasCampusExperience: createdLead.hasCampusExperience,
         projectId: createdLead.projectId,
         attachments: createdLead.attachments.map(file => file.id),
         remark: updatedRemark,

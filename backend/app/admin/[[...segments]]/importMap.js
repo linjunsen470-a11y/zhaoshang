@@ -1,3 +1,5 @@
+import BrandLogo from '@/app/admin/components/BrandLogo'
+import LoginIntro from '@/app/admin/components/LoginIntro'
 import { default as default_4fd6cd6a13ca54f0423d17f636427cc5 } from '@/app/admin/components/ProjectEditHints'
 import { default as default_325caa2fbfcb7a7f2d1bada949bd74a1 } from '@/app/admin/components/PropertyWorkspace'
 import { default as default_190d5196cff995eea9a0acd8e10edcd7 } from '@/app/admin/components/InquiryContactBar'
@@ -14,6 +16,8 @@ import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } f
 
 /** @type import('payload').ImportMap */
 export const importMap = {
+  "@/app/admin/components/BrandLogo#default": BrandLogo,
+  "@/app/admin/components/LoginIntro#default": LoginIntro,
   "@/app/admin/components/ProjectEditHints#default": default_4fd6cd6a13ca54f0423d17f636427cc5,
   "@/app/admin/components/PropertyWorkspace#default": default_325caa2fbfcb7a7f2d1bada949bd74a1,
   "@/app/admin/components/InquiryContactBar#default": default_190d5196cff995eea9a0acd8e10edcd7,

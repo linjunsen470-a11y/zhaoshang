@@ -14,6 +14,16 @@ COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml .npmrc* ./
 COPY patches* ./patches/
 RUN pnpm install --frozen-lockfile
 
+# Explicit schema operations and the optional sync worker need tsx and source.
+# Keep these out of the smaller web runtime and select this target deliberately.
+FROM deps AS tools
+COPY . .
+ENV NODE_ENV=production
+ENV PAYLOAD_DB_PUSH=false
+RUN mkdir -p media .tencent-sync && chown -R 1001:1001 media .tencent-sync
+USER 1001:1001
+CMD ["node", "node_modules/tsx/dist/cli.mjs", "scripts/sync-tencent.ts", "--watch"]
+
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
@@ -43,7 +53,7 @@ RUN adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 
 # Set the correct permission for prerender cache
-RUN mkdir -p .next media && chown nextjs:nodejs .next media
+RUN mkdir -p .next media .tencent-sync && chown nextjs:nodejs .next media .tencent-sync
 
 # Automatically leverage output traces to reduce image size
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./

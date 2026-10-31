@@ -8,8 +8,8 @@ export function SystemSettingsView() {
   const isAdmin = String((user as { role?: string } | null)?.role || '') === 'admin'
   return (
     <main className="cms-page" id="main-content">
-      <header className="cms-page-header"><div><p className="cms-eyebrow">后台维护</p><h1>系统设置</h1><p>管理后台账号和媒体资源。日常房源图片请直接在房源编辑页上传。</p></div></header>
-      {isAdmin ? <section className="cms-settings-grid"><Link className="cms-settings-card" href="/admin/collections/users"><h2>后台账号</h2><p>新增管理员或编辑，并维护账号权限。</p><span>打开账号管理</span></Link><Link className="cms-settings-card" href="/admin/collections/media"><h2>媒体库</h2><p>查看后台上传图片和用户咨询附件。</p><span>打开媒体库</span></Link></section> : <div className="cms-alert" role="alert">只有管理员可以访问系统设置。</div>}
+      <header className="cms-page-header"><div><p className="cms-eyebrow">后台维护</p><h1>系统设置</h1><p>管理账号、图片和文档连接。</p></div></header>
+      {isAdmin ? <section className="cms-settings-grid"><Link className="cms-settings-card" href="/admin/collections/users"><h2>用户管理</h2><p>添加员工账号，设置管理员或普通用户。</p><span>管理用户</span></Link><Link className="cms-settings-card" href="/admin/collections/media"><h2>媒体库</h2><p>查看后台上传图片和用户咨询附件。</p><span>打开媒体库</span></Link><Link className="cms-settings-card" href="/admin/workspace/sync"><h2>腾讯文档</h2><p>查看同步结果，维护连接设置。</p><span>查看文档同步</span></Link></section> : <div className="cms-alert" role="alert">只有管理员可以访问系统设置。</div>}
     </main>
   )
 }

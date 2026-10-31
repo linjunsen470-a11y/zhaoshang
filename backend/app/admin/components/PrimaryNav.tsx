@@ -11,11 +11,6 @@ const projectTools = [
 
 const links = [
   {
-    label: '腾讯文档同步',
-    href: '/admin/workspace/sync',
-    match: (pathname: string) => pathname.startsWith('/admin/workspace/sync'),
-  },
-  {
     label: '运营工作台',
     href: '/admin',
     match: (pathname: string) => pathname === '/admin',
@@ -34,6 +29,11 @@ const links = [
       || pathname.startsWith('/admin/collections/leads')
       || pathname.startsWith('/admin/workspace/equipment'),
   },
+  {
+    label: '腾讯文档同步',
+    href: '/admin/workspace/sync',
+    match: (pathname: string) => pathname.startsWith('/admin/workspace/sync'),
+  },
 ]
 
 export function PrimaryNav() {
@@ -43,12 +43,12 @@ export function PrimaryNav() {
   const visibleLinks = role === 'admin'
     ? [
         ...links,
+        { label: '用户管理', href: '/admin/collections/users', match: (path: string) => path.startsWith('/admin/collections/users') },
         {
           label: '系统设置',
           href: '/admin/workspace/system',
           match: (path: string) =>
             path.startsWith('/admin/workspace/system')
-            || path.startsWith('/admin/collections/users')
             || path.startsWith('/admin/collections/media'),
         },
       ]

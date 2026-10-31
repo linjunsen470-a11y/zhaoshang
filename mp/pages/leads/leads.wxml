@@ -45,7 +45,7 @@
                 <text class="spec-lbl">区域：</text>
                 <text class="spec-val">{{item.regionPreference}}</text>
               </view>
-              <view class="spec-cell" wx:if="{{item.leadType === 'leasing' && item.businessScene === 'campus'}}">
+              <view class="spec-cell" wx:if="{{item.leadType === 'leasing' && item.businessScene === 'campus' && item.hasCampusExperience !== null && item.hasCampusExperience !== undefined}}">
                 <text class="spec-lbl">校园经营经验：</text>
                 <text class="spec-val">{{item.hasCampusExperience ? '有校园经验' : '暂无校园经验'}}</text>
               </view>
@@ -55,7 +55,7 @@
               <view class="detail-line" wx:if="{{item.transferDetails.feeText}}">面积费用：{{item.transferDetails.feeText}}</view>
               <view class="detail-line" wx:if="{{item.transferDetails.transferFee}}">转让费：{{item.transferDetails.transferFee}}</view>
               <view class="detail-line" wx:if="{{item.transferDetails.remainingTerm}}">剩余合同：{{item.transferDetails.remainingTerm}}</view>
-              <view class="detail-line">包含设备：{{item.transferDetails.includesEquipment ? '是' : '否/待定'}}</view>
+              <view class="detail-line" wx:if="{{item.transferDetails.includesEquipment !== null && item.transferDetails.includesEquipment !== undefined}}">包含设备：{{item.transferDetails.includesEquipment ? '是' : '否'}}</view>
             </view>
             <view class="spec-desc-row" wx:if="{{item.equipmentDetails}}">
               <view class="detail-line" wx:if="{{item.equipmentDetails.equipmentName}}">设备名称：{{item.equipmentDetails.equipmentName}}</view>

@@ -26,7 +26,7 @@ Page({
       this._useLocalMock = config.USE_LOCAL_MOCK;
       wx.removeStorageSync('pendingListFilter');
       this.setFilters(pending);
-      wx.setNavigationBarTitle({ title: this.data.isRecentOnly ? '最近浏览' : (this.data.isFavoritesOnly ? '我的收藏' : '找饭堂与商铺') });
+      wx.setNavigationBarTitle({ title: this.data.isRecentOnly ? '最近浏览' : (this.data.isFavoritesOnly ? '我的收藏' : '找商铺') });
       this.loadProjects();
       return;
     }
@@ -171,7 +171,7 @@ Page({
     this.loadProjects();
   },
   onResetFilters() { this.setFilters({ favs: this.data.isFavoritesOnly, recent: this.data.isRecentOnly }); this.loadProjects(); },
-  onBrowseAll() { this.setFilters({}); wx.setNavigationBarTitle({ title: '找饭堂与商铺' }); this.loadProjects(); },
+  onBrowseAll() { this.setFilters({}); wx.setNavigationBarTitle({ title: '找商铺' }); this.loadProjects(); },
   onBackToMy() { wx.switchTab({ url: '/pages/my/my' }); },
   onCoverError(e) {
     const index = this.data.projectList.findIndex(p => String(p.id) === String(e.currentTarget.dataset.id));
@@ -184,9 +184,9 @@ Page({
   },
   onProjectDetail(e) { wx.navigateTo({ url: '/pages/detail/detail?id=' + encodeURIComponent(e.currentTarget.dataset.id) }); },
   onShareAppMessage() {
-    return { title: '找饭堂与商铺 · 发现适合你的经营空间', path: '/pages/list/list' + this.shareQuery() };
+    return { title: `${config.APP_NAME} · 发现适合你的商铺`, path: '/pages/list/list' + this.shareQuery() };
   },
-  onShareTimeline() { return { title: '饭堂与商铺 · 招租房源', query: this.shareQuery().slice(1) }; },
+  onShareTimeline() { return { title: `${config.APP_NAME} · 商铺招租`, query: this.shareQuery().slice(1) }; },
   shareQuery() {
     const filters = { ...this.data.filters, q: this.data.keyword };
     return '?' + Object.keys(filters).filter(key => filters[key] && filters[key] !== ALL).map(key => key + '=' + encodeURIComponent(filters[key])).join('&');
