@@ -4,6 +4,18 @@
 
 后台容器、本地测试与 CI 统一使用 Node.js 24；测试命令中的 `--test-isolation=none` 不支持旧 Node 22。
 
+## Gitee 镜像源验证
+
+GitHub 保持主仓库。验证分支 `codex/gitee-mirror-verify` 的提交先推送到 GitHub，再同步同一 SHA 到 Gitee；`.workflow/gitee-verify.yml` 仅手动运行，不随同步自动发布。此次为试跑，尚未替换 `main` 上的 GitHub 发布流程。
+
+Gitee 直接从 DaoCloud 公共镜像源拉取 `node:24-alpine`，Alpine 使用清华 TUNA 镜像，Corepack/pnpm 使用 `registry.npmmirror.com`。这些值通过 Docker 构建参数传入；Dockerfile 的默认源仍为官方源，不额外维护 Node 基础镜像或中转服务。pnpm 11 使用 `PNPM_CONFIG_REGISTRY`，不再读取普通的 `NPM_CONFIG_REGISTRY`，见 [pnpm 配置说明](https://pnpm.io/configuring)。
+
+应用与工具镜像复用现有 Dockerfile，使用腾讯云仓库缓存，并以完整提交 SHA 打标。Gitee 镜像插件通过 `BUILD_TARGET=tools` 选择工具阶段；默认仍构建应用阶段。仓库凭证引用 Gitee Go 中仅授权本项目的 `tencent-ccr-zhaoshang`，密码不写入 YAML。
+
+2026-10-31 的[第 4 次验证](https://gitee.com/linjunsen470/zhaoshang/gitee_go/pipelines/builds/5267993/stages/5276212/jobs/6132746/view)使用 GitHub/Gitee 相同的 `84caa4c63bc2e611ae997030cf6ad5f197816b5c`：应用镜像构建并上传耗时 2 分 35 秒，工具镜像 2 分 14 秒，两个任务均成功。此前两次失败分别发生在 Docker Hub 拉取和 Alpine 官方源解析，改用公共镜像源后通过。
+
+本次从本机通过专用 SSH 密钥调用现有 `deploy/deploy.sh`，腾讯云直接拉取这两份 Gitee 成品镜像，完成数据库备份、容器更新和 HTTPS 验收，没有传输镜像文件或在服务器构建。应用和数据库均健康，公开项目 API、管理员登录与工作台、匿名访问限制、Payload/Sharp 原生依赖、UID 1001 和工具脚本检查通过；正常启动仍为 `PAYLOAD_DB_PUSH=false`。这验证了发布链路，尚未给 Gitee 配置 SSH 自动部署。
+
 ## 日常流程
 
 1. 在工作分支修改代码并创建 PR。
