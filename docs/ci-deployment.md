@@ -56,6 +56,10 @@ Repository Secrets：`REGISTRY_USER`、`REGISTRY_PASSWORD`，供 main 构建推�
 
 [独立 CI 验证](https://github.com/linjunsen470-a11y/zhaoshang/actions/runs/41193793961) 构建了两份真实生产镜像，中间修改一个应用静态文件：镜像整体发生变化，但约 156.5 MB 的依赖层摘要完全一致；容器 UID、依赖目录权限、Next/Payload/Sharp 模块解析及 Sharp 原生 PNG 编码均通过。验证未上传镜像或更新测试环境，临时验证分支已清理。
 
+`ecf929c` 的[发布流水线](https://github.com/linjunsen470-a11y/zhaoshang/actions/runs/41196293767)已完成：112 项单元/CMS 测试、类型和静态检查通过，云端管理员页面及 API、权限限制、容器健康、发布备份和镜像内容检查通过。首次生成的独立依赖层仍遇到跨境上传阻塞，经一次性初始化后由原流水线完成部署；缓存优化减少日常重传，不能代替稳定的上传链路，临时初始化流程没有并入主分支。
+
+本段以纯文档提交验收自动路由：预期仅运行 `changes`，跳过检查、镜像与部署任务，云端保持运行 `ecf929c`。
+
 数据库密码、微信 AppSecret、Payload 密钥仍保存在服务器 `.env`，不会写进镜像、Actions 参数或公开日志。腾讯文档 Token 保存在持久化同步卷。根目录 `.env.example` 是云端模板；`backend/.env.example` 是本地开发模板。更新服务器应用密钥后按需重新创建应用容器，更新腾讯 Token 使用后台“连接设置”。
 
 ## Compose 与数据库
