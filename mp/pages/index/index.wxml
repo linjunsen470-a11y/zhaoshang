@@ -16,8 +16,10 @@
   </view>
   <view class="scene-row">
     <button class="scene-item" wx:for="{{categories}}" wx:key="id" bindtap="onCategoryTap" data-type="{{item.type}}" data-val="{{item.val}}" hover-class="tap-active">
-      <view class="scene-art scene-art-{{item.id}}" aria-hidden="true"><view class="scene-building"></view><view class="scene-tree"></view></view>
-      <text class="scene-name">{{item.name}}</text>
+      <view class="scene-heading">
+        <view class="scene-art scene-art-{{item.id}}" aria-hidden="true"><view class="scene-building"></view></view>
+        <text class="scene-name">{{item.name}}</text>
+      </view>
       <view class="scene-summary"><text class="scene-desc">{{item.desc}}</text><text class="scene-arrow" aria-hidden="true"><text class="ui-chevron" aria-hidden="true"></text></text></view>
     </button>
   </view>
@@ -56,7 +58,7 @@
               <image wx:if="{{item.coverImage && !item.coverImageError}}" class="rec-cover" src="{{item.coverImage}}" mode="aspectFill" lazy-load="{{index > 0}}" binderror="onCoverError" data-list="recommendedList" data-id="{{item.id}}" />
               <view wx:else class="rec-cover property-fallback">
                 <image class="line-icon" src="/images/icons/shops.png" />
-                <text>暂无实拍</text>
+                <text>暂无图片</text>
               </view>
             </view>
             <view class="rec-copy">

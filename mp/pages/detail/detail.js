@@ -104,6 +104,10 @@ Page({
   },
   onMoreUnits() { this.loadUnits(this.data.unitPage > 0); },
   onRelatedProject(e) { wx.navigateTo({ url: `/pages/detail/detail?id=${encodeRouteValue(e.currentTarget.dataset.id)}` }); },
+  onSimilarCoverError(e) {
+    const id = e.currentTarget.dataset.id;
+    this.setData({ similarProjects: this.data.similarProjects.map(item => String(item.id) === String(id) ? { ...item, coverImageError: true } : item) });
+  },
 
   onRetryLoad() {
     if (this.data.projectId) this.loadDetail(this.data.projectId);

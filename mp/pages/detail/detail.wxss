@@ -49,7 +49,7 @@
   font-size: 26rpx;
 }
 
-.swiper-count {
+.swiper-count, .swiper-tip {
   position: absolute;
   bottom: 24rpx;
   padding: 6rpx 16rpx;
@@ -57,12 +57,16 @@
   color: #fff;
   font-size: 22rpx;
   border-radius: 8rpx;
+  pointer-events: none;
 }
 
 .swiper-count {
   right: 24rpx;
 }
 
+.swiper-tip {
+  left: 24rpx;
+}
 
 .detail-body {
   padding: 32rpx;
@@ -289,6 +293,21 @@
 .unit-meta {
   margin-top: 8rpx;
 }
+
+.similar-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 16rpx; }
+.similar-hint { color: var(--muted); font-size: 22rpx; white-space: nowrap; }
+.similar-scroll { width: calc(100% + 32rpx); white-space: nowrap; }
+.similar-track { display: inline-flex; gap: 20rpx; padding-right: 32rpx; vertical-align: top; }
+.similar-card { flex: 0 0 300rpx; width: 300rpx; overflow: hidden; border: 1rpx solid var(--line); border-radius: 14rpx; background: #fff; white-space: normal; }
+.similar-media { position: relative; }
+.similar-image { display: block; width: 100%; height: 190rpx; background: var(--wash); }
+.similar-image.image-fallback { display: flex; gap: 8rpx; font-size: 22rpx; }
+.similar-status { position: absolute; top: 12rpx; left: 12rpx; padding: 2rpx 10rpx; border-radius: 6rpx; background: rgba(255,255,255,.94); color: var(--ink); font-size: 21rpx; }
+.similar-copy { padding: 16rpx; }
+.similar-title { min-height: 76rpx; color: var(--ink); font-size: 26rpx; font-weight: 600; line-height: 1.45; overflow-wrap: anywhere; }
+.similar-area { margin-top: 6rpx; color: var(--muted); font-size: 23rpx; }
+.similar-price { margin-top: 8rpx; color: var(--pine); font-size: 25rpx; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
+.similar-price-label { margin-right: 6rpx; color: var(--muted); font-size: 21rpx; font-weight: 400; }
 
 .bottom-action-bar {
   position: fixed;

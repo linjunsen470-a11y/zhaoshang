@@ -1,16 +1,18 @@
 <template name="property">
   <view class="property-media">
     <image wx:if="{{item.coverImage && !item.coverImageError}}" class="property-image" src="{{item.coverImage}}" mode="aspectFill" lazy-load="{{lazy}}" binderror="onCoverError" data-list="{{listName}}" data-id="{{item.id}}" />
-    <view wx:else class="property-image property-fallback"><image class="line-icon" src="/images/icons/shops.png" /><text>暂无实拍</text></view>
+    <view wx:else class="property-image property-fallback"><image class="line-icon" src="/images/icons/shops.png" /><text>暂无图片</text></view>
     <text class="property-status" wx:if="{{item.status === 'coming' || item.status === 'full'}}">{{item.status === 'coming' ? '即将开放' : '已租满 / 已转'}}</text>
   </view>
   <view class="property-content">
     <view class="property-kind">{{item.sceneLabel}} · {{item.spaceLabel}}</view>
     <view class="property-title ellipsis-2">{{item.title}}</view>
     <view class="property-location ellipsis" wx:if="{{item.placeText}}">{{item.placeText}}</view>
-    <view class="property-meta">{{item.areaRangeText}}<text wx:if="{{item.opportunityType === 'transfer'}}"> · 转让</text></view>
-    <view class="property-tags" wx:if="{{item.suitableBusiness.length}}">
-      <text class="property-tag" wx:for="{{item.suitableBusiness}}" wx:for-item="biz" wx:key="*this" wx:if="{{index < 2}}">{{biz}}</text>
+    <view class="property-meta-row">
+      <view class="property-meta ellipsis">{{item.areaRangeText}}<text wx:if="{{item.opportunityType === 'transfer'}}"> · 转让</text></view>
+      <view class="property-tags" wx:if="{{item.suitableBusiness.length}}">
+        <text class="property-tag ellipsis" wx:for="{{item.suitableBusiness}}" wx:for-item="biz" wx:key="*this" wx:if="{{index < 2}}">{{biz}}</text>
+      </view>
     </view>
     <view class="property-price {{item.priceText === '面议' ? 'quiet' : ''}}"><text class="property-price-label">{{item.priceLabel}}</text><block wx:if="{{item.priceAmount}}"><text class="price-number">{{item.priceAmount}}</text><text class="price-unit">{{item.priceUnit}}</text></block><text wx:else>{{item.priceSummary}}</text></view>
   </view>

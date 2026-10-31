@@ -77,20 +77,28 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
-  gap: 12rpx;
-  background: var(--wash);
-  min-height: 144rpx;
-  padding: 20rpx;
+  justify-content: space-between;
+  gap: 18rpx;
+  min-height: 160rpx;
+  padding: 20rpx 22rpx;
+  border: 1rpx solid #e0eae3;
+  background: #f1f6f2;
   font-size: 24rpx;
   line-height: 1.4;
   color: var(--ink);
-  border-radius: 12rpx;
+  text-align: left;
+  border-radius: 16rpx;
 }
-.scene-name { font-size: 32rpx; font-weight: 600; white-space: nowrap; }
-.scene-summary { display: flex; align-items: center; justify-content: space-between; gap: 4rpx; width: 100%; }
-.scene-desc { color: #637068; font-size: 24rpx; text-align: left; white-space: nowrap; }
-.scene-arrow { color: var(--muted); font-size: 28rpx; }
+.scene-item:nth-child(2) { background: #f2f5f6; border-color: #e2e9ec; }
+.scene-heading { display: flex; align-items: center; gap: 14rpx; width: 100%; min-width: 0; }
+.scene-name { font-size: 28rpx; font-weight: 600; line-height: 1.3; white-space: nowrap; }
+.scene-summary { display: flex; align-items: center; justify-content: space-between; gap: 8rpx; width: 100%; min-width: 0; }
+.scene-desc { min-width: 0; color: #637068; font-size: 22rpx; line-height: 1.4; white-space: nowrap; }
+.scene-arrow { flex-shrink: 0; color: #718178; line-height: 1; }
+.scene-art { position: relative; flex: 0 0 56rpx; width: 56rpx; height: 56rpx; border-radius: 14rpx; background: #fff; }
+.scene-building { position: absolute; left: 11rpx; bottom: 10rpx; width: 34rpx; height: 25rpx; border: 2rpx solid #799788; border-top: 6rpx solid #8aa796; border-radius: 3rpx 3rpx 0 0; background: repeating-linear-gradient(90deg, #c9dace 0, #c9dace 5rpx, #eff5f0 5rpx, #eff5f0 9rpx); }
+.scene-art-campus .scene-building::before { content: ''; position: absolute; left: 8rpx; top: -15rpx; width: 14rpx; height: 10rpx; background: #a7bfaf; border-radius: 10rpx 10rpx 0 0; }
+.scene-art-workplace .scene-building { left: 17rpx; bottom: 9rpx; width: 24rpx; height: 37rpx; border-color: #8b9fab; background: repeating-linear-gradient(0deg, #ccd9e1 0, #ccd9e1 5rpx, #f1f5f8 5rpx, #f1f5f8 9rpx); }
 .home-actions {
   display: flex;
   gap: 20rpx;
@@ -256,18 +264,6 @@
 .container { background: linear-gradient(165deg, #eaf2ed 0, #fff 740rpx); }
 .need-title { font-size: 30rpx; font-weight: 600; }
 .need-desc { margin-top: 4rpx; font-size: 22rpx; font-weight: 400; }
-.scene-item { position: relative; overflow: hidden; padding-top: 112rpx; background: #f0f4f1; border: 1rpx solid #e3ebe5; }
-.scene-item:nth-child(2) { background: #f1f3f5; border-color: #e4e8ec; }
-.scene-name, .scene-summary { position: relative; z-index: 1; }
-.scene-name { font-size: 29rpx; }
-.scene-desc { font-size: 22rpx; }
-.scene-art { position: absolute; top: 16rpx; right: 24rpx; width: 160rpx; height: 100rpx; }
-.scene-building { position: absolute; bottom: 0; left: 8rpx; width: 110rpx; height: 64rpx; border: 2rpx solid #799788; background: repeating-linear-gradient(90deg, #c9dace 0, #c9dace 12rpx, #eff5f0 12rpx, #eff5f0 22rpx); border-top: 12rpx solid #8aa796; border-radius: 4rpx 4rpx 0 0; }
-.scene-art-campus .scene-building::before { content: ''; position: absolute; left: 30rpx; top: -36rpx; width: 44rpx; height: 28rpx; background: #a7bfaf; border-radius: 24rpx 24rpx 0 0; }
-.scene-art-workplace .scene-building { height: 88rpx; width: 64rpx; left: 26rpx; border-color: #8b9fab; background: repeating-linear-gradient(0deg, #ccd9e1 0, #ccd9e1 10rpx, #f1f5f8 10rpx, #f1f5f8 18rpx); }
-.scene-art-workplace .scene-building::after { content: ''; position: absolute; left: 68rpx; bottom: -2rpx; height: 56rpx; width: 38rpx; background: #dce5eb; border: 2rpx solid #9aadb8; border-radius: 4rpx 4rpx 0 0; }
-.scene-tree { position: absolute; bottom: 0; right: 8rpx; width: 8rpx; height: 38rpx; background: #8aa796; }
-.scene-tree::before { content: ''; position: absolute; left: -16rpx; top: -26rpx; width: 40rpx; height: 44rpx; border-radius: 50%; background: #b4cbbb; }
 .section-header { margin-bottom: 12rpx; }
 .services-sheet { animation: sheet-in 200ms ease-out; }
 .services-backdrop { animation: fade-in 200ms ease-out; }
