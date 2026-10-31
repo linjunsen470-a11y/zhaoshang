@@ -55,7 +55,7 @@ pnpm backend:lint
 pnpm backend:build
 ```
 
-PR 自动运行测试、lint 和 Docker 构建；合入 `main` 后，将相同提交的应用/工具镜像发布到 GHCR，再通过 SSH 更新腾讯云。发布前备份数据库，失败自动恢复上一个镜像与配置。数据库结构变更必须单独备份并显式执行，不随启动自动修改。
+PR 自动运行测试、lint 和 Docker 构建；合入 `main` 后，将相同提交的应用/工具镜像发布到 GHCR，再通过 SSH + rsync 增量传输并更新腾讯云。发布前备份数据库，失败自动恢复上一个镜像与配置。数据库结构变更必须单独备份并显式执行，不随启动自动修改。
 
 真实 HTTP 合约需要隔离测试环境；微信 E2E 需要带开发者工具的自托管 runner，按需运行。跳过的测试不代表通过。详见 [自动化测试](docs/miniprogram-automation-test.md)。
 
