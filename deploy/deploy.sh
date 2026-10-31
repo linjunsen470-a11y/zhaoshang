@@ -1,26 +1,32 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 umask 077
-# Called over SSH after rsync transfers the versioned images and checksum.
+# GitHub builds the images. The server only pulls and starts them.
 deploy_dir=${1:?deployment directory required}
 revision=${2:?commit required}
 image=${3:?image repository required}
 public_url=${4:?public HTTPS URL required}
+registry_user=${5:?registry user required}
 [[ "$deploy_dir" == /opt/* && "$deploy_dir" != *..* && "$deploy_dir" != *[!a-zA-Z0-9/_-]* ]]
 [[ "$revision" =~ ^[a-f0-9]{40}$ ]]
-[[ "$image" =~ ^ghcr.io/[a-z0-9._/-]+$ ]]
+[[ "$image" =~ ^[a-z0-9.-]+/[a-z0-9._/-]+$ ]]
+[[ "$registry_user" =~ ^[a-zA-Z0-9_@.-]+$ ]]
+registry_host=${image%%/*}
 [[ "$public_url" =~ ^https://[a-zA-Z0-9.-]+$ ]]
 release_dir=$(cd -- "$(dirname -- "$0")" && pwd)
 cd "$deploy_dir"
 exec 9>.deploy.lock
 flock -w 600 9
 [[ -f .env && -f compose.yml ]]
+IFS= read -r registry_password
+registry_config=$(mktemp -d)
 changed=false
 sync_running=false
 backup_dir="backups/$(date -u +%Y%m%dT%H%M%SZ)-${revision:0:12}"
 cleanup() {
   status=$?
   trap - EXIT
+  rm -rf -- "$registry_config"
   if (( status != 0 )) && [[ "$changed" == true ]]; then
     echo 'Deployment failed; restoring previous images and Compose configuration.' >&2
     cp "$backup_dir/previous.env" .env
@@ -33,9 +39,10 @@ cleanup() {
   exit "$status"
 }
 trap cleanup EXIT
-sha256sum --check --status "$release_dir/SHA256SUMS"
-sudo docker load -i images.tar
-sudo docker image inspect "$image:$revision" "$image-tools:$revision" > /dev/null
+printf '%s' "$registry_password" | docker --config "$registry_config" login "$registry_host" -u "$registry_user" --password-stdin
+unset registry_password
+sudo docker --config "$registry_config" pull "$image:$revision"
+sudo docker --config "$registry_config" pull "$image-tools:$revision"
 if sudo docker compose ps --services --status running | grep -qx sync; then sync_running=true; fi
 mkdir -p "$backup_dir"
 cp .env "$backup_dir/previous.env"

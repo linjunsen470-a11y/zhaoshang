@@ -8,8 +8,8 @@
 
 1. 在工作分支修改代码并创建 PR。
 2. `CI and deploy` 检查客户端/后端单元测试、CMS 测试、ESLint、ShellCheck，并构建生产镜像（包含 TypeScript 检查）。
-3. PR 通过后合入 `main`。流水线重新检查，将应用及工具镜像发布到 GHCR，以完整 commit SHA 标记。
-4. 部署 job 使用专用 SSH 密钥和固定主机公钥，由 GitHub runner 拉取镜像，经 SSH + rsync 增量传输到服务器，校验 SHA-256、载入镜像、备份数据库，再更新后台。
+3. PR 通过后合入 `main`。流水线重新检查，将应用及工具镜像发布到腾讯云镜像仓库，以完整 commit SHA 标记。
+4. 部署 job 使用专用 SSH 密钥和固定主机公钥，服务器从腾讯云仓库拉取已构建的镜像，备份数据库，再更新后台；不执行 npm/pnpm 安装或应用编译。
 5. 等待容器健康检查，验证 HTTPS 房源 API、登录页以及匿名访问员工 API 必须被拒绝。失败自动恢复之前的 `.env`、Compose 和镜像。
 
 也可在 Actions 页面手动运行 `CI and deploy`，选择 `main`。部署环境 `tencent-test` 仅允许 `main`。同一分支的发布不会互相中断，服务器另有文件锁防止并发部署。
@@ -29,7 +29,12 @@ Environment `tencent-test` 的 Secrets：
 同一 Environment 的 Variables：`DEPLOY_PATH=/opt/zhaoshang-test`、`PUBLIC_URL=https://api.cqwushi.com`。
 SSH 私钥写入前自动去除 Windows 回车符。Docker 生产依赖独立裁剪并缓存，业务代码修改不会重新裁剪依赖。
 
-镜像仓库使用工作流临时 `GITHUB_TOKEN`，无需另建长期 GitHub PAT。镜像只在 GitHub runner 上拉取；服务器不保存 GitHub 令牌，也不依赖直连 GHCR 下载大文件。服务器保留最新的 `images.tar` 作为 rsync 增量比较基础，首次全量传输，后续复用未变化的数据；传输中断不会覆盖已运行容器。
+Repository Variables：`REGISTRY_HOST=ccr.ccs.tencentyun.com`、`REGISTRY_IMAGE=ccr.ccs.tencentyun.com/jinyi_zhaoshang/wechat_app`。
+Repository Secrets：`REGISTRY_USER`、`REGISTRY_PASSWORD`，供 main 构建推送及部署拉取使用。PR 构建不登录或推送仓库，部署仍受 tencent-test 的 main 分支限制。
+
+应用镜像为 `<REGISTRY_IMAGE>:<commit>`，工具镜像为 `<REGISTRY_IMAGE>-tools:<commit>`。仓库命名空间必须预先创建，仓库可在首次推送时创建。镜像层复用，服务器直接走腾讯云仓库，避免依赖 GitHub/GHCR 跨境大文件下载。拉取凭据通过 SSH 标准输入传输，临时 Docker 登录配置用后删除，不写入服务器业务 `.env`。
+
+初次联调曾使用 GitHub 成品镜像经 SSH + rsync 验证完整发布，并一次性初始化缓存；最终常规流程统一使用腾讯云仓库，避免保留两套发布方式。
 
 数据库密码、微信 AppSecret、Payload 密钥仍保存在服务器 `.env`，不会写进镜像、Actions 参数或公开日志。腾讯文档 Token 保存在持久化同步卷。根目录 `.env.example` 是云端模板；`backend/.env.example` 是本地开发模板。更新服务器应用密钥后按需重新创建应用容器，更新腾讯 Token 使用后台“连接设置”。
 

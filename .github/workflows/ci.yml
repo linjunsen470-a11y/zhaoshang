@@ -45,22 +45,23 @@ jobs:
     timeout-minutes: 35
     permissions:
       contents: read
-      packages: write
     outputs:
       image: ${{ steps.names.outputs.image }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - id: names
         env:
-          REPOSITORY: ${{ github.repository }}
-        run: echo "image=ghcr.io/${REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+          REGISTRY_IMAGE: ${{ vars.REGISTRY_IMAGE }}
+        run: |
+          [[ "$REGISTRY_IMAGE" =~ ^[a-z0-9.-]+/[a-z0-9._/-]+$ ]]
+          echo "image=$REGISTRY_IMAGE" >> "$GITHUB_OUTPUT"
       - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
       - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ vars.REGISTRY_HOST }}
+          username: ${{ secrets.REGISTRY_USER }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
       - name: Build application
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
@@ -92,7 +93,6 @@ jobs:
     environment: tencent-test
     permissions:
       contents: read
-      packages: read
     env:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -102,20 +102,10 @@ jobs:
       DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
       PUBLIC_URL: ${{ vars.PUBLIC_URL }}
       IMAGE: ${{ needs.images.outputs.image }}
+      REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+      REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Prepare images on the GitHub runner
-        run: |
-          docker pull "$IMAGE:$GITHUB_SHA"
-          docker pull "$IMAGE-tools:$GITHUB_SHA"
-          docker save -o "$RUNNER_TEMP/images.tar" "$IMAGE:$GITHUB_SHA" "$IMAGE-tools:$GITHUB_SHA"
-          cd "$RUNNER_TEMP"
-          sha256sum images.tar > SHA256SUMS
       - name: Deploy over SSH
         shell: bash
         run: |
@@ -123,6 +113,7 @@ jobs:
           [[ "$DEPLOY_PATH" =~ ^/opt/[a-zA-Z0-9/_-]+$ && "$DEPLOY_PATH" != *..* ]]
           [[ "$DEPLOY_HOST" =~ ^[a-zA-Z0-9.-]+$ && "$DEPLOY_USER" =~ ^[a-zA-Z0-9_-]+$ && "$DEPLOY_PORT" =~ ^[0-9]+$ ]]
           [[ "$PUBLIC_URL" =~ ^https://[a-zA-Z0-9.-]+$ ]]
+          [[ "$REGISTRY_USER" =~ ^[a-zA-Z0-9_@.-]+$ ]]
           install -m 700 -d ~/.ssh
           printf '%s\n' "$DEPLOY_KEY" | tr -d '\r' > ~/.ssh/deploy_key
           printf '%s\n' "$KNOWN_HOSTS" | tr -d '\r' > ~/.ssh/known_hosts
@@ -131,13 +122,9 @@ jobs:
           destination="$DEPLOY_USER@$DEPLOY_HOST"
           release="$DEPLOY_PATH/releases/$GITHUB_SHA"
           ssh "${ssh_args[@]}" -p "$DEPLOY_PORT" "$destination" "mkdir -p '$release'"
-          scp "${ssh_args[@]}" -P "$DEPLOY_PORT" deploy/deploy.sh deploy/check.sh docker-compose.yml "$RUNNER_TEMP/SHA256SUMS" "$destination:$release/"
-          # Keep the previous tar as rsync's delta basis; interrupted transfers stay separate.
-          rsync -az --partial-dir=.rsync-partial \
-            -e "ssh -i $HOME/.ssh/deploy_key -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 -o ServerAliveInterval=15 -p $DEPLOY_PORT" \
-            "$RUNNER_TEMP/images.tar" "$destination:$DEPLOY_PATH/images.tar"
-          ssh "${ssh_args[@]}" -p "$DEPLOY_PORT" "$destination" \
-            "bash '$release/deploy.sh' '$DEPLOY_PATH' '$GITHUB_SHA' '$IMAGE' '$PUBLIC_URL'"
+          scp "${ssh_args[@]}" -P "$DEPLOY_PORT" deploy/deploy.sh deploy/check.sh docker-compose.yml "$destination:$release/"
+          printf '%s\n' "$REGISTRY_PASSWORD" | ssh "${ssh_args[@]}" -p "$DEPLOY_PORT" "$destination" \
+            "bash '$release/deploy.sh' '$DEPLOY_PATH' '$GITHUB_SHA' '$IMAGE' '$PUBLIC_URL' '$REGISTRY_USER'"
           echo "Deployed commit $GITHUB_SHA to $PUBLIC_URL" >> "$GITHUB_STEP_SUMMARY"
       - name: Remove temporary SSH key
         if: always()
