@@ -1,8 +1,20 @@
-# GitHub Actions 与腾讯云部署
+# CI/CD 与腾讯云部署
 
 仓库：`linjunsen470-a11y/zhaoshang`。当前目标是腾讯云测试环境 `/opt/zhaoshang-test`，域名 `https://api.cqwushi.com`。
 
 后台容器、本地测试与 CI 统一使用 Node.js 24；测试命令中的 `--test-isolation=none` 不支持旧 Node 22。
+
+## 当前发布状态（2026-10-31）
+
+| 项目 | 状态 |
+| --- | --- |
+| 主仓库 | GitHub `linjunsen470-a11y/zhaoshang`，Gitee 同步相同提交 |
+| `main` 自动发布 | 仍由 `.github/workflows/ci.yml` 执行，尚未切换到 Gitee |
+| Gitee 验证分支 | `codex/gitee-mirror-verify`，尚未合入 `main` |
+| 腾讯云测试版本 | `84caa4c63bc2e611ae997030cf6ad5f197816b5c`，应用/工具镜像均由 Gitee 构建并直接上传腾讯云 |
+| 测试发布方式 | 本机调用现有 SSH 部署脚本；Gitee 尚未保存 SSH 部署凭据 |
+
+后续文档提交可以领先已部署镜像；不因更新验证记录重新构建或部署。下文的 `ecf929c` 等版本属于此前 GitHub 流程的历史记录。
 
 ## Gitee 镜像源验证
 
@@ -16,7 +28,7 @@ Gitee 直接从 DaoCloud 公共镜像源拉取 `node:24-alpine`，Alpine 使用�
 
 本次从本机通过专用 SSH 密钥调用现有 `deploy/deploy.sh`，腾讯云直接拉取这两份 Gitee 成品镜像，完成数据库备份、容器更新和 HTTPS 验收，没有传输镜像文件或在服务器构建。应用和数据库均健康，公开项目 API、管理员登录与工作台、匿名访问限制、Payload/Sharp 原生依赖、UID 1001 和工具脚本检查通过；正常启动仍为 `PAYLOAD_DB_PUSH=false`。这验证了发布链路，尚未给 Gitee 配置 SSH 自动部署。
 
-## 日常流程
+## GitHub 主分支日常流程
 
 1. 在工作分支修改代码并创建 PR。
 2. `CI and deploy` 先判断变更范围。代码变更执行单元测试、CMS 测试、ESLint、TypeScript、ShellCheck；后端运行代码、依赖或发布配置变化时，才构建应用和工具镜像。
@@ -29,6 +41,8 @@ Gitee 直接从 DaoCloud 公共镜像源拉取 `node:24-alpine`，Alpine 使用�
 ### 变更范围与发布基线
 
 `scripts/ci-plan.mjs` 使用现有 `tencent-test` 成功部署记录作为主分支发布基线，检查此后累计的后端和发布配置变化。因此，即使中间某次运行失败或排队任务被新提交替换，也不会因为最新提交只改文档而漏发之前的后端修改。PR 使用其目标分支基线，只验证、不发布。首次没有成功记录时检查完整源码树。部署记录查询失败会使检查失败，不会放行发布。
+
+本次从本机部署 Gitee 镜像，没有创建新的 GitHub Deployment 记录，因此不改变该主分支基线。将验证分支合入 `main` 时，现有 GitHub 工作流仍会按累计变更决定构建和发布；这与 Gitee 的手动构建是两个独立入口。
 
 仅文档变更保留轻量计划任务，跳过依赖安装和后续任务。小程序、静态官网、测试、环境示例及 lint 配置变化执行检查，但不单独触发后端发布。`backend/` 的其余运行输入，以及 `docker-compose.yml`、`deploy/deploy.sh`、`deploy/check.sh`、CI 工作流和计划脚本变化，执行完整链路。发布配置单独变化仍通过 BuildKit 复用已有内容并生成新 SHA 标签，保持现有镜像版本规则。
 
@@ -70,7 +84,7 @@ Repository Secrets：`REGISTRY_USER`、`REGISTRY_PASSWORD`，供 main 构建推�
 
 `ecf929c` 的[发布流水线](https://github.com/linjunsen470-a11y/zhaoshang/actions/runs/41196293767)已完成：112 项单元/CMS 测试、类型和静态检查通过，云端管理员页面及 API、权限限制、容器健康、发布备份和镜像内容检查通过。首次生成的独立依赖层仍遇到跨境上传阻塞，经一次性初始化后由原流水线完成部署；缓存优化减少日常重传，不能代替稳定的上传链路，临时初始化流程没有并入主分支。
 
-本段以纯文档提交验收自动路由：预期仅运行 `changes`，跳过检查、镜像与部署任务，云端保持运行 `ecf929c`。
+随后 `bd4e4c5` 的纯文档提交已验证自动路由：仅运行 `changes`，跳过检查、镜像与部署任务，当时云端继续运行 `ecf929c`。当前测试版本见本文开头。
 
 数据库密码、微信 AppSecret、Payload 密钥仍保存在服务器 `.env`，不会写进镜像、Actions 参数或公开日志。腾讯文档 Token 保存在持久化同步卷。根目录 `.env.example` 是云端模板；`backend/.env.example` 是本地开发模板。更新服务器应用密钥后按需重新创建应用容器，更新腾讯 Token 使用后台“连接设置”。
 

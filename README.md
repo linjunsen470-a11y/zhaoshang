@@ -4,7 +4,7 @@
 
 - 后台：<https://api.cqwushi.com/admin>
 - 小程序开发版直接连接云端；体验版与正式版地址仍需在 `mp/config/environments.js` 配置。
-- 自动部署、备份和回退见 [持续部署说明](docs/ci-deployment.md)。日常操作见 [CMS 指南](docs/payload-cms-quickstart.md)。
+- GitHub 自动部署、Gitee 镜像源验证、备份和回退见 [持续部署说明](docs/ci-deployment.md)。日常操作见 [CMS 指南](docs/payload-cms-quickstart.md)。
 
 ## 结构
 
@@ -56,6 +56,8 @@ pnpm backend:build
 ```
 
 代码变更自动运行测试、lint 和类型检查；后端运行代码或发布配置变化时才构建 Docker 镜像。合入 `main` 后，按上次成功部署以来的累计变化决定是否发布，将相同提交的应用/工具镜像推送到腾讯云仓库，再通过 SSH 拉取并启动。小程序、独立静态官网、测试和文档单独变化不触发后端部署。发布前备份数据库，失败自动恢复上一个镜像与配置。数据库结构变更必须单独备份并显式执行，不随启动自动修改。
+
+2026-10-31 已在 `codex/gitee-mirror-verify` 验证 Gitee 使用公共镜像源构建并直传腾讯云，测试环境运行该分支的 `84caa4c` 镜像。GitHub 仍为主仓库，`main` 的自动发布仍由 GitHub Actions 执行；Gitee 流水线仅手动构建，测试部署由本机调用现有 SSH 发布脚本完成。后续纯文档提交不需要重建或替换这份镜像。
 
 真实 HTTP 合约需要隔离测试环境；微信 E2E 需要带开发者工具的自托管 runner，按需运行。跳过的测试不代表通过。详见 [自动化测试](docs/miniprogram-automation-test.md)。
 
