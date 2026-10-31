@@ -20,7 +20,7 @@
 
 ## 本地开发
 
-使用 Node.js 22+、pnpm 11.5.0，准备独立开发数据库：
+使用 Node.js 24+、pnpm 11.5.0，准备独立开发数据库：
 
 ```bash
 pnpm install --frozen-lockfile

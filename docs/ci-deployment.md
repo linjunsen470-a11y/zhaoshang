@@ -2,6 +2,8 @@
 
 仓库：`linjunsen470-a11y/zhaoshang`。当前目标是腾讯云测试环境 `/opt/zhaoshang-test`，域名 `https://api.cqwushi.com`。
 
+后台容器、本地测试与 CI 统一使用 Node.js 24；测试命令中的 `--test-isolation=none` 不支持旧 Node 22。
+
 ## 日常流程
 
 1. 在工作分支修改代码并创建 PR。
