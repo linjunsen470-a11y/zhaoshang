@@ -17,7 +17,6 @@ next-env.d.ts
 # Runtime data and secrets
 .env
 .env.*
-!.env.example
 media
 .tencent-sync
 uploads
@@ -32,6 +31,7 @@ uploads
 backups
 scratch
 test-results
+tests
 playwright-report
 blob-report
 

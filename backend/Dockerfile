@@ -63,7 +63,9 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Copy the pruned tree to preserve pnpm's package directories and symlinks,
 # including Sharp's Alpine libvips dependency missed by standalone tracing.
-COPY --from=production-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
+# Keep this large layer independent of application output. Numeric ownership is
+# required because --link cannot look up users in the preceding filesystem.
+COPY --link --from=production-deps --chown=1001:1001 /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/payload.config.ts ./payload.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/collections ./collections
 COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json

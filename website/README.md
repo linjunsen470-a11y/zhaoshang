@@ -4,6 +4,10 @@
 
 `Dockerfile` 和 `server.mjs` 为 Railway 提供轻量静态文件服务，监听平台分配的 `PORT`，只对外提供上述页面及 CSS/JS，不包含后端或数据库。
 
+## 仓库边界
+
+当前继续保留在本仓库的 `website/` 目录，独立部署。官网与小程序属于同一业务，现有测试会核对企业和联系方式的一致性；拆仓库会增加重复维护和跨仓库校验，目前收益有限。CI 按变更范围运行，单独修改官网不会构建或部署腾讯云后端。以后出现独立维护团队、访问权限或产品发布边界时，再考虑拆仓库。
+
 ## Railway 部署
 
 - [Railway 临时访问地址](https://website-production-db44.up.railway.app/)；[服务管理页面](https://railway.com/project/cea5cce1-8322-4a34-9b3c-f11bd72bd601/service/3f00ed91-8c40-48e1-b17f-63d75c739232)。
