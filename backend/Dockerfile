@@ -1,5 +1,6 @@
 # Dockerfile for Payload CMS + Next.js
-FROM node:24-alpine AS base
+ARG NODE_IMAGE=node:24-alpine
+FROM ${NODE_IMAGE} AS base
 
 # Install dependencies only when needed
 FROM base AS deps

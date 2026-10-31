@@ -19,9 +19,13 @@ stages:
         isCache: true
         processorType:
           - amd64
+        parameter:
+          NODE_IMAGE: m.daocloud.io/docker.io/library/node:24-alpine
         strategy:
           retry: "0"
           timeout: 15
           resource:
             cpu: "4"
             memory: "8"
+triggers:
+  trigger: manual
