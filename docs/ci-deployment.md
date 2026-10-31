@@ -27,6 +27,8 @@ Environment `tencent-test` 的 Secrets：
 | `DEPLOY_KNOWN_HOSTS` | 已核实的服务器公钥，禁止跳过主机验证 |
 
 同一 Environment 的 Variables：`DEPLOY_PATH=/opt/zhaoshang-test`、`PUBLIC_URL=https://api.cqwushi.com`。
+SSH 私钥写入前自动去除 Windows 回车符。Docker 生产依赖独立裁剪并缓存，业务代码修改不会重新裁剪依赖。
+
 镜像仓库使用工作流临时 `GITHUB_TOKEN`，无需另建长期 GitHub PAT。服务器只在拉取期间保存临时 Docker 登录配置，结束后删除。
 
 数据库密码、微信 AppSecret、Payload 密钥仍保存在服务器 `.env`，不会写进镜像、Actions 参数或公开日志。腾讯文档 Token 保存在持久化同步卷。根目录 `.env.example` 是云端模板；`backend/.env.example` 是本地开发模板。更新服务器应用密钥后按需重新创建应用容器，更新腾讯 Token 使用后台“连接设置”。

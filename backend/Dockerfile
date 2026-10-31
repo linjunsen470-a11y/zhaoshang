@@ -24,6 +24,10 @@ RUN mkdir -p media .tencent-sync && chown -R 1001:1001 media .tencent-sync
 USER 1001:1001
 CMD ["node", "node_modules/tsx/dist/cli.mjs", "scripts/sync-tencent.ts", "--watch"]
 
+# Prune once per dependency change, independently of application source changes.
+FROM deps AS production-deps
+RUN pnpm prune --prod
+
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
@@ -37,7 +41,6 @@ ENV NODE_ENV=production
 # Payload needs a secret while Next collects route data during build.
 # Runtime containers still receive the real secret from docker compose.
 RUN PAYLOAD_SECRET=build-time-placeholder-secret PAYLOAD_DB_PUSH=false pnpm build
-RUN pnpm prune --prod
 
 # Production image, copy all the files and run next
 FROM base AS runner
@@ -60,7 +63,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 # Copy the pruned tree to preserve pnpm's package directories and symlinks,
 # including Sharp's Alpine libvips dependency missed by standalone tracing.
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=production-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/payload.config.ts ./payload.config.ts
 COPY --from=builder --chown=nextjs:nodejs /app/collections ./collections
 COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json
