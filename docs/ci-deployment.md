@@ -10,7 +10,7 @@
 | --- | --- |
 | 主仓库 | GitHub `linjunsen470-a11y/zhaoshang`，Gitee 同步相同提交 |
 | `main` 自动发布 | 仍由 `.github/workflows/ci.yml` 执行，尚未切换到 Gitee |
-| Gitee 验证分支 | `codex/gitee-mirror-verify`，尚未合入 `main` |
+| Gitee 镜像验证 | `.workflow/gitee-verify.yml`，按需在目标分支手动运行 |
 | 腾讯云测试版本 | `84caa4c63bc2e611ae997030cf6ad5f197816b5c`，应用/工具镜像均由 Gitee 构建并直接上传腾讯云 |
 | 测试发布方式 | 本机调用现有 SSH 部署脚本；Gitee 尚未保存 SSH 部署凭据 |
 
@@ -18,7 +18,7 @@
 
 ## Gitee 镜像源验证
 
-GitHub 保持主仓库。验证分支 `codex/gitee-mirror-verify` 的提交先推送到 GitHub，再同步同一 SHA 到 Gitee；`.workflow/gitee-verify.yml` 仅手动运行，不随同步自动发布。此次为试跑，尚未替换 `main` 上的 GitHub 发布流程。
+GitHub 保持主仓库。需要通过 Gitee 验证时，先将目标提交同步到 Gitee，再手动运行 `.workflow/gitee-verify.yml`；该流水线不随同步自动发布，也不替换 `main` 上的 GitHub 发布流程。
 
 Gitee 直接从 DaoCloud 公共镜像源拉取 `node:24-alpine`，Alpine 使用清华 TUNA 镜像，Corepack/pnpm 使用 `registry.npmmirror.com`。这些值通过 Docker 构建参数传入；Dockerfile 的默认源仍为官方源，不额外维护 Node 基础镜像或中转服务。pnpm 11 使用 `PNPM_CONFIG_REGISTRY`，不再读取普通的 `NPM_CONFIG_REGISTRY`，见 [pnpm 配置说明](https://pnpm.io/configuring)。
 
@@ -42,7 +42,7 @@ Gitee 直接从 DaoCloud 公共镜像源拉取 `node:24-alpine`，Alpine 使用�
 
 `scripts/ci-plan.mjs` 使用现有 `tencent-test` 成功部署记录作为主分支发布基线，检查此后累计的后端和发布配置变化。因此，即使中间某次运行失败或排队任务被新提交替换，也不会因为最新提交只改文档而漏发之前的后端修改。PR 使用其目标分支基线，只验证、不发布。首次没有成功记录时检查完整源码树。部署记录查询失败会使检查失败，不会放行发布。
 
-本次从本机部署 Gitee 镜像，没有创建新的 GitHub Deployment 记录，因此不改变该主分支基线。将验证分支合入 `main` 时，现有 GitHub 工作流仍会按累计变更决定构建和发布；这与 Gitee 的手动构建是两个独立入口。
+从本机部署 Gitee 镜像不会创建 GitHub Deployment 记录，因此不改变主分支发布基线。GitHub 工作流仍会按累计变更决定构建和发布；这与 Gitee 的手动构建是两个独立入口。
 
 仅文档变更保留轻量计划任务，跳过依赖安装和后续任务。小程序、静态官网、测试、环境示例及 lint 配置变化执行检查，但不单独触发后端发布。`backend/` 的其余运行输入，以及 `docker-compose.yml`、`deploy/deploy.sh`、`deploy/check.sh`、CI 工作流和计划脚本变化，执行完整链路。发布配置单独变化仍通过 BuildKit 复用已有内容并生成新 SHA 标签，保持现有镜像版本规则。
 
