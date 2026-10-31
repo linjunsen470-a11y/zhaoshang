@@ -21,6 +21,8 @@ stages:
           - amd64
         parameter:
           NODE_IMAGE: m.daocloud.io/docker.io/library/node:24-alpine
+          ALPINE_MIRROR: https://mirrors.tuna.tsinghua.edu.cn/alpine
+          NPM_CONFIG_REGISTRY: https://registry.npmmirror.com
         strategy:
           retry: "0"
           timeout: 15

@@ -1,10 +1,14 @@
 # Dockerfile for Payload CMS + Next.js
 ARG NODE_IMAGE=node:24-alpine
 FROM ${NODE_IMAGE} AS base
+ARG ALPINE_MIRROR=https://dl-cdn.alpinelinux.org/alpine
+ARG NPM_CONFIG_REGISTRY=https://registry.npmjs.org
+ARG COREPACK_NPM_REGISTRY=${NPM_CONFIG_REGISTRY}
 
 # Install dependencies only when needed
 FROM base AS deps
-RUN apk add --no-cache libc6-compat
+RUN sed -i "s|https://dl-cdn.alpinelinux.org/alpine|${ALPINE_MIRROR}|g" /etc/apk/repositories \
+  && apk add --no-cache libc6-compat
 WORKDIR /app
 
 # Enable pnpm
