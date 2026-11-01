@@ -61,7 +61,10 @@ stages:
         name: deploy-vps
         displayName: Pull CCR images and deploy
         commands:
-          - bash deploy/gitee-deploy.sh
+          - |
+            set +x
+            export DEPLOY_SSH_KEY='${DEPLOY_SSH_KEY}'
+            bash deploy/gitee-deploy.sh
         strategy:
           retry: "0"
           timeout: 20
