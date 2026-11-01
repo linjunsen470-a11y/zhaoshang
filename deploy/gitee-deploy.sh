@@ -7,14 +7,7 @@ revision=${GITEE_COMMIT:?required}
 key_dir=$(mktemp -d)
 trap 'rm -rf -- "$key_dir"' EXIT
 [[ "$DEPLOY_SSH_KEY" == *'-----BEGIN OPENSSH PRIVATE KEY-----'* ]] || { echo 'DEPLOY_SSH_KEY did not resolve to an OpenSSH key' >&2; exit 1; }
-key_body=${DEPLOY_SSH_KEY#*-----BEGIN OPENSSH PRIVATE KEY-----}
-key_body=${key_body%%-----END OPENSSH PRIVATE KEY-----*}
-{
-  printf '%s\n' '-----BEGIN OPENSSH PRIVATE KEY-----'
-  printf '%s' "$key_body" | sed 's/\\n//g' | tr -d '[:space:]' | fold -w 70
-  printf '\n%s\n' '-----END OPENSSH PRIVATE KEY-----'
-} > "$key_dir/key"
-unset key_body
+printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > "$key_dir/key"
 unset DEPLOY_SSH_KEY
 chmod 600 "$key_dir/key"
 cp deploy/known_hosts "$key_dir/known_hosts"

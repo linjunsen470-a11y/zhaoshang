@@ -1,6 +1,8 @@
 version: "1.0"
 name: gitee-verify
 displayName: Build and deploy via Tencent CCR
+ref_variable:
+  - DEPLOY_SSH_KEY
 stages:
   - name: build
     displayName: Build and upload image
