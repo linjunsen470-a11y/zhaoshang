@@ -7,8 +7,8 @@
 | 根目录 `.env` | 云端 Compose 参数，以及本机 SSH、仓库和 CMS 维护凭据 | 仅影响本机读取此文件的命令 |
 | `backend/.env` | 本地 Next/Payload 开发，连接独立开发库 | 修改后重启本地开发进程 |
 | 服务器 `/opt/zhaoshang-test/.env` | 线上容器运行配置 | 在服务器修改，按需重新创建相应容器 |
-| GitHub Secrets / Variables | 镜像推送及 SSH 发布 | 在 GitHub 单独更新；不会自动读取本机 `.env` |
-| Gitee Go 仓库凭证 | 手动验证流水线向腾讯镜像仓库推送 | 在 Gitee 单独更新，凭证仅授权本项目；不会随 GitHub Secrets 或本机 `.env` 自动同步 |
+| GitHub 工作流 | 手动代码检查及微信 E2E | 不再使用 CCR / SSH 发布凭据，不自动发布 |
+| Gitee Go 仓库凭证 | 手动流水线推送 CCR 并通过 SSH 部署 | 在 Gitee 单独更新，凭证仅授权本项目；不会随 GitHub Secrets 或本机 `.env` 自动同步 |
 | CMS「腾讯文档同步 → 连接设置」 | 云端腾讯文档地址、Token 和工作表配置 | 保存到持久化同步卷，不随应用镜像替换 |
 
 两份 `.env.example` 分别对应根目录和后台开发环境。复制模板只用于首次配置，不要用模板覆盖已有密钥。文件使用 UTF-8，注释单独占行；含 `#`、空格等特殊字符的值应正确加引号。凭据不写入 Markdown、截图或日志。
@@ -21,8 +21,8 @@
 - **运行模式**：云端 Compose 固定 `PAYLOAD_DB_PUSH=false`、`WECHAT_AUTH_MODE=wechat`。根环境文件保留相同值用于静态检查；仅修改根文件不能覆盖 Compose 中的固定设置。结构变更按 [数据库说明](schema-setup.md) 显式执行。
 - **微信**：`WECHAT_APPID` 与小程序项目配置一致，AppSecret 属于该 AppID。`WECHAT_CODE_ENV_VERSION` 控制生成小程序码的目标版本，不控制客户端 API 地址；客户端地址在 `mp/config/environments.js`。
 - **腾讯文档**：根 `.env` 的 MCP 地址及 Token 仅供本机维护，不由 Compose 自动传入容器。云端在 CMS 配置。本地 `backend/.env` 中非空的 MCP 变量优先于 CMS 保存值；如需通过后台修改连接，先清除对应环境变量并重启。
-- **仓库**：`REGISTRY_HOST` 仅填主机名，`REGISTRY_IMAGE` 填完整仓库路径且不带标签。`REGISTRY_NAMESPACE` 仅便于查看，CI 使用完整路径。GitHub 变量、Secrets 的对应关系见 [持续部署说明](ci-deployment.md)。
-- **Gitee 验证**：根 `.env` 的 `GITEE_ACCESS_TOKEN` 仅供本机同步和维护，不提交到 Git，也不注入应用容器。流水线引用独立保存的腾讯仓库凭证；`NODE_IMAGE`、`ALPINE_MIRROR`、`PNPM_CONFIG_REGISTRY` 和 `BUILD_TARGET` 是公开构建参数，不是服务器运行配置。Gitee 当前未配置 SSH 自动部署。
+- **仓库**：`REGISTRY_HOST` 仅填主机名，`REGISTRY_IMAGE` 填完整仓库路径且不带标签。`REGISTRY_NAMESPACE` 仅便于查看，CI 使用完整路径。Gitee 凭证和服务器拉取配置见 [持续部署说明](ci-deployment.md)。
+- **Gitee 发布**：根 `.env` 的 `GITEE_ACCESS_TOKEN` 仅供本机同步和维护，不提交到 Git，也不注入应用容器。流水线引用独立保存的腾讯仓库凭证；`NODE_IMAGE`、`ALPINE_MIRROR`、`PNPM_CONFIG_REGISTRY` 和 `BUILD_TARGET` 是公开构建参数，不是服务器运行配置。加密通用变量 `DEPLOY_SSH_KEY` 通过 YAML 的 `ref_variable` 关联；VPS 的 `ccr-pull.env` 保存 CCR 拉取凭据，权限 600。
 - **维护账号**：SSH 和 `CMS_ADMIN_*` 仅供本机维护使用，不注入应用容器。填写 CMS 账号不会创建或重置后台用户。CI 使用专用 SSH 密钥。
 
 ## 仓库卫生
@@ -44,4 +44,4 @@ git commit -m "Tidy configuration and repository files [skip ci]"
 git push origin HEAD
 ```
 
-根据 [GitHub 官方说明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/skip-workflow-runs)，`[skip ci]` 跳过本次 push / pull_request 触发的 Actions，不会永久关闭工作流，也不阻止人工 `workflow_dispatch`。跳过后线上镜像仍是上一部署版本，这是预期结果。功能、依赖、权限或部署逻辑变更应正常运行 CI。
+GitHub 工作流只接受 `workflow_dispatch`，推送不触发检查、镜像构建或部署。Gitee 同步和流水线由用户手动处理。代码变更应在本机或手动检查工作流中按风险验证。

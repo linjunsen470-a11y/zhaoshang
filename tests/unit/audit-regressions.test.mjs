@@ -2,15 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { createStorage, loadMiniProgramModule } from '../helpers/load-cjs.mjs';
-import { planChanges } from '../../scripts/ci-plan.mjs';
-
-test('Gitee mode ignores stale release paths but retains code checks', () => {
-  assert.deepEqual(planChanges('push', ['docs/a.md'], ['backend/app/page.tsx'], false), { checks: false, images: false, release: false });
-  for (const event of ['push', 'pull_request', 'workflow_dispatch']) {
-    assert.deepEqual(planChanges(event, ['mp/app.js'], ['backend/app/page.tsx'], false), { checks: true, images: false, release: false });
-  }
-});
-
 test('numeric favorites match route strings and toggle without duplicates', () => {
   const storage = createStorage({ favorites: [42] });
   const favorites = loadMiniProgramModule(path.resolve('mp/utils/favorites.js'), { globals: { wx: { ...storage, showToast() {} } } });

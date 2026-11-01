@@ -1,49 +1,20 @@
-name: CI and deploy
+name: Manual code checks
 
 on:
-  pull_request:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      deployments: read
-    outputs:
-      checks: ${{ steps.plan.outputs.checks }}
-      images: ${{ steps.plan.outputs.images }}
-      release: ${{ steps.plan.outputs.release }}
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-        with:
-          fetch-depth: 2
-      - id: plan
-        env:
-          GH_TOKEN: ${{ github.token }}
-          CI_BUILD_IMAGES: ${{ vars.CI_BUILD_IMAGES }}
-        run: node scripts/ci-plan.mjs
-
   checks:
-    needs: changes
-    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.checks == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - name: Require a successful change plan
-        env:
-          PLAN_RESULT: ${{ needs.changes.result }}
-        run: test "$PLAN_RESULT" = success
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
         with:
@@ -63,99 +34,5 @@ jobs:
       - run: pnpm --dir backend exec tsc --noEmit
       - name: Check deployment scripts
         run: |
-          bash -n deploy/deploy.sh deploy/check.sh deploy/tencent-test/backup.sh
-          shellcheck deploy/deploy.sh deploy/check.sh deploy/tencent-test/backup.sh
-
-  images:
-    needs: [changes, checks]
-    if: needs.changes.outputs.images == 'true'
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
-    permissions:
-      contents: read
-    outputs:
-      image: ${{ steps.names.outputs.image }}
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - id: names
-        env:
-          REGISTRY_IMAGE: ${{ vars.REGISTRY_IMAGE }}
-        run: |
-          [[ "$REGISTRY_IMAGE" =~ ^[a-z0-9.-]+/[a-z0-9._/-]+$ ]]
-          echo "image=$REGISTRY_IMAGE" >> "$GITHUB_OUTPUT"
-      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
-      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-        with:
-          registry: ${{ vars.REGISTRY_HOST }}
-          username: ${{ secrets.REGISTRY_USER }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
-      - name: Build and push application image
-        timeout-minutes: 15
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
-        with:
-          context: backend
-          target: runner
-          push: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
-          tags: ${{ steps.names.outputs.image }}:${{ github.sha }}
-          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
-          cache-from: type=gha,scope=payload
-          cache-to: type=gha,scope=payload,mode=max
-      - name: Build and push maintenance image
-        timeout-minutes: 10
-        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
-        with:
-          context: backend
-          target: tools
-          push: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
-          tags: ${{ steps.names.outputs.image }}-tools:${{ github.sha }}
-          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
-          cache-from: |
-            type=gha,scope=payload
-            type=gha,scope=tools
-          cache-to: type=gha,scope=tools,mode=max
-
-  deploy:
-    needs: [changes, images]
-    if: needs.changes.outputs.release == 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    environment: tencent-test
-    permissions:
-      contents: read
-    env:
-      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-      DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-      DEPLOY_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-      KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
-      DEPLOY_PATH: ${{ vars.DEPLOY_PATH }}
-      PUBLIC_URL: ${{ vars.PUBLIC_URL }}
-      IMAGE: ${{ needs.images.outputs.image }}
-      REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
-      REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-      - name: Deploy over SSH
-        shell: bash
-        run: |
-          set -euo pipefail
-          [[ "$DEPLOY_PATH" =~ ^/opt/[a-zA-Z0-9/_-]+$ && "$DEPLOY_PATH" != *..* ]]
-          [[ "$DEPLOY_HOST" =~ ^[a-zA-Z0-9.-]+$ && "$DEPLOY_USER" =~ ^[a-zA-Z0-9_-]+$ && "$DEPLOY_PORT" =~ ^[0-9]+$ ]]
-          [[ "$PUBLIC_URL" =~ ^https://[a-zA-Z0-9.-]+$ ]]
-          [[ "$REGISTRY_USER" =~ ^[a-zA-Z0-9_@.-]+$ ]]
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$DEPLOY_KEY" | tr -d '\r' > ~/.ssh/deploy_key
-          printf '%s\n' "$KNOWN_HOSTS" | tr -d '\r' > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
-          ssh_args=(-i ~/.ssh/deploy_key -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=20 -o ServerAliveInterval=15)
-          destination="$DEPLOY_USER@$DEPLOY_HOST"
-          release="$DEPLOY_PATH/releases/$GITHUB_SHA"
-          ssh "${ssh_args[@]}" -p "$DEPLOY_PORT" "$destination" "mkdir -p '$release'"
-          scp "${ssh_args[@]}" -P "$DEPLOY_PORT" deploy/deploy.sh deploy/check.sh docker-compose.yml "$destination:$release/"
-          printf '%s\n' "$REGISTRY_PASSWORD" | ssh "${ssh_args[@]}" -p "$DEPLOY_PORT" "$destination" \
-            "bash '$release/deploy.sh' '$DEPLOY_PATH' '$GITHUB_SHA' '$IMAGE' '$PUBLIC_URL' '$REGISTRY_USER'"
-          echo "Deployed commit $GITHUB_SHA to $PUBLIC_URL" >> "$GITHUB_STEP_SUMMARY"
-      - name: Remove temporary SSH key
-        if: always()
-        run: rm -f ~/.ssh/deploy_key
+          bash -n deploy/deploy.sh deploy/gitee-deploy.sh deploy/check.sh deploy/tencent-test/backup.sh
+          shellcheck deploy/deploy.sh deploy/gitee-deploy.sh deploy/check.sh deploy/tencent-test/backup.sh
