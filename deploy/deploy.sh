@@ -67,10 +67,3 @@ bash "$release_dir/check.sh" "$public_url"
 if [[ -f deployed-revision ]]; then cp deployed-revision previous-deployed-revision; fi
 printf '%s\n' "$revision" > deployed-revision
 printf 'Deployed %s successfully\n' "$revision"
-if [[ -f ccr-cleanup.env && -x /opt/zhaoshang-test/cleanup-venv/bin/python ]]; then
-  if ! (set -a; . ./ccr-cleanup.env; set +a; /opt/zhaoshang-test/cleanup-venv/bin/python "$release_dir/cleanup-ccr.py" --apply); then
-    echo 'WARNING: Deployment succeeded, but CCR cleanup failed.' >&2
-  fi
-else
-  echo 'WARNING: Deployment succeeded; CCR cleanup needs ccr-cleanup.env and cleanup-venv.' >&2
-fi

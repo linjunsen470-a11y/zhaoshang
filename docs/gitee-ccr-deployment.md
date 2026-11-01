@@ -8,8 +8,4 @@ The deployment backs up Postgres and the previous environment/Compose configurat
 
 ## CCR retention
 
-`deploy/cleanup-ccr.py` previews by default; `--apply` deletes only 40-character commit tags in `jinyi_zhaoshang/wechat_app` and `jinyi_zhaoshang/wechat_app-tools`. Keep the newest five per repository, current/previous deployments and digests shared with retained or non-release tags. A cleanup error does not undo a healthy deployment.
-
-On the VPS, install `tencentcloud-sdk-python-tcr` in `/opt/zhaoshang-test/cleanup-venv`. Provide mode-600 `/opt/zhaoshang-test/ccr-cleanup.env` with `TENCENTCLOUD_SECRET_ID`, `TENCENTCLOUD_SECRET_KEY`, `TENCENTCLOUD_REGION`. Use a CAM principal restricted to DescribeImagePersonal and DeleteImagePersonal for these two repositories. Registry login passwords are not CAM API keys. Without this configuration deployment prints a cleanup warning and does not delete images.
-
-Run cleanup from `/opt/zhaoshang-test`, where `deployed-revision` and `previous-deployed-revision` identify protected releases. Do not enable account-wide lifecycle cleanup for this project.
+The owner configured Tencent Cloud automatic cleanup to retain the latest 10 versions. Retention is managed in Tencent Cloud, not deployment code; no CAM cleanup credentials or custom deletion scripts are required.
