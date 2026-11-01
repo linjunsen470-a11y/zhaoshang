@@ -11,7 +11,7 @@ async function request(url, method = 'GET') {
   return response;
 }
 
-test('Railway website serves only its public assets and supports HEAD', async () => {
+test('static website serves only its public assets and supports HEAD', async () => {
   for (const url of ['/', '/index.html', '/about.html', '/services.html', '/contact.html', '/css/style.css', '/js/main.js']) {
     const response = await request(url);
     assert.equal(response.status, 200, url);

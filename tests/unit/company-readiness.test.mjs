@@ -56,3 +56,15 @@ test('the website never publishes an invented ICP number and shows a real one wh
     assert.doesNotMatch(html, /粤ICP备X|已依法依规通过工业和信息化部ICP备案审查/);
   }
 });
+
+test('each company page includes the current shared stylesheet', () => {
+  const normalize = text => text.replace(/\r\n/g, '\n');
+  const css = normalize(readFileSync('website/css/style.css', 'utf8')).trimEnd();
+  for (const name of ['index', 'about', 'services', 'contact']) {
+    const html = normalize(readFileSync(`website/${name}.html`, 'utf8'));
+    const styles = [...html.matchAll(/<style data-source="css\/style\.css">\n([\s\S]*?)\n  <\/style>/g)];
+    assert.equal(styles.length, 1, `${name}: expected one inline stylesheet`);
+    assert.equal(styles[0][1], css, `${name}: inline stylesheet is out of date`);
+    assert.doesNotMatch(html, /<link\b[^>]*\brel=["']stylesheet["']/i);
+  }
+});

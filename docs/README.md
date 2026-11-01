@@ -18,7 +18,7 @@
 - [咨询表单说明](小程序咨询表单精简方案.md)：各类咨询首次提交的字段及后台处理。
 - [企业备案与小程序上线准备](企业备案与小程序上线准备.md)：主体信息、网站和小程序备案、计划域名及部署步骤。
 - [腾讯云测试部署记录](tencent-cloud-test-deployment-2026-10-31.md)：初次迁移记录；当前 HTTPS 和 CI 部署步骤以持续部署说明为准；[操作说明](../deploy/tencent-test/README.md)。
-- [静态公司网站](../website/README.md)：独立托管目录，不属于 Next/Payload 构建。
+- [静态公司网站](../website/README.md)：独立托管目录，不属于 Next/Payload 构建；[官网部署与同步](../deploy/website/README.md)。
 
 ## 近期变更与待办记录
 

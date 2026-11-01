@@ -8,6 +8,7 @@
 - 用户同步目标提交至 Gitee 后，手动运行 main 的 `.workflow/gitee-verify.yml`。两个 BuildKit 任务成功后，自动执行 SSH 部署阶段。
 - 镜像经腾讯 CCR 到 VPS；不再使用 VPS registry 或镜像 tar 直传。试验 registry 容器和 Nginx `/v2/` 入口已移除，数据卷暂保留。
 - 腾讯云后台由用户设置自动清理，保留最近 **10 个版本**。仓库不再维护清理脚本或要求 CAM 删除凭据。回退前应确认目标标签仍在 CCR 或本机。
+- 企业静态官网独立于上述后端发布流程；腾讯云预览、备案后的 DNS 切换及证书续期见 [官网部署说明](../deploy/website/README.md)。
 
 ## 构建与凭据
 

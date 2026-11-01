@@ -1,0 +1,3 @@
+# Add inside HAProxy frontend shared_https, before its default_backend.
+    acl jinyi_site req.ssl_sni -i jinyifangchan.com
+    use_backend wushi_https if jinyi_site

@@ -5,3 +5,7 @@
 Dockerfile text eol=lf
 *.md text eol=lf
 .env.example text eol=lf
+website/*.html text eol=lf
+website/css/*.css text eol=lf
+website/js/*.js text eol=lf
+deploy/website/*.conf text eol=lf
