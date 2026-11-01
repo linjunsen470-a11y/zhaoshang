@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 umask 077
-# GitHub builds the images. The server only pulls and starts them.
+# CI builds the images. The server only pulls and starts them.
 deploy_dir=${1:?deployment directory required}
 revision=${2:?commit required}
 image=${3:?image repository required}
@@ -64,5 +64,13 @@ sudo docker compose config --quiet
 sudo docker compose up -d --no-deps --wait --wait-timeout 150 payload
 if [[ "$sync_running" == true ]]; then sudo docker compose --profile sync up -d --no-deps sync; fi
 bash "$release_dir/check.sh" "$public_url"
+if [[ -f deployed-revision ]]; then cp deployed-revision previous-deployed-revision; fi
 printf '%s\n' "$revision" > deployed-revision
 printf 'Deployed %s successfully\n' "$revision"
+if [[ -f ccr-cleanup.env && -x /opt/zhaoshang-test/cleanup-venv/bin/python ]]; then
+  if ! (set -a; . ./ccr-cleanup.env; set +a; /opt/zhaoshang-test/cleanup-venv/bin/python "$release_dir/cleanup-ccr.py" --apply); then
+    echo 'WARNING: Deployment succeeded, but CCR cleanup failed.' >&2
+  fi
+else
+  echo 'WARNING: Deployment succeeded; CCR cleanup needs ccr-cleanup.env and cleanup-venv.' >&2
+fi

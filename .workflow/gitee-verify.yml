@@ -1,6 +1,6 @@
 version: "1.0"
 name: gitee-verify
-displayName: Tencent image verification
+displayName: Build and deploy via Tencent CCR
 stages:
   - name: build
     displayName: Build and upload image
@@ -52,5 +52,21 @@ stages:
           resource:
             cpu: "4"
             memory: "8"
+  - name: deploy
+    displayName: Deploy to VPS
+    strategy: naturally
+    trigger: auto
+    steps:
+      - step: custom-build@custom
+        name: deploy-vps
+        displayName: Pull CCR images and deploy
+        commands:
+          - bash deploy/gitee-deploy.sh
+        strategy:
+          retry: "0"
+          timeout: 20
+          resource:
+            cpu: "2"
+            memory: "4"
 triggers:
   trigger: manual

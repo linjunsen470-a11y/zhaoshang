@@ -150,7 +150,7 @@ test('rented property sync never toggles offline and unchanged rows skip media q
   } as unknown as Payload
   const docs: DocsClient = {
     async call(method) {
-      if (method === 'smartsheet.list_views') return { views: [{ view_name: '全部房源', view_id: 'all', config: '{"filterSpec":{"2":[]}}' }] }
+      if (method === 'smartsheet.list_views') return { views: [{ view_name: '全部房源', view_id: 'all', config: '{"filterSpec":{"conditions":[]}}' }] }
       if (method === 'smartsheet.list_records') return { records: [record], total: 1, has_more: false }
       throw new Error('Unexpected call')
     }, async close() {},
@@ -284,7 +284,7 @@ test('actual property sync stops malformed rows and persists missing confirmatio
   } as unknown as Payload
   const docs: DocsClient = {
     async call(method) {
-      if (method === 'smartsheet.list_views') return { views: [{ view_name: '全部房源', view_id: 'all', config: '{"filterSpec":{"2":[]}}' }] }
+      if (method === 'smartsheet.list_views') return { views: [{ view_name: '全部房源', view_id: 'all', config: '{"filterSpec":{"conditions":[]}}' }] }
       if (method === 'smartsheet.list_records') return { records: remote, total: remote.length, has_more: false }
       throw new Error('Unexpected call')
     }, async close() {},
@@ -319,4 +319,23 @@ test('unknown types and cross-city districts are rejected instead of silently de
   assert.throws(() => mapProperty(changed('商铺类型', '未知')), /商铺类型/)
   assert.throws(() => mapProperty(changed('招租业态', '未知')), /招租业态/)
   assert.throws(() => mapProperty(changed('场景', '')), /场景/)
+})
+
+
+test('property reconciliation rejects filtered and unknown view configurations before writes', async t => {
+  await isolated(t)
+  for (const viewConfig of [{ filterSpec: { conditions: [{ field: 'status' }] } }, {}, { filterSpec: {} }]) {
+    let writes = 0
+    const payload = { async update() { writes++; }, async find() { throw new Error('must not scan database'); } } as unknown as Payload
+    const docs: DocsClient = {
+      async call(method) {
+        assert.equal(method, 'smartsheet.list_views')
+        return { views: [{ view_name: '全部房源', view_id: 'all', config: JSON.stringify(viewConfig) }] }
+      }, async close() {},
+    }
+    const report = await runTencentSync(payload, 'test', docs, { ...config, importProperties: true, exportLeads: false })
+    assert.equal(report.errors.length, 1)
+    assert.match(report.errors[0].message, /停止缺失对账/)
+    assert.equal(writes, 0)
+  }
 })

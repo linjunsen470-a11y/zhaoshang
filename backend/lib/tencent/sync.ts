@@ -176,7 +176,7 @@ export async function runTencentSync(payload: Payload, trigger = 'manual', suppl
       const all = (views.views as { view_id: string; view_name: string; config: string }[] || []).find(view => view.view_name === '全部房源')
       if (!all) throw new Error('缺少全部房源视图，停止缺失对账')
       const viewConfig = JSON.parse(all.config)
-      const filters = viewConfig.filterSpec?.['2'] ?? viewConfig.filter?.conditions
+      const filters = viewConfig.filterSpec?.conditions
       if (!Array.isArray(filters) || filters.length) throw new Error('全部房源视图存在筛选，停止缺失对账')
       const records = await listRecords(docs, config.fileId, config.propertySheetId, all.view_id)
       const scope = `tencent:${config.fileId}:${config.propertySheetId}:`
