@@ -13,4 +13,7 @@ async function main() {
   try { console.log(JSON.stringify(await cleanupExpiredAttachments(payload, !process.argv.includes('--delete')))) }
   finally { await payload.destroy() }
 }
-main().catch(() => { console.error('附件清理失败，请检查数据库连接和服务器日志'); process.exitCode = 1 })
+main().then(() => process.exit(0)).catch(() => {
+  console.error('附件清理失败，请检查数据库连接和服务器日志')
+  process.exit(1)
+})
