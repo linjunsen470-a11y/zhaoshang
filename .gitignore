@@ -72,6 +72,9 @@ miniprogram_npm/
 # Local deployment credentials
 deploy/local/
 
+# Private VPS backup automation and recovery material
+/ops/weiyun-backup/
+
 # Database dumps, deployment archives, and local backup directories
 /backups/
 /backend/backups/

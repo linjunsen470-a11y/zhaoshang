@@ -145,24 +145,14 @@ export async function DELETE(request: Request, { params }: Args) {
     }
 
     // 3. 执行删除
-    const snapshot = lead.customerSnapshot as { attachmentIds?: unknown } | undefined
-    const leadAttachmentIds = [...new Set([
-      ...attachmentIds(lead.attachments),
-      ...attachmentIds(snapshot?.attachmentIds),
-    ])]
-
     await payload.delete({
       collection: 'leads',
       id,
       overrideAccess: true,
     })
-    await deleteOwnedOrphanAttachments(leadAttachmentIds, auth.openid)
     return json({ success: true })
   } catch (err) {
     console.error('Failed to delete lead:', err)
     return json({ error: '删除线索失败' }, 500)
   }
 }
-
-
-

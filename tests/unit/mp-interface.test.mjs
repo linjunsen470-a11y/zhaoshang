@@ -154,7 +154,7 @@ test('more filters are staged, cancellation discards changes and confirmation re
 });
 
 test('scene changes clear campus-only filters while preserving other filters and favorites scope', () => {
-  const { page, requests } = listPage({ favorites: ['42'] });
+  const { page, requests } = listPage({ favorite_sync_state: { activeOwner: '', sequence: 0, accounts: [{ owner: '', ids: ['42'], pending: [], status: 'idle', error: '' }] } });
   page.setFilters({ projectType: '食堂档口', district: '天河', favs: true });
   assert.equal(page.data.filters.businessScene, 'campus');
   page.onQuickFilter(event({ key: 'businessScene', value: 'office' }));

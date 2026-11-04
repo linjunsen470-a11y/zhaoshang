@@ -77,7 +77,7 @@ test('prelaunch HTTP security and attachment lifecycle', { timeout: 240_000 }, a
 
   await t.test('anonymous and mini-program users cannot read drafts or staff endpoints', async () => {
     assert.equal((await call(`/projects/${draft.id}`)).status, 404)
-    assert.equal((await call(`/payload/projects/${draft.id}`)).status, 404)
+    assert.equal((await call(`/payload/projects/${draft.id}`)).status, 403)
     for (const path of ['/stats', '/admin/properties', '/admin/inquiries', '/admin/equipment', '/admin/ops-workbench', '/admin/wechat-code']) {
       const response = await call(path, { headers: { Authorization: `Bearer ${owner}` } })
       assert.ok([401, 403].includes(response.status), `${path}: ${response.status}`)

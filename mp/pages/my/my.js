@@ -1,6 +1,7 @@
 const app = getApp();
 const api = require('../../services/api.js');
 const { recentIds } = require('../../utils/recent.js');
+const { snapshot, subscribeFavorites, syncFavorites } = require('../../utils/favorites.js');
 const { clip, validatePhone, config } = require('../../utils/form.js');
 const { authorizeWechatPhone, rememberContact } = require('../../utils/wechatContact.js');
 
@@ -11,7 +12,7 @@ Page({
       avatarUrl: '/images/tab_my.png',
       phone: ''
     },
-    favoriteCount: 0, recentCount: 0, leadCount: null,
+    favoriteCount: 0, favoriteSyncStatus: 'idle', recentCount: 0, leadCount: null,
     companyName: config.COMPANY_NAME,
     appName: config.APP_NAME,
     maxNameLength: config.MAX_NAME_LENGTH,
@@ -25,7 +26,10 @@ Page({
 
   onShow() {
     config.refreshRuntimeConfig();
-    this.setData({ favoriteCount: (wx.getStorageSync('favorites') || []).length, recentCount: recentIds().length });
+    if (!this._unsubscribeFavorites) this._unsubscribeFavorites = subscribeFavorites(value => this.updateFavorites(value));
+    this.updateFavorites(snapshot());
+    syncFavorites().catch(() => {});
+    this.setData({ recentCount: recentIds().length });
     api.getLeads().then(leads => this.setData({ leadCount: leads.length })).catch(() => this.setData({ leadCount: null }));
     const localInfo = wx.getStorageSync('userInfo');
     if (localInfo) {
@@ -39,6 +43,15 @@ Page({
     } else {
       this.setData({ userInfo: app.globalData.userInfo });
     }
+  },
+
+  onHide() {
+    if (this._unsubscribeFavorites) this._unsubscribeFavorites();
+    this._unsubscribeFavorites = null;
+  },
+
+  updateFavorites(value) {
+    this.setData({ favoriteCount: value.ids.length, favoriteSyncStatus: value.status });
   },
 
   onEditProfile() {

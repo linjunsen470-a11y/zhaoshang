@@ -40,9 +40,8 @@ Page({
     this.setData({ submitting: true });
     const request = this.data.isEditMode ? api.updateLead(this.data.leadId, payload) : api.submitEquipment(payload);
     request.then(res => {
-      if (!this.data.isEditMode) this.setData({ submitting: false });
       if (this.data.isEditMode) this.finishEditing();
-      else wx.navigateTo({ url: `/pages/success/success?leadId=${res.id}` });
+      else this.finishCreating(`/pages/success/success?leadId=${res.id}`);
     }).catch(err => {
       console.error(err);
       this.setData({ submitting: false });

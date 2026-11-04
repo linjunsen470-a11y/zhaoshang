@@ -2,12 +2,54 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { createStorage, loadMiniProgramModule } from '../helpers/load-cjs.mjs';
+test('completed forms stay locked when redirect fails, preventing duplicate creation', async () => {
+  for (const name of ['apply', 'transfer', 'equipment', 'renovation']) {
+    let definition;
+    let submissions = 0;
+    let redirects = 0;
+    const submit = async () => { submissions++; return { id: '123' }; };
+    loadMiniProgramModule(path.resolve(`mp/pages/${name}/${name}.js`), {
+      globals: {
+        Page: value => { definition = value; }, Behavior: value => value,
+        wx: { ...createStorage(), pageScrollTo() {}, showModal() {}, redirectTo(options) { redirects++; options.fail(); } },
+        getApp: () => ({ globalData: {} })
+      },
+      stubs: { '../../services/api.js': { submitLead: submit, submitTransfer: submit, submitEquipment: submit } }
+    });
+    const behavior = definition.behaviors[0];
+    const page = { ...behavior.methods, ...definition, data: { ...structuredClone(behavior.data), ...structuredClone(definition.data),
+      privacyAccepted: true, phone: '13812345678', locationText: '广州', leadType: 'equipment_sell', equipmentName: '冰箱' },
+      setData(patch) { Object.assign(this.data, patch); } };
+    page.onSubmitForm();
+    await new Promise(resolve => setImmediate(resolve));
+    page.onSubmitForm();
+    assert.equal(submissions, 1, name);
+    assert.equal(redirects, 1, name);
+    assert.equal(page.data.submitting, true, name);
+  }
+});
+
+test('upload is blocked after consent is unchecked even with historical consent', async () => {
+  let uploads = 0;
+  const behavior = loadMiniProgramModule(path.resolve('mp/utils/formBehavior.js'), {
+    globals: { Behavior: value => value, wx: { ...createStorage({ privacyConsentAccepted: true }), pageScrollTo() {} } },
+    stubs: { '../services/upload.js': { pickCompressAndUpload: async () => { uploads++; return []; } } }
+  });
+  const page = { ...behavior.methods, data: structuredClone(behavior.data), setData(patch) { Object.assign(this.data, patch); } };
+  await page.onChooseImages();
+  assert.equal(uploads, 0);
+  assert.match(page.data.fieldErrors.privacy, /隐私/);
+  page.data.privacyAccepted = true;
+  await page.onChooseImages();
+  assert.equal(uploads, 1);
+});
+
 test('numeric favorites match route strings and toggle without duplicates', () => {
-  const storage = createStorage({ favorites: [42] });
-  const favorites = loadMiniProgramModule(path.resolve('mp/utils/favorites.js'), { globals: { wx: { ...storage, showToast() {} } } });
+  const storage = createStorage({ favorite_sync_state: { activeOwner: '', sequence: 0, accounts: [{ owner: '', ids: [42], pending: [], status: 'idle', error: '' }] } });
+  const favorites = loadMiniProgramModule(path.resolve('mp/utils/favorites.js'), { globals: { wx: { ...storage, showToast() {} } }, stubs: { '../services/api.js': { getFavorites: async () => { throw new Error('offline'); } } } });
   assert.equal(favorites.isFavorite([42], '42'), true);
   assert.equal(favorites.toggleFavorite('42'), false);
-  assert.equal(storage.getStorageSync('favorites').length, 0);
+  assert.equal(favorites.snapshot().ids.length, 0);
 });
 
 test('late concurrent 401 reuses refreshed authentication and remote requests do not seed demo data', async () => {

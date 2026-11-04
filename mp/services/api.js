@@ -129,7 +129,8 @@ async function request(options) {
     data = {},
     auth: requiresAuth = false,
     retried = false,
-    forceRemote = false
+    forceRemote = false,
+    expectedOpenId = ''
   } = options;
   const appInstance = getApp() || {
     globalData: {
@@ -139,6 +140,9 @@ async function request(options) {
     }
   };
   if (appInstance.globalData.useLocalMock && !forceRemote) {
+    if (expectedOpenId && getCurrentOpenId() !== expectedOpenId) {
+      throw createApiError(409, { error: '微信账号已变化，请重新同步收藏' });
+    }
     initLocalStorage();
     return normalizeResponse(urlPath, localFallback(urlPath, method, data), method);
   }
@@ -150,6 +154,9 @@ async function request(options) {
   let token;
   if (requiresAuth) {
     token = await auth.getAuthToken(false, forceRemote);
+    if (expectedOpenId && wx.getStorageSync('authOpenId') !== expectedOpenId) {
+      throw createApiError(409, { error: '微信账号已变化，请重新同步收藏' });
+    }
     header.Authorization = `Bearer ${token}`;
   }
 
@@ -163,6 +170,10 @@ async function request(options) {
     });
   } catch (err) {
     throw err || new Error('Network error');
+  }
+
+  if (expectedOpenId && wx.getStorageSync('authOpenId') !== expectedOpenId) {
+    throw createApiError(409, { error: '微信账号已变化，请重新同步收藏' });
   }
 
   if (res.statusCode >= 200 && res.statusCode < 300) {
@@ -182,6 +193,18 @@ function getCurrentOpenId() {
   return wx.getStorageSync('authOpenId') || (app && app.globalData && app.globalData.devOpenId) || 'dev-openid-local';
 }
 
+async function getFavorites(params, expectedOwner = '') {
+  const app = getApp();
+  const localMock = Boolean(app && app.globalData && app.globalData.useLocalMock);
+  if (!localMock) await auth.getAuthToken();
+  const owner = localMock ? getCurrentOpenId() : wx.getStorageSync('authOpenId');
+  if (!owner || (expectedOwner && owner !== expectedOwner)) {
+    throw createApiError(409, { error: '微信账号已变化，请重新同步收藏' });
+  }
+  const result = await request({ url: '/favorites', data: params, auth: true, expectedOpenId: owner });
+  return { ...result, owner };
+}
+
 function hydrateLocalAttachments(value) {
   const media = wx.getStorageSync('local_media') || [];
   return (Array.isArray(value) ? value : []).map(item => {
@@ -191,6 +214,29 @@ function hydrateLocalAttachments(value) {
 }
 
 function localFallback(urlPath, method, requestData = {}) {
+  if (urlPath === '/favorites' && method === 'GET') {
+    const owner = getCurrentOpenId();
+    const all = (wx.getStorageSync('local_favorite_records') || []).filter(row => row.owner === owner);
+    const page = Math.max(1, Number(requestData.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(requestData.limit) || 100));
+    return { docs: all.slice((page - 1) * limit, page * limit).map(row => ({ projectId: row.projectId, createdAt: row.createdAt })), page, hasNextPage: page * limit < all.length };
+  }
+
+  if (urlPath.startsWith('/favorites/') && (method === 'PUT' || method === 'DELETE')) {
+    const owner = getCurrentOpenId();
+    const projectId = decodeURIComponent(urlPath.substring('/favorites/'.length));
+    const rows = wx.getStorageSync('local_favorite_records') || [];
+    const existing = rows.some(row => row.owner === owner && row.projectId === projectId);
+    if (method === 'PUT' && !existing) {
+      const projects = wx.getStorageSync('local_projects') || [];
+      const project = projects.find(item => String(item.id) === projectId);
+      if (!project || !commercial.publicRecord(project, projects)) throw createApiError(404, { error: '房源已不可用，无法同步收藏' });
+      rows.unshift({ owner, projectId, createdAt: new Date().toISOString() });
+    }
+    wx.setStorageSync('local_favorite_records', method === 'DELETE' ? rows.filter(row => row.owner !== owner || row.projectId !== projectId) : rows);
+    return { success: true };
+  }
+
   if (urlPath === '/projects' && method === 'GET') {
     return commercial.queryLocal(wx.getStorageSync('local_projects') || [], requestData);
   }
@@ -352,6 +398,8 @@ function localFallback(urlPath, method, requestData = {}) {
 }
 
 module.exports = {
+  getFavorites,
+  setFavorite: (id, active, owner) => request({ url: `/favorites/${encodeURIComponent(id)}`, method: active ? 'PUT' : 'DELETE', auth: true, expectedOpenId: owner }),
   getWechatPhone: code => request({ url: '/auth/wechat-phone', method: 'POST', data: { code }, auth: true, forceRemote: true }),
   getProjects: params => request({ url: '/projects', data: { limit: 100, ...params } }).then(data => data.docs),
   getProjectPage: params => request({ url: '/projects', data: { ...params, view: 'card' } }),

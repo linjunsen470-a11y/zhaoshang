@@ -1,5 +1,5 @@
 import { assertSourceWrite, isTencentSource, SOURCE_FIELDS } from '../lib/tencent/propertyPolicy'
-import { commercialId, commercialScene, publicCommercialWhere, validateCommercial } from '../lib/commercial'
+import { commercialId, commercialScene, validateCommercial } from '../lib/commercial'
 import type { CollectionConfig } from 'payload'
 import { canManageProjects, isAdminUser, isStaffUser } from './shared/access'
 import {
@@ -52,10 +52,8 @@ export const Projects: CollectionConfig = {
     },
   },
   access: {
-    read: ({ req: { user } }) => {
-      if (user && isStaffUser(user)) return true
-      return publicCommercialWhere()
-    },
+    // Public clients use /api/projects, which filters and redacts the response.
+    read: ({ req: { user } }) => isStaffUser(user),
     create: ({ req: { user } }) => canManageProjects(user),
     update: ({ req: { user } }) => canManageProjects(user),
     delete: ({ req: { user } }) => isAdminUser(user),

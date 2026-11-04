@@ -22,8 +22,6 @@ App({
     this.globalData.devOpenId = runtime.DEV_OPEN_ID;
     this.globalData.configError = runtime.CONFIG_ERROR;
     this.globalData.useLocalMock = runtime.USE_LOCAL_MOCK;
-    const favs = wx.getStorageSync('favorites');
-    if (!favs) wx.setStorageSync('favorites', []);
     if (config.CONFIG_ERROR) {
       wx.showModal({
         title: '运行环境未配置',

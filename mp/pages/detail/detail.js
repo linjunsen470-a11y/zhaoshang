@@ -1,4 +1,4 @@
-const { toggleFavorite, isFavorite } = require('../../utils/favorites.js');
+const { canSyncInBackground, toggleFavorite, isFavorite, snapshot, subscribeFavorites, syncFavorites } = require('../../utils/favorites.js');
 const api = require('../../services/api.js');
 const config = require('../../config.js');
 const { rememberProject } = require('../../utils/recent.js');
@@ -38,9 +38,16 @@ Page({
   },
 
   onShow() {
+    if (!this._unsubscribeFavorites) this._unsubscribeFavorites = subscribeFavorites(() => this.checkFavoriteStatus(this.data.projectId));
     if (this.data.projectId) {
       this.checkFavoriteStatus(this.data.projectId);
     }
+    if (canSyncInBackground()) syncFavorites().catch(() => {});
+  },
+
+  onHide() {
+    if (this._unsubscribeFavorites) this._unsubscribeFavorites();
+    this._unsubscribeFavorites = null;
   },
 
   loadDetail(id) {
@@ -98,7 +105,7 @@ Page({
     if (this.data.unitsLoading || (append && !this.data.unitsHasNext)) return;
     const page = append ? this.data.unitPage + 1 : 1;
     this.setData({ unitsLoading: true, unitsError: false });
-    api.getProjectPage({ public: true, parentProject: this.data.projectId, page, limit: 20 }).then(result => {
+    api.getProjectPage({ public: true, available: true, parentProject: this.data.projectId, page, limit: 20 }).then(result => {
       this.setData({ units: append ? [...this.data.units, ...result.docs] : result.docs, unitPage: result.page, unitsHasNext: result.hasNextPage, unitsLoading: false });
     }).catch(() => this.setData({ unitsLoading: false, unitsError: true }));
   },
@@ -117,7 +124,7 @@ Page({
   onFindSimilar() { wx.setStorageSync('pendingListFilter', { businessScene: this.data.project.businessScene }); wx.switchTab({ url: '/pages/list/list' }); },
 
   checkFavoriteStatus(id) {
-    const favs = wx.getStorageSync('favorites') || [];
+    const favs = snapshot().ids;
     this.setData({ isFavorited: isFavorite(favs, id) });
   },
 

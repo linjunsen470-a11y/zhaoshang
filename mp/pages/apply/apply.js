@@ -77,11 +77,10 @@ Page({
     this.setData({ submitting: true });
     const request = this.data.isEditMode ? api.updateLead(this.data.leadId, payload) : api.submitLead(payload);
     request.then(res => {
-      if (!this.data.isEditMode) this.setData({ submitting: false });
       if (this.data.isEditMode) {
         this.finishEditing();
       } else {
-        wx.navigateTo({ url: `/pages/success/success?projectId=${projectId || ''}&leadId=${res.id}` });
+        this.finishCreating(`/pages/success/success?projectId=${projectId || ''}&leadId=${res.id}`);
       }
     }).catch(err => {
       console.error(err);

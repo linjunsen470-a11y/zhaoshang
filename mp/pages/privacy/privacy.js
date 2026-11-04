@@ -2,7 +2,7 @@ const config = require('../../config.js');
 
 Page({
   data: {
-    updatedAt: '2026-10-31',
+    updatedAt: '2026-11-05',
     companyName: config.COMPANY_NAME,
     contactPhone: config.ADVISOR_PHONE
   },

@@ -1,4 +1,4 @@
-const { toggleFavorite, isFavorite } = require('../../utils/favorites.js');
+const { canSyncInBackground, toggleFavorite, isFavorite, snapshot, subscribeFavorites, syncFavorites } = require('../../utils/favorites.js');
 const api = require('../../services/api.js');
 const config = require('../../config.js');
 const { isPublicProject } = require('../../utils/project.js');
@@ -8,6 +8,7 @@ Page({
   data: {
     appName: config.APP_NAME,
     searchKeyword: '',
+    searchFocused: false,
     secondaryServices: [
       { id: 'transfer', name: '委托转让', desc: '登记信息，协助联系意向方', icon: '/images/icons/transfer.png', action: 'transfer' },
       { id: 'equipment', name: '餐饮设备', desc: '求购、出售与回收登记', icon: '/images/icons/equipment.png', action: 'equipment' },
@@ -28,13 +29,19 @@ Page({
   },
 
   onShow() {
+    if (!this._unsubscribeFavorites) this._unsubscribeFavorites = subscribeFavorites(() => this.refreshFavoriteMarks());
+    if (canSyncInBackground()) syncFavorites().catch(() => {});
     if (this._useLocalMock !== config.USE_LOCAL_MOCK) {
       this._useLocalMock = config.USE_LOCAL_MOCK;
       this.loadData();
       return;
     }
+    this.refreshFavoriteMarks();
+  },
+
+  refreshFavoriteMarks() {
     if (this.data.recommendedList.length > 0 || this.data.latestList.length > 0) {
-      const favs = wx.getStorageSync('favorites') || [];
+      const favs = snapshot().ids;
       this.setData({
         recommendedList: this.data.recommendedList.map(p => ({ ...p, isFav: isFavorite(favs, p.id) })),
         latestList: this.data.latestList.map(p => ({ ...p, isFav: isFavorite(favs, p.id) }))
@@ -62,7 +69,7 @@ Page({
       api.getProjectPage({ public: true, available: 'true', sort: 'latest', page: 1, limit: 6 })
     ]), requestTimeout])
       .then(([recommended, latest]) => {
-        const favs = wx.getStorageSync('favorites') || [];
+        const favs = snapshot().ids;
         const prepare = rows => rows.filter(p => isPublicProject(p) && p.status !== 'full').map(p => ({ ...p, isFav: isFavorite(favs, p.id) }));
         const recommendedList = prepare(recommended.docs);
         const recommendedIds = new Set(recommendedList.map(project => String(project.id)));
@@ -89,6 +96,9 @@ Page({
     this.setData({ searchKeyword: e.detail.value });
   },
 
+  onSearchFocus() { this.setData({ searchFocused: true }); },
+  onSearchBlur() { this.setData({ searchFocused: false }); },
+
   onSearch() {
     const q = this.data.searchKeyword.trim();
     wx.setStorageSync('pendingListFilter', { q });
@@ -111,7 +121,12 @@ Page({
   },
   onOpenServices() { this.setData({ showServices: true }); },
   onCloseServices() { this.setData({ showServices: false }); },
-  onHide() { this.onCloseServices(); },
+  onHide() {
+    if (this._unsubscribeFavorites) this._unsubscribeFavorites();
+    this._unsubscribeFavorites = null;
+    this.onCloseServices();
+    this.onSearchBlur();
+  },
   noop() {},
   onCategoryTap(e) {
     const { type, val } = e.currentTarget.dataset;
@@ -160,7 +175,7 @@ Page({
     const id = e.currentTarget.dataset.id;
     const isFav = toggleFavorite(id);
 
-    const updateFav = arr => arr.map(item => item.id === id ? { ...item, isFav } : item);
+    const updateFav = arr => arr.map(item => String(item.id) === String(id) ? { ...item, isFav } : item);
     this.setData({
       recommendedList: updateFav(this.data.recommendedList),
       latestList: updateFav(this.data.latestList)

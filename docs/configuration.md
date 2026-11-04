@@ -25,6 +25,8 @@
 - **Gitee 发布**：根 `.env` 的 `GITEE_ACCESS_TOKEN` 仅供本机同步和维护，不提交到 Git，也不注入应用容器。流水线引用独立保存的腾讯仓库凭证；`NODE_IMAGE`、`ALPINE_MIRROR`、`PNPM_CONFIG_REGISTRY` 和 `BUILD_TARGET` 是公开构建参数，不是服务器运行配置。加密通用变量 `DEPLOY_SSH_KEY` 通过 YAML 的 `ref_variable` 关联；VPS 的 `ccr-pull.env` 保存 CCR 拉取凭据，权限 600。
 - **维护账号**：SSH 和 `CMS_ADMIN_*` 仅供本机维护使用，不注入应用容器。填写 CMS 账号不会创建或重置后台用户。CI 使用专用 SSH 密钥。
 
+当前目标为企业小程序 `wx4f94db3b93564c34`。根目录与 `mp/` 的 `project.config.json`、两份 `.env.example` 已更新；真实环境中的 AppID/AppSecret 必须成对切换，不能沿用个人账号密钥。服务端令牌、旧数据归属、二维码及微信后台待办见 [企业小程序切换](wechat-enterprise-switch-2026-11-02.md)。
+
 ## 仓库卫生
 
 提交源码、锁文件、部署脚本和脱敏模板。`.env`、私钥、数据库 dump、媒体目录、同步凭据、构建缓存与测试产物由 `.gitignore` 排除。排除规则不会自动移除已经被 Git 跟踪的文件。

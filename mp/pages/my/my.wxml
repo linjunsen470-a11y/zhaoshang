@@ -20,7 +20,7 @@
     <button class="shortcut" bindtap="onGoToFavorites">
       <image class="line-icon" src="/images/icons/star.png" />
       <view class="shortcut-title">收藏的空间<text class="shortcut-count">{{favoriteCount}}</text></view>
-      <view class="shortcut-desc">收藏仅保存在本机</view>
+      <view class="shortcut-desc">{{favoriteSyncStatus === 'mock' ? '本地测试模式' : (favoriteSyncStatus === 'error' ? '收藏同步失败' : (favoriteSyncStatus === 'pending' ? '收藏待同步' : (favoriteSyncStatus === 'syncing' ? '正在同步' : '跨设备保存心仪空间')))}}</view>
       <text class="shortcut-arrow"><text class="ui-chevron" aria-hidden="true"></text></text>
     </button>
   </view>

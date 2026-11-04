@@ -7,9 +7,10 @@ import {
   stopE2E,
   waitForData,
   waitForPage,
+  waitUntil,
 } from './e2e/harness.mjs';
 
-test('mini-program browse and branch navigation regression', { timeout: 90_000 }, async () => {
+test('mini-program browse and branch navigation regression', { timeout: 90_000, skip: process.env.MP_E2E_CONFIRM_ISOLATED !== 'true' && '收藏操作需要确认使用隔离测试后端' }, async () => {
   let context;
   try {
     context = await startE2E();
@@ -20,8 +21,12 @@ test('mini-program browse and branch navigation regression', { timeout: 90_000 }
     assert.ok(favorite);
     const favoriteId = String((await home.data('latestList'))[0].id);
     await home.callMethod('onToggleFav', { currentTarget: { dataset: { id: favoriteId } } });
-    const favorites = await miniProgram.evaluate(() => wx.getStorageSync('favorites') || []);
-    assert.ok(favorites.includes(favoriteId), 'favorite tap must persist the project id');
+    await waitUntil(async () => miniProgram.evaluate(id => {
+      const state = wx.getStorageSync('favorite_sync_state') || { accounts: [] };
+      const owner = wx.getStorageSync('authOpenId') || state.activeOwner || '';
+      const account = state.accounts.find(item => item.owner === owner);
+      return Boolean(account && account.ids.includes(id));
+    }, favoriteId), 'favorite tap must persist the project id');
 
     await (await home.$('.e2e-search-input')).input('华商');
     await home.callMethod('onSearch');

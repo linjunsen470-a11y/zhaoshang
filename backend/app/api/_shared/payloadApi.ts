@@ -2,7 +2,6 @@ import { commercialScene, commercialIsPublic } from '../../../lib/commercial'
 import { publicCampusLabel, redactPublicProject, scrubSchoolText } from '../../../lib/publicSchool'
 import config from '@/payload.config'
 import { getPayload } from 'payload'
-import type { Where } from 'payload'
 import { relationIds } from './relationIds'
 import { signMediaToken } from './tokens'
 
@@ -324,58 +323,11 @@ export async function validateAttachmentOwnership(
   return null
 }
 
-/** Keep files referenced by either a working copy or an immutable original. */
-export async function deleteOwnedOrphanAttachments(
-  attachmentIds: (string | number)[],
-  ownerOpenId: string,
-) {
-  if (!attachmentIds.length) return
-  const payload = await getPayloadInstance()
-  const originalIds = new Set<string>()
-  let page = 1
-  while (true) {
-    const originals = await payload.find({
-      collection: 'leads',
-      where: { submitterOpenId: { equals: ownerOpenId } },
-      select: { customerSnapshot: true },
-      page,
-      limit: 100,
-      depth: 0,
-      overrideAccess: true,
-    })
-    for (const lead of originals.docs) {
-      const snapshot = objectValue(lead.customerSnapshot)
-      if (Array.isArray(snapshot.attachmentIds)) snapshot.attachmentIds.forEach(id => originalIds.add(String(id)))
-    }
-    if (!originals.hasNextPage) break
-    page += 1
-  }
-
-  for (const id of attachmentIds) {
-    if (originalIds.has(String(id))) continue
-    try {
-      const references = await payload.find({
-        collection: 'leads',
-        where: { attachments: { contains: id } } as Where,
-        limit: 1,
-        depth: 0,
-        overrideAccess: true,
-      })
-      if (references.totalDocs > 0) continue
-      const projects = await payload.count({
-        collection: 'projects',
-        where: { or: [{ coverImage: { equals: id } }, { images: { contains: id } }] } as Where,
-        overrideAccess: true,
-      })
-      if (projects.totalDocs > 0) continue
-
-      const media = await payload.findByID({ collection: 'media', id, overrideAccess: true })
-      if (media.source !== 'lead_attachment' || media.ownerOpenId !== ownerOpenId) continue
-      await payload.delete({ collection: 'media', id, overrideAccess: true })
-    } catch (error) {
-      console.error('[deleteOwnedOrphanAttachments]', { mediaId: String(id), error })
-    }
-  }
+/** Shared by API deletion, CMS deletion and the maintenance command. */
+export async function deleteOwnedOrphanAttachments(attachmentIds: (string | number)[], ownerOpenId: string) {
+  const { deleteOrphanAttachments } = await import('../../../lib/attachmentCleanup')
+  try { await deleteOrphanAttachments(await getPayloadInstance(), attachmentIds, ownerOpenId) }
+  catch { console.error('附件清理失败，请运行附件清理命令') }
 }
 
 export function maskPublicRegion(value: unknown) {

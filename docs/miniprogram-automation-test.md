@@ -37,7 +37,7 @@ pnpm test:api:integration
 
 ## DevTools E2E
 
-E2E 会先检查 `${MP_E2E_API_URL}/projects?public=true`，然后启动 DevTools 或连接已经开启的自动化端口。测试不会修改 `mp/config/environments.js`，而是在 develop 自动化会话中覆盖 `app.globalData`。
+E2E 会先检查 `${MP_E2E_API_URL}/projects?public=true`，然后启动 DevTools 或连接已经开启的自动化端口。测试不会修改 `mp/config/environments.js`，而是在 develop 自动化会话中覆盖 `app.globalData`。Full 涉及收藏写入，必须先确认 API 和数据库均为隔离测试环境并设置 `MP_E2E_CONFIRM_ISOLATED=true`，否则相关用例明确跳过。
 
 自动启动：
 
@@ -65,6 +65,7 @@ pnpm test:mp:full
 | `MP_E2E_WS_ENDPOINT` | `ws://127.0.0.1:9420` | connect 模式地址 |
 | `MP_E2E_PORT` | `9420` | launch 模式端口 |
 | `MP_E2E_API_URL` | `http://127.0.0.1:3000/api` | 独立测试后端 API |
+| `MP_E2E_CONFIRM_ISOLATED` | 未设置 | Full 收藏用例需设为 `true`，确认后端及数据库均隔离 |
 | `MP_E2E_ARTIFACT_DIR` | `test-results/mp-e2e` | 失败截图目录 |
 
 ## 覆盖与隔离规则

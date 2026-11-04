@@ -105,3 +105,41 @@ test('remote requests refresh once after 401', async () => {
   assert.deepEqual(authCalls, [false, false]);
   assert.equal(calls[1].header.Authorization, 'Bearer fresh-token');
 });
+
+test('favorite writes are not sent if reauthentication changes the owner', async () => {
+  const storage = createStorage({ authOpenId: 'owner-a' });
+  const calls = [];
+  const wx = { ...storage, request: options => calls.push(options) };
+  const api = loadMiniProgramModule(apiPath, {
+    globals: { wx, getApp: () => ({ globalData: { apiUrl: 'https://api.test', useLocalMock: false, configError: '' } }) },
+    stubs: { './auth.js': { getAuthToken: async () => { storage.setStorageSync('authOpenId', 'owner-b'); return 'fresh-token'; } } },
+  });
+  await assert.rejects(() => api.setFavorite('42', true, 'owner-a'), error => error.statusCode === 409);
+  assert.equal(calls.length, 0);
+});
+
+test('favorite list responses are rejected if the account changes in flight', async () => {
+  const storage = createStorage({ authOpenId: 'owner-a' });
+  const wx = { ...storage, request: options => {
+    storage.setStorageSync('authOpenId', 'owner-b');
+    options.success({ statusCode: 200, data: { docs: [{ projectId: '42' }], page: 1, hasNextPage: false } });
+  } };
+  const api = loadMiniProgramModule(apiPath, {
+    globals: { wx, getApp: () => ({ globalData: { apiUrl: 'https://api.test', useLocalMock: false, configError: '' } }) },
+    stubs: { './auth.js': { getAuthToken: async () => 'token-a' } },
+  });
+  await assert.rejects(() => api.getFavorites({ page: 1 }), error => error.statusCode === 409);
+});
+
+test('local mock favorites stay isolated by openid and are idempotent', async () => {
+  const { api, storage } = makeLocalApi({ local_projects: [{ id: 'p1', status: 'online', businessScene: 'campus', listingKind: 'unit' }], local_leads: [] });
+  await api.setFavorite('p1', true, 'unit-openid');
+  await api.setFavorite('p1', true, 'unit-openid');
+  assert.equal((await api.getFavorites({ page: 1 })).docs.length, 1);
+  storage.setStorageSync('authOpenId', 'other-user');
+  assert.equal((await api.getFavorites({ page: 1 })).docs.length, 0);
+  await assert.rejects(() => api.setFavorite('p1', false, 'unit-openid'), error => error.statusCode === 409);
+  storage.setStorageSync('authOpenId', 'unit-openid');
+  await api.setFavorite('p1', false, 'unit-openid');
+  assert.equal((await api.getFavorites({ page: 1 })).docs.length, 0);
+});

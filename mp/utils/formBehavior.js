@@ -38,6 +38,16 @@ module.exports = Behavior({
     detached() { clearTimeout(this._navTimer); }
   },
   methods: {
+    finishCreating(url) {
+      // Keep the completed form locked even if navigation fails.
+      wx.redirectTo({
+        url,
+        fail: () => wx.showModal({
+          title: '提交成功', content: '需求已收到，请到「我的咨询记录」查看。', showCancel: false,
+          success: () => wx.switchTab({ url: '/pages/my/my' })
+        })
+      });
+    },
     finishEditing() {
       wx.showToast({ title: '修改成功', icon: 'success', duration: 1500 });
       this._navTimer = setTimeout(() => wx.navigateBack(), 1500);
@@ -109,6 +119,10 @@ module.exports = Behavior({
 
     async onChooseImages() {
       if (this.data.uploadingImages) return;
+      if (!this.data.isEditMode && validatePrivacyConsent(this.data.privacyAccepted)) {
+        this.showFieldError('privacy', '上传图片前，请先阅读并同意《隐私政策》');
+        return;
+      }
       this.setData({ uploadingImages: true });
       try {
         const files = await upload.pickCompressAndUpload(this.data.attachments);

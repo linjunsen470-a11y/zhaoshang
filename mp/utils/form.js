@@ -33,7 +33,7 @@ function rememberPrivacyConsent() {
 }
 
 function validatePrivacyConsent(accepted) {
-  if (!accepted && !hasPrivacyConsent()) return '请先阅读并同意《隐私政策》';
+  if (!accepted) return '请先阅读并同意《隐私政策》';
   return '';
 }
 

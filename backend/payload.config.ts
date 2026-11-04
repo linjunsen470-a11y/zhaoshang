@@ -10,6 +10,7 @@ import { Projects } from './collections/Projects'
 import { Leads } from './collections/Leads'
 import { Media } from './collections/Media'
 import { Users } from './collections/Users'
+import { Favorites } from './collections/Favorites'
 
 // For Docker / VPS deployment we will use Postgres
 // Local dev can use env var or fallback
@@ -79,6 +80,7 @@ export default buildConfig({
     Leads,
     Media,
     Users,
+    Favorites,
   ],
   editor: lexicalEditor({}),
   secret: secret || 'your-fallback-dev-secret-for-local-demo',

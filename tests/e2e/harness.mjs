@@ -125,7 +125,7 @@ export async function startE2E(options = {}) {
     app.globalData.useLocalMock = false;
     app.globalData.configError = '';
     if (config.resetStorage) {
-      ['authToken', 'authOpenId', 'authTokenExpiresAt', 'privacyConsentAccepted', 'userInfo', 'favorites']
+      ['authToken', 'authOpenId', 'authTokenExpiresAt', 'privacyConsentAccepted', 'userInfo', 'favorite_sync_state']
         .forEach(key => wx.removeStorageSync(key));
     }
   }, { apiUrl, resetStorage: options.resetStorage !== false });

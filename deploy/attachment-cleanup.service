@@ -1,0 +1,10 @@
+[Unit]
+Description=Clean unreferenced consultation attachments older than seven days
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/zhaoshang-test
+ExecStart=/usr/bin/flock -w 600 /opt/zhaoshang-test/.deploy.lock /usr/bin/docker compose run --rm -T tools node node_modules/tsx/dist/cli.mjs scripts/cleanup-attachments.ts --delete
+TimeoutStartSec=3600

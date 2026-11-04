@@ -291,3 +291,9 @@
 .collection-desc { margin-top: 8rpx; color: var(--muted); font-size: 26rpx; }
 .collection-actions { display: flex; gap: 16rpx; margin-top: 24rpx; }
 .collection-actions .btn { flex: 1; padding: 16rpx; font-size: 26rpx; }
+.favorite-sync { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; margin: 12rpx 0 20rpx; color: var(--muted); font-size: 24rpx; }
+.sync-retry { flex-shrink: 0; }
+.clear-recent, .remove-recent { display: block; min-height: 44px; margin-left: auto; font-size: 24rpx; }
+.unavailable-project { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; margin-bottom: 20rpx; padding: 28rpx; border: 1rpx solid var(--line); border-radius: 16rpx; background: var(--wash); }
+.unavailable-title { font-size: 28rpx; font-weight: 600; }
+.unavailable-desc { margin-top: 8rpx; color: var(--muted); font-size: 24rpx; }

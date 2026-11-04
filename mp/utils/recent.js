@@ -9,4 +9,12 @@ function rememberProject(id) {
   wx.setStorageSync(KEY, [String(id), ...recentIds().filter(value => value !== String(id))].slice(0, 20));
 }
 
-module.exports = { recentIds, rememberProject };
+function removeRecent(id) {
+  wx.setStorageSync(KEY, recentIds().filter(value => value !== String(id)));
+}
+
+function clearRecent() {
+  wx.setStorageSync(KEY, []);
+}
+
+module.exports = { recentIds, rememberProject, removeRecent, clearRecent };

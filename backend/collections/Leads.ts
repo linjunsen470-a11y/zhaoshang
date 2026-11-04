@@ -8,6 +8,7 @@ import {
   LEAD_STATUS_HELP,
 } from './shared/fieldOptions'
 import { buildLeadSnapshot } from '../lib/leadSnapshot'
+import { deleteOrphanAttachments, leadAttachmentIds } from '../lib/attachmentCleanup'
 
 const EQUIPMENT_TYPES = ['equipment_sell', 'equipment_buy', 'equipment_recycle']
 
@@ -223,6 +224,14 @@ export const Leads: CollectionConfig = {
     },
   ],
   hooks: {
+    afterDelete: [async ({ doc, req }) => {
+      try {
+        await deleteOrphanAttachments(req.payload, leadAttachmentIds(doc), String(doc.submitterOpenId || ''), req)
+      } catch {
+        // The maintenance command retries orphan cleanup; do not undo the deletion.
+        req.payload.logger.error('咨询已删除，但附件清理失败，请运行附件清理命令')
+      }
+    }],
     beforeChange: [
       async ({ data, operation, originalDoc, req }) => {
         if (data.projectId && !data.project) data.project = data.projectId

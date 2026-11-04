@@ -27,7 +27,8 @@ test('form helpers enforce limits, phone format and privacy consent', () => {
   assert.equal(form.validatePhone('12812345678'), false);
   assert.match(form.validatePrivacyConsent(false), /隐私政策/);
   form.rememberPrivacyConsent();
-  assert.equal(form.validatePrivacyConsent(false), '');
+  assert.match(form.validatePrivacyConsent(false), /隐私政策/);
+  assert.equal(form.validatePrivacyConsent(true), '');
 });
 
 test('navigation helpers reject unsafe identifiers and malformed encoding', () => {

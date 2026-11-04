@@ -1,12 +1,12 @@
 # Demo 与正式发布检查清单
 
-更新：2026-10-31。企业信息、域名及备案步骤见 [企业备案与小程序上线准备](企业备案与小程序上线准备.md)；微信端操作说明见 [自动化测试](miniprogram-automation-test.md)。
+更新：2026-11-05。企业信息、域名及备案步骤见 [企业备案与小程序上线准备](企业备案与小程序上线准备.md)；新企业账号切换见 [企业小程序切换](wechat-enterprise-switch-2026-11-02.md)；微信端操作说明见 [自动化测试](miniprogram-automation-test.md)。
 
 ## 本地 demo
 
 - [ ] 微信开发者工具打开 `mp/project.config.json`，使用 develop 模式。
-- [ ] 保持 `mp/config/environments.js` 中 develop 的 `useLocalMock: true`；演示数据保存在本机 Storage，不需要后端。
-- [ ] 浏览校园、社区、文旅、购物中心，检查列表筛选、详情和父项目/子铺位跳转。
+- [ ] 如需本地演示，显式将 `mp/config/environments.js` 中 develop 的 `useLocalMock` 设为 `true`；演示数据保存在本机 Storage，不需要后端。当前 develop 默认连接腾讯云 HTTPS API，演示结束后恢复实际配置。
+- [ ] 浏览学校、工业园区、写字楼，检查列表筛选、详情和父项目/子铺位跳转。
 - [ ] 提交找铺、转让、设备、装修咨询，检查隐私同意、字段错误、查询/编辑/删除与成功页返回。
 - [ ] 演示摄影保留「示意 / 非实拍」标识；现已配置真实顾问电话，测试时避免误拨。
 - [ ] 本地连续导航存在历史自动化超时记录，手工复核「提交成功 → 首页 → 其他场景」及「子铺位 → 返回列表」。
@@ -32,17 +32,22 @@ node scripts/mp-check-templates.mjs
 - [ ] trial HTTPS API 地址：`mp/config/environments.js`。
 - [ ] release HTTPS API 地址：同上；trial/release 保持关闭 Mock 与开发 OpenID。
 - [ ] 核对真实顾问电话，填写管局核发的小程序备案号：`mp/config/index.js`。
-- [ ] 确认小程序注册主体与 `wx98ad42097b40a52d` 对应；按微信平台要求完成主体认证、服务类目和小程序备案。
+- [ ] 确认企业小程序 `wx4f94db3b93564c34` 的注册主体；按微信平台要求完成主体认证、服务类目和小程序备案。
 - [ ] 独立随机 `MINIPROGRAM_TOKEN_SECRET`，至少 32 字符且与 `PAYLOAD_SECRET` 不同。
 - [ ] `WECHAT_AUTH_MODE=wechat`。
 - [ ] 真实 `WECHAT_APP_SECRET`。
-- [ ] `WECHAT_APPID` 与 `mp/project.config.json` 的 appid 一致。
+- [ ] `WECHAT_APPID` 与根目录、`mp/` 两份 `project.config.json` 的 appid 一致，AppSecret 属于同一新账号；本机修改不代表服务器已切换。
+- [ ] 新账号切换时更新独立的 `MINIPROGRAM_TOKEN_SECRET` 并重新创建应用容器，使旧登录及私密图片令牌失效；重新登录并重新生成分享码。
 - [ ] 正式版 `WECHAT_CODE_ENV_VERSION=release`（体验版按对应环境配置）。
 - [ ] 真实 HTTPS `PAYLOAD_PUBLIC_SERVER_URL`。
 
 静态检查还会检查 `PAYLOAD_SECRET`、`DATABASE_URI` 与 `PAYLOAD_DB_PUSH=false`。目标部署环境须单独检查；本地检查结果不证明线上配置正确。
 
 ## 目标环境验收
+
+- [ ] 新版收藏 API 已部署；备份后显式更新 favorites 结构，验证收藏增删、跨设备与双账号隔离。
+- [ ] 原生 Payload 项目接口拒绝匿名读取，公开自定义接口保持脱敏。
+- [ ] 新 tools 镜像发布后，按 [附件清理说明](attachment-cleanup.md)预览并启用每日任务。
 
 - [ ] HTTPS、公众平台 request/uploadFile/downloadFile 合法域名已配置，微信开发者工具保持开启域名校验并复测；仅本地调试 HTTP Mock API 时临时关闭，复测前重新开启。
 - [ ] 真实微信 code 登录与两个账号的咨询/附件隔离通过。
@@ -52,4 +57,4 @@ node scripts/mp-check-templates.mjs
 - [ ] 数据库迁移在隔离环境验证，并完成目标库与 media 卷的配套备份/恢复演练。
 - [ ] 正常启动与镜像构建关闭自动 schema push；反向代理覆盖不可信的 IP 转发头。
 
-真实 HTTP、容器和真机验收未完成时，不将本地 demo 成功写成正式发布通过。订阅消息、地图、对比、收藏云同步等增长功能可后续迭代。
+真实 HTTP、容器和真机验收未完成时，不将本地 demo 成功写成正式发布通过。订阅消息、地图、对比等功能可后续迭代。收藏云同步代码已实现，仍需随新版后端部署并显式更新数据库结构。

@@ -1,7 +1,7 @@
-const { toggleFavorite, isFavorite } = require('../../utils/favorites.js');
+const { canSyncInBackground, toggleFavorite, setFavorite, isFavorite, snapshot, subscribeFavorites, syncFavorites } = require('../../utils/favorites.js');
 const api = require('../../services/api.js');
 const config = require('../../config.js');
-const { recentIds } = require('../../utils/recent.js');
+const { recentIds, removeRecent, clearRecent } = require('../../utils/recent.js');
 const { safeDecode } = require('../../utils/navigation.js');
 const { ALL, FILTERS, defaults, normalize, tabs, moreGroups } = require('../../utils/projectFilters.js');
 Page({
@@ -12,7 +12,8 @@ Page({
     keyword: '', isRecommendedOnly: false, isFavoritesOnly: false, isRecentOnly: false,
     draftCount: null, draftCounting: false,
     projectList: [], loading: true, loadError: false, loadingMore: false, moreError: false,
-    page: 0, totalDocs: 0, hasNextPage: false, hasFilters: false, scopeNotice: false
+    page: 0, totalDocs: 0, hasNextPage: false, hasFilters: false, scopeNotice: false,
+    favoriteSyncStatus: 'idle', favoriteSyncError: ''
   },
   onLoad(params) {
     if (typeof wx.showShareMenu === 'function') wx.showShareMenu({ menus: ['shareAppMessage', 'shareTimeline'] });
@@ -21,7 +22,12 @@ Page({
     this.loadProjects();
   },
   onShow() {
+    if (!this._unsubscribeFavorites) this._unsubscribeFavorites = subscribeFavorites(value => this.refreshFavorites(value));
+    const currentFavorites = snapshot();
+    this._favoriteIdsKey = currentFavorites.ids.join(',');
+    this.refreshFavorites(currentFavorites);
     const pending = wx.getStorageSync('pendingListFilter');
+    if (this.data.isFavoritesOnly || (pending && pending.favs) || canSyncInBackground()) syncFavorites().catch(() => {});
     if (pending) {
       this._useLocalMock = config.USE_LOCAL_MOCK;
       wx.removeStorageSync('pendingListFilter');
@@ -36,8 +42,18 @@ Page({
       return;
     }
     if (this.data.isRecentOnly || this.data.isFavoritesOnly) { this.loadProjects(); return; }
-    const favorites = wx.getStorageSync('favorites') || [];
+    const favorites = snapshot().ids;
     this.setData({ projectList: this.data.projectList.map(p => ({ ...p, isFav: isFavorite(favorites, p.id) })).filter(p => !this.data.isFavoritesOnly || p.isFav) });
+  },
+  refreshFavorites(value) {
+    const key = value.ids.join(',');
+    this.setData({ favoriteSyncStatus: value.status, favoriteSyncError: value.error });
+    if (this.data.isFavoritesOnly && key !== this._favoriteIdsKey && !this._updatingFavorite) {
+      this._favoriteIdsKey = key;
+      this.loadProjects();
+    } else if (!this.data.isFavoritesOnly) {
+      this.setData({ projectList: this.data.projectList.map(project => ({ ...project, isFav: isFavorite(value.ids, project.id) })) });
+    }
   },
   setFilters(params) {
     const incoming = { ...params };
@@ -65,21 +81,24 @@ Page({
     this._requestId = requestId;
     const page = append ? this.data.page + 1 : 1;
     this.setData(append ? { loadingMore: true, moreError: false } : { loading: true, loadError: false, loadingMore: false, moreError: false });
-    const params = { ...this.data.filters, public: true, q: this.data.keyword, page, limit: 20 };
-    if (!this.data.isFavoritesOnly && !this.data.isRecentOnly && this.data.filters.status === ALL) params.available = 'true';
+    const scoped = this.data.isFavoritesOnly || this.data.isRecentOnly;
+    const scopeIds = this.data.isFavoritesOnly ? snapshot().ids : this.data.isRecentOnly ? recentIds() : [];
+    const showUnavailable = scoped && !this.data.hasFilters;
+    const pageIds = showUnavailable ? scopeIds.slice((page - 1) * 20, page * 20) : [];
+    const params = { ...this.data.filters, public: true, q: this.data.keyword, page: showUnavailable ? 1 : page, limit: 20 };
+    if (scoped) params.ids = (showUnavailable ? pageIds : scopeIds).join(',');
+    if (!scoped && this.data.filters.status === ALL) params.available = 'true';
     if (this.data.isRecommendedOnly) params.recommended = 'true';
-    if (this.data.isFavoritesOnly) params.ids = (wx.getStorageSync('favorites') || []).join(',');
-    if (this.data.isRecentOnly) params.ids = recentIds().join(',');
     if (params.ids === '') {
-      this.setData({ projectList: [], loading: false, loadingMore: false, page: 1, totalDocs: 0, hasNextPage: false });
+      this.setData({ projectList: append ? this.data.projectList : [], loading: false, loadingMore: false, page, totalDocs: scopeIds.length, hasNextPage: false });
       if (callback) callback();
       return Promise.resolve();
     }
     return api.getProjectPage(params).then(result => {
       if (requestId !== this._requestId) return;
-      const favorites = wx.getStorageSync('favorites') || [];
-      const items = result.docs.map(p => ({ ...p, isFav: isFavorite(favorites, p.id) }));
-      if (this.data.isRecentOnly) { const ids = recentIds(); items.sort((a, b) => ids.indexOf(String(a.id)) - ids.indexOf(String(b.id))); }
+      const favorites = snapshot().ids;
+      const rows = result.docs.map(p => ({ ...p, isFav: isFavorite(favorites, p.id) }));
+      const items = showUnavailable ? pageIds.map(id => rows.find(row => String(row.id) === String(id)) || { id, unavailable: true, isFav: isFavorite(favorites, id) }) : rows;
       const combined = append ? [...this.data.projectList, ...items] : items;
       const seen = new Set();
       const projectList = combined.filter(p => {
@@ -87,15 +106,15 @@ Page({
         seen.add(p.id);
         return true;
       });
-      this.setData({ projectList, totalDocs: result.totalDocs, page: result.page, hasNextPage: result.hasNextPage, loading: false, loadingMore: false, loadError: false, moreError: false });
+      this.setData({ projectList, totalDocs: showUnavailable ? scopeIds.length : result.totalDocs, page: showUnavailable ? page : result.page, hasNextPage: showUnavailable ? page * 20 < scopeIds.length : result.hasNextPage, loading: false, loadingMore: false, loadError: false, moreError: false });
     }).catch(error => {
       if (requestId !== this._requestId) return;
       console.error(error);
       this.setData(append ? { loadingMore: false, moreError: true } : { loading: false, loadError: true });
     }).finally(() => { if (callback) callback(); });
   },
-  onUnload() { this._requestId = (this._requestId || 0) + 1; this.closeDrawer(); },
-  onHide() { this.closeDrawer(); },
+  onUnload() { this._requestId = (this._requestId || 0) + 1; if (this._unsubscribeFavorites) this._unsubscribeFavorites(); this._unsubscribeFavorites = null; this.closeDrawer(); },
+  onHide() { if (this._unsubscribeFavorites) this._unsubscribeFavorites(); this._unsubscribeFavorites = null; this.closeDrawer(); },
   onPullDownRefresh() { return this.loadProjects(() => wx.stopPullDownRefresh()); },
   onReachBottom() { return this.loadProjects(null, true); },
   onLoadMore() { return this.loadProjects(null, true); },
@@ -158,7 +177,7 @@ Page({
     this._countTimer = setTimeout(() => {
       const params = { ...this.data.draftFilters, public: true, q: this.data.keyword, page: 1, limit: 1 };
       if (!this.data.isFavoritesOnly && !this.data.isRecentOnly && params.status === ALL) params.available = 'true';
-      if (this.data.isFavoritesOnly) params.ids = (wx.getStorageSync('favorites') || []).join(',');
+      if (this.data.isFavoritesOnly) params.ids = snapshot().ids.join(',');
       if (this.data.isRecentOnly) params.ids = recentIds().join(',');
       if (this.data.isRecommendedOnly) params.recommended = 'true';
       api.getProjectPage(params).then(result => {
@@ -204,9 +223,34 @@ Page({
   },
   onToggleFavInList(e) {
     const id = e.currentTarget.dataset.id;
+    this._updatingFavorite = true;
     const isFav = toggleFavorite(id);
+    this._updatingFavorite = false;
     // Removing an item shifts server pagination; restart to avoid skipping the next item.
-    if (this.data.isFavoritesOnly) return this.loadProjects();
+    if (this.data.isFavoritesOnly) { this._favoriteIdsKey = snapshot().ids.join(','); return this.loadProjects(); }
     this.setData({ projectList: this.data.projectList.map(p => String(p.id) === String(id) ? { ...p, isFav } : p) });
+  },
+  onRemoveUnavailableFavorite(e) {
+    this._updatingFavorite = true;
+    setFavorite(e.currentTarget.dataset.id, false);
+    this._updatingFavorite = false;
+    this._favoriteIdsKey = snapshot().ids.join(',');
+    return this.loadProjects();
+  },
+  onRetryFavorites() { syncFavorites().catch(() => {}); },
+  onRemoveRecent(e) {
+    removeRecent(e.currentTarget.dataset.id);
+    return this.loadProjects();
+  },
+  onClearRecent() {
+    wx.showModal({
+      title: '清空最近浏览',
+      content: '确定清空本机的最近浏览记录吗？',
+      success: result => {
+        if (!result.confirm) return;
+        clearRecent();
+        this.loadProjects();
+      }
+    });
   }
 });

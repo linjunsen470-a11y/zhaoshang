@@ -4,9 +4,10 @@ import path from 'node:path';
 import { createStorage, loadMiniProgramModule } from '../helpers/load-cjs.mjs';
 
 const load = (file, options = {}) => loadMiniProgramModule(path.resolve('mp', file), options);
+const favoriteState = ids => ({ activeOwner: '', sequence: 0, accounts: [{ owner: '', ids, pending: [], status: 'idle', error: '' }] });
 
 test('removing a favorite restarts pagination and returning from detail refreshes the count', async () => {
-  const storage = createStorage({ favorites: ['first', 'second', 'third'] });
+  const storage = createStorage({ favorite_sync_state: favoriteState(['first', 'second', 'third']) });
   const calls = [];
   let definition;
   load('pages/list/list.js', {
@@ -24,7 +25,7 @@ test('removing a favorite restarts pagination and returning from detail refreshe
   assert.equal(calls[0].page, 1);
   assert.equal(page.data.totalDocs, 2);
   assert.equal(page.data.projectList[1].id, 'third');
-  storage.setStorageSync('favorites', ['third']);
+  storage.setStorageSync('favorite_sync_state', favoriteState(['third']));
   page.onShow();
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(page.data.totalDocs, 1);
@@ -71,14 +72,14 @@ test('rent display groups digits and fee breakdown retains every unrecognized co
 });
 
 test('favorites toggle mixed ID types once without vibrating the phone', () => {
-  const storage = createStorage({ favorites: [42] });
+  const storage = createStorage({ favorite_sync_state: favoriteState([42]) });
   const toasts = [];
   const vibrations = [];
-  const { toggleFavorite } = load('utils/favorites.js', { globals: { wx: { ...storage, showToast: value => toasts.push(value), vibrateShort: value => vibrations.push(value) } } });
+  const { toggleFavorite, snapshot } = load('utils/favorites.js', { globals: { wx: { ...storage, showToast: value => toasts.push(value), vibrateShort: value => vibrations.push(value) } }, stubs: { '../services/api.js': { getFavorites: async () => { throw new Error('offline'); } } } });
   assert.equal(toggleFavorite('42'), false);
-  assert.equal(storage.getStorageSync('favorites').length, 0);
+  assert.equal(snapshot().ids.length, 0);
   assert.equal(toggleFavorite('42'), true);
-  assert.equal(storage.getStorageSync('favorites').length, 1);
+  assert.equal(snapshot().ids.length, 1);
   assert.equal(toasts.every(value => value.icon === 'none'), true);
   assert.equal(vibrations.length, 0);
 });

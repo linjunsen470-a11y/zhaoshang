@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily consultation attachment cleanup
+
+[Timer]
+OnCalendar=*-*-* 04:00:00 Asia/Singapore
+Persistent=true
+Unit=attachment-cleanup.service
+
+[Install]
+WantedBy=timers.target

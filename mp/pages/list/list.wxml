@@ -39,8 +39,13 @@
       <view><text>{{isRecentOnly ? '最近浏览的房源' : (isFavoritesOnly ? '收藏的房源' : (filters.status === 'full' ? '已租满房源' : '可咨询房源'))}}</text><text class="result-count" wx:if="{{!loading && totalDocs}}">{{totalDocs}} 处</text></view>
       <button wx:if="{{hasFilters}}" class="reset-btn-link" bindtap="onResetFilters">清空筛选</button>
     </view>
-    <view class="fav-local-tip" wx:if="{{isFavoritesOnly || isRecentOnly}}">{{isRecentOnly ? '按最近浏览排序，最多保留 20 处' : '收藏仅保存在本机，换设备后需重新收藏'}}</view>
+    <view class="fav-local-tip" wx:if="{{isRecentOnly}}">仅保存在本机，按最近浏览排序，最多保留 20 处</view>
+    <view class="favorite-sync" wx:elif="{{isFavoritesOnly}}">
+      <text>{{favoriteSyncStatus === 'mock' ? '本地测试模式，收藏仅保存在本机' : (favoriteSyncStatus === 'error' ? favoriteSyncError : (favoriteSyncStatus === 'syncing' || favoriteSyncStatus === 'pending' ? '正在同步收藏，请稍候' : '收藏可在同一微信账号下同步'))}}</text>
+      <button wx:if="{{favoriteSyncStatus === 'error'}}" class="text-link sync-retry" bindtap="onRetryFavorites">重试同步</button>
+    </view>
     <view class="listing-note" wx:else>默认展示开放中与即将开放的房源，费用及条件请向顾问确认。</view>
+    <button class="text-link clear-recent" wx:if="{{isRecentOnly && totalDocs}}" bindtap="onClearRecent">清空最近浏览</button>
     <view class="loading-state" wx:if="{{loading}}">
       <template is="loading-cards" data="{{kind: 'property'}}" />
     </view>
@@ -51,12 +56,20 @@
     </view>
     <block wx:else>
       <view wx:if="{{projectList.length}}">
-        <view class="project-card property-row" wx:for="{{projectList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" role="button" aria-label="{{item.title}}">
-          <template is="property" data="{{item, lazy: index > 2, listName: 'projectList'}}" />
-          <button class="{{item.isFav ? 'favorite-active' : ''}} property-favorite" catchtap="onToggleFavInList" data-id="{{item.id}}" aria-label="{{item.isFav ? '取消收藏' : '收藏'}}">
-            <image src="{{item.isFav ? '/images/icons/star-fill.png' : '/images/icons/star.png'}}" />
-          </button>
-        </view>
+        <block wx:for="{{projectList}}" wx:key="id">
+          <view wx:if="{{item.unavailable}}" class="unavailable-project">
+            <view><view class="unavailable-title">房源已不可用</view><view class="unavailable-desc">该房源已下架或暂不可查看</view></view>
+            <button wx:if="{{isFavoritesOnly}}" class="text-link" catchtap="onRemoveUnavailableFavorite" data-id="{{item.id}}">移除收藏</button>
+            <button wx:elif="{{isRecentOnly}}" class="text-link" catchtap="onRemoveRecent" data-id="{{item.id}}">移出记录</button>
+          </view>
+          <view wx:else class="project-card property-row" bindtap="onProjectDetail" data-id="{{item.id}}" role="button" aria-label="{{item.title}}">
+            <template is="property" data="{{item, lazy: index > 2, listName: 'projectList'}}" />
+            <button class="{{item.isFav ? 'favorite-active' : ''}} property-favorite" catchtap="onToggleFavInList" data-id="{{item.id}}" aria-label="{{item.isFav ? '取消收藏' : '收藏'}}">
+              <image src="{{item.isFav ? '/images/icons/star-fill.png' : '/images/icons/star.png'}}" />
+            </button>
+          </view>
+          <button wx:if="{{isRecentOnly && !item.unavailable}}" class="text-link remove-recent" bindtap="onRemoveRecent" data-id="{{item.id}}">移出最近浏览</button>
+        </block>
       </view>
       <view class="state-box empty-state" wx:else>
         <image class="line-icon" src="/images/icons/shops.png" />

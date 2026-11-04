@@ -5,19 +5,19 @@
     <view class="privacy-meta">个人信息处理者：{{companyName}}</view>
     <view class="privacy-section">
       <view class="section-title">1. 我们收集的信息</view>
-      <view class="section-text">为提供招商咨询服务，我们可能收集：微信登录标识（openid）、您自愿填写的称呼、您手动填写或经微信授权提供的手机号、区域偏好、备注内容及您主动上传的图片。手机号用于联系您并跟进咨询，您可以选择手动填写或主动授权微信获取。</view>
+      <view class="section-text">为提供招商咨询服务，我们可能收集：微信登录标识（openid）、您自愿填写的称呼、您手动填写或经微信授权提供的手机号、区域偏好、备注内容、您主动收藏的房源及您主动上传的图片。手机号用于联系您并跟进咨询，您可以选择手动填写或主动授权微信获取。</view>
     </view>
     <view class="privacy-section">
       <view class="section-title">2. 信息使用目的</view>
-      <view class="section-text">用于匹配项目与铺位、跟进咨询进度、联系您确认需求，以及改进服务质量。我们不会将您的个人信息出售给第三方。</view>
+      <view class="section-text">用于匹配项目与铺位、跟进咨询进度、联系您确认需求、同步您的收藏，以及统计房源受欢迎程度和改进服务质量。我们不会将您的个人信息出售给第三方。</view>
     </view>
     <view class="privacy-section">
       <view class="section-title">3. 信息存储与保护</view>
-      <view class="section-text">登录凭证保存在设备本地，用于维持登录状态。咨询信息保存在提供服务所需的服务器中，我们采取访问控制等措施保护信息，并按提供服务所需期限及法律法规要求保存、删除或匿名化处理。请勿在公共设备上长期使用本小程序。</view>
+      <view class="section-text">登录凭证和最近浏览记录保存在设备本地。收藏记录保存在服务器，用于同一微信账号跨设备同步；未同步的收藏变更暂存在本机。咨询信息也保存在服务器中。我们采取访问控制等措施保护信息，并按提供服务所需期限及法律法规要求保存、删除或匿名化处理。请勿在公共设备上长期使用本小程序。</view>
     </view>
     <view class="privacy-section">
       <view class="section-title">4. 您的权利</view>
-      <view class="section-text">您可在「我的咨询记录」中查看、编辑或删除自己提交的线索。如需进一步协助，请联系招商顾问。</view>
+      <view class="section-text">您可在「我的收藏」中取消收藏，在「最近浏览」中删除或清空本机记录，也可在「我的咨询记录」中查看、编辑或删除自己提交的线索。如需进一步协助，请联系招商顾问。</view>
     </view>
     <view class="privacy-section">
       <view class="section-title">5. 第三方服务</view>
