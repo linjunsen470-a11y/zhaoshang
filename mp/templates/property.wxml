@@ -8,12 +8,12 @@
     <view class="property-kind">{{item.sceneLabel}} · {{item.spaceLabel}}</view>
     <view class="property-title ellipsis-2">{{item.title}}</view>
     <view class="property-location ellipsis" wx:if="{{item.placeText}}">{{item.placeText}}</view>
-    <view class="property-meta-row">
-      <view class="property-meta ellipsis">{{item.areaRangeText}}<text wx:if="{{item.opportunityType === 'transfer'}}"> · 转让</text></view>
+    <view class="property-meta-row" wx:if="{{item.areaRangeText || item.opportunityType === 'transfer' || item.suitableBusiness.length}}">
+      <view class="property-meta ellipsis" wx:if="{{item.areaRangeText || item.opportunityType === 'transfer'}}">{{item.areaRangeText}}<text wx:if="{{item.opportunityType === 'transfer'}}">{{item.areaRangeText ? ' · 转让' : '转让'}}</text></view>
       <view class="property-tags" wx:if="{{item.suitableBusiness.length}}">
         <text class="property-tag ellipsis" wx:for="{{item.suitableBusiness}}" wx:for-item="biz" wx:key="*this" wx:if="{{index < 2}}">{{biz}}</text>
       </view>
     </view>
-    <view class="property-price {{item.priceText === '面议' ? 'quiet' : ''}}"><text class="property-price-label">{{item.priceLabel}}</text><block wx:if="{{item.priceAmount}}"><text class="price-number">{{item.priceAmount}}</text><text class="price-unit">{{item.priceUnit}}</text></block><text wx:else>{{item.priceSummary}}</text></view>
+    <view wx:if="{{item.priceText}}" class="property-price {{item.priceText === '面议' ? 'quiet' : ''}}"><text class="property-price-label">{{item.priceLabel}}</text><block wx:if="{{item.priceAmount}}"><text class="price-number">{{item.priceAmount}}</text><text class="price-unit">{{item.priceUnit}}</text></block><text wx:else>{{item.priceSummary}}</text></view>
   </view>
 </template>

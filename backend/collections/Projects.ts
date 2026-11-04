@@ -202,7 +202,6 @@ export const Projects: CollectionConfig = {
             {
               name: 'feeText',
               type: 'text',
-              required: true,
               label: '费用说明',
               admin: { placeholder: '例如：3 万元/年，另收 2% 管理费…' },
             },
@@ -211,7 +210,6 @@ export const Projects: CollectionConfig = {
         {
           name: 'customerInfo',
           type: 'textarea',
-          required: true,
           label: '客群说明',
           admin: { description: '说明主要客群、消费时段及资料来源。' },
         },

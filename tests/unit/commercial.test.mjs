@@ -101,6 +101,17 @@ test('cards omit a city or district already present in the title', () => {
   assert.equal(community.placeText, '广州 · 天河');
   assert.equal(community.placeDetail, '广州 · 天河 · 社区');
 });
+
+test('missing area and price stay empty while explicitly supplied values are preserved', () => {
+  const empty = commercial.decorate({ businessScene: 'office' });
+  assert.equal(empty.areaRangeText, '');
+  assert.equal(empty.priceText, '');
+  assert.equal(empty.priceSummary, '');
+  assert.equal(empty.monthlyRentText, '');
+  const explicit = commercial.decorate({ businessScene: 'office', areaText: '20㎡', feeText: '面议' });
+  assert.equal(explicit.areaRangeText, '20㎡');
+  assert.equal(explicit.priceText, '面议');
+});
 test('hidden parents hide their children without changing child states', () => {
   const records = [{ id: 'parent', businessScene: 'office', listingKind: 'project', status: 'offline' }, { id: 'child', businessScene: 'office', status: 'online', parentProject: 'parent' }];
   assert.equal(commercial.queryLocal(records, {}).docs.length, 0);

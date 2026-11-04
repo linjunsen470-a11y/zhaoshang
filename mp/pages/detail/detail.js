@@ -69,7 +69,7 @@ Page({
         wx.setNavigationBarTitle({ title: project.locationLabel || project.title || '房源详情' });
         rememberProject(id);
         this.setData({ anchors: [
-          { id: 'fees', label: '费用' }, { id: 'space', label: '空间' },
+          ...(project.priceText ? [{ id: 'fees', label: '费用' }] : []), { id: 'space', label: '空间' },
           ...(project.operatingRequirements || (project.suitableBusiness || []).length || (project.unsuitableBusiness || []).length || project.premisesConditions ? [{ id: 'conditions', label: '条件' }] : []),
           ...(project.introduction || (project.highlights || []).length || project.customerInfo ? [{ id: 'intro', label: '介绍' }] : [])
         ] });

@@ -99,8 +99,8 @@ function decorate(p) {
     feeRemainder: fees.remainder,
     priceAmount,
     priceUnit: priceAmount ? '元/月' : '',
-    priceSummary: /面议/.test(feeText) && !rentText ? '面议' : (rentText || feeText || '面议'),
-    priceText: rentText || feeText || '面议',
+    priceSummary: /面议/.test(feeText) && !rentText ? '面议' : (rentText || feeText),
+    priceText: rentText || feeText,
     priceLabel: rentText ? '基础月租' : '费用',
     areaText: rewrite(p.areaText),
     highlights,
@@ -109,8 +109,8 @@ function decorate(p) {
     schoolName: '',
     schoolAlias: '',
     showFullSchoolName: false,
-    areaRangeText: rangeText(p.areaMin, p.areaMax, '㎡') || rewrite(p.areaText) || '面积待确认',
-    monthlyRentText: rentText || '面议',
+    areaRangeText: rangeText(p.areaMin, p.areaMax, '㎡') || rewrite(p.areaText),
+    monthlyRentText: rentText,
   };
 }
 function parentId(p) { return p.parentProject && typeof p.parentProject === 'object' ? p.parentProject.id : p.parentProject; }

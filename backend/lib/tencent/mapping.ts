@@ -39,7 +39,7 @@ export function mapProperty(record: SheetRecord) {
 
   const venue = value('场所名称')
   const location = value('校区/位置')
-  if (!venue || !location) throw new Error('缺少场所名称或位置')
+  if (!venue) throw new Error('缺少场所名称')
   const sceneInput = value('场景')
   if (sceneInput && !['学校', '校园', '校园商铺', '工业园区', '写字楼'].includes(sceneInput)) throw new Error('场景应为学校、工业园区或写字楼')
   if (!sceneInput) throw new Error('场景：必须明确选择学校、工业园区或写字楼')
@@ -47,8 +47,8 @@ export function mapProperty(record: SheetRecord) {
   const area = number('商铺面积（㎡）')
   const rent = number('租金')
   const unit = value('租金单位')
-  const feeParts = [rent === undefined ? '租金面议' : `基础租金 ${rent}${unit || '（单位待核实）'}`]
-  for (const [field, label, suffix] of [['抽成比例（%）', '营业额抽成', '%（与租金的结算关系待核实）'], ['进场费（元）', '进场费', '元'], ['押金（元）', '押金', '元'], ['物业费（元/月）', '物业费', '元/月']]) {
+  const feeParts = rent === undefined ? [] : [`基础租金 ${rent}${unit}`]
+  for (const [field, label, suffix] of [['抽成比例（%）', '营业额抽成', '%'], ['进场费（元）', '进场费', '元'], ['押金（元）', '押金', '元'], ['物业费（元/月）', '物业费', '元/月']]) {
     const amount = number(field)
     if (amount !== undefined) feeParts.push(`${label} ${amount}${suffix}`)
   }
@@ -67,15 +67,15 @@ export function mapProperty(record: SheetRecord) {
   const projectType = options.campusTypes.includes(propertyType) ? propertyType : typeAliases[propertyType] || '其他'
   const population = number('学生人数')
   const data = {
-    title: `${isDemo ? '【演示】' : ''}${venue} · ${location}`, listingKind: 'unit', businessScene,
+    title: `${isDemo ? '【演示】' : ''}${[venue, location].filter(Boolean).join(' · ')}`, listingKind: 'unit', businessScene,
     opportunityType: 'leasing', city, district, schoolName, schoolAlias: '', venueName: venue,
-    projectType: businessScene === 'campus' ? projectType : '其他', unitLocation: location, addressText: `${venue} ${location}`,
-    areaText: area ? `${area}㎡` : '面积待核实', areaMin: area || null, areaMax: area || null,
+    projectType: businessScene === 'campus' ? projectType : '其他', unitLocation: location, addressText: [venue, location].filter(Boolean).join(' '),
+    areaText: area ? `${area}㎡` : '', areaMin: area || null, areaMax: area || null,
     monthlyRentMin: monthlyRent === undefined ? null : Math.round(monthlyRent * 100) / 100,
     monthlyRentMax: monthlyRent === undefined ? null : Math.round(monthlyRent * 100) / 100,
     feeText: feeParts.join('；'), suitableBusiness, status,
-    customerInfo: `${isDemo ? '样例房源，仅用于联调。' : ''}${population ? `资料登记服务人数约 ${population} 人，具体客群与人数待核实。` : '客群与营业时段待核实。'}`,
-    operatingRequirements: value('招商要求'), cooperationMode: value('合同期限') ? `合同期限 ${value('合同期限')}；其他条款以确认结果为准。` : '合作条款待确认',
+    customerInfo: population ? `资料登记人数 ${population} 人` : '',
+    operatingRequirements: value('招商要求'), cooperationMode: value('合同期限') ? `合同期限 ${value('合同期限')}` : '',
     sourcePropertyType: propertyType, sourceBusinessText,
     sourceRemark: `腾讯文档 ${value('房源编号')}；${value('备注')}`,
   }

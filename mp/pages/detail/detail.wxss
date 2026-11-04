@@ -117,6 +117,8 @@
   border-left: 1rpx solid var(--line);
 }
 
+.area-figure--first { padding-left: 0; border-left: 0; }
+
 .figure-label, .param-label, .minor-label {
   font-size: 24rpx;
   color: var(--muted);

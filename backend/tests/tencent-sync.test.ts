@@ -67,10 +67,26 @@ test('property import preserves rental units and separates base rent from commis
   const record = { record_id: 'p1', field_values: [textCell('城市', '东莞市'), textCell('行政区', '松山湖'), textCell('场所名称', '示例学校'), textCell('场景', '学校'), textCell('校区/位置', 'A01'), textCell('招租状态', '招租中'), textCell('租金单位', '元/㎡/月'), { field: '租金', number_value: 350 }, { field: '商铺面积（㎡）', number_value: 68.8 }, { field: '抽成比例（%）', number_value: 5 }, { field: '商铺图片', image_value: { items: [{ image_url: 'https://docimg3.docs.qq.com/image/example.jpg' }] } }] }
   const mapped = mapProperty(record)
   assert.equal(mapped.data.monthlyRentMin, 24080)
-  assert.ok(mapped.data.feeText.includes('5%'))
-  assert.ok(mapped.data.feeText.includes('待核实'))
+  assert.equal(mapped.data.feeText, '基础租金 350元/㎡/月；营业额抽成 5%')
   assert.equal(mapped.isDemo, true)
   assert.equal(mapped.data.title.startsWith('【演示】'), true)
+})
+
+test('property import leaves unavailable details empty without inventing placeholder text', () => {
+  const row: SheetRecord = { record_id: 'p-empty', field_values: [
+    textCell('城市', '广州'), textCell('行政区', '白云'), textCell('场所名称', '某学校'),
+    textCell('场景', '学校'), textCell('招租状态', '招租中'),
+    { field: '商铺图片', image_value: { items: [{ image_id: 'image-1' }] } },
+  ] }
+  const { data } = mapProperty(row)
+  assert.equal(data.title, '某学校')
+  assert.equal(data.unitLocation, '')
+  assert.equal(data.areaText, '')
+  assert.equal(data.feeText, '')
+  assert.equal(data.customerInfo, '')
+  assert.equal(data.cooperationMode, '')
+  assert.equal(data.monthlyRentMin, null)
+  assert.doesNotMatch(JSON.stringify(data), /待核实|待确认|面议/)
 })
 
 test('workplace rows use the explicit source scene and venue with a required source scene', () => {

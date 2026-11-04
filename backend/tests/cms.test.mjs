@@ -12,7 +12,7 @@ test('property publish checklist reports only missing public fields', () => {
     feeText: '3 万元/年',
     customerInfo: '',
     images: [],
-  }), ['客群说明', '详情图片'])
+  }), ['详情图片'])
 })
 
 
@@ -34,7 +34,7 @@ test('completeness filters agree with publication checks for every missing field
   const ready = { title: '测试铺位', coverImage: 1, district: '天河', feeText: '面议', customerInfo: '社区居民', images: [1], listingKind: 'unit', businessScene: 'campus' }
   const cases = [ready, ...REQUIRED_PROJECT_FIELDS.flatMap(({ key }) => [
     { ...ready, [key]: undefined }, { ...ready, [key]: key === 'images' ? [] : null },
-    ...(['title', 'feeText', 'customerInfo'].includes(key) ? [{ ...ready, [key]: '' }] : []),
+    ...(key === 'title' ? [{ ...ready, [key]: '' }] : []),
   ]), { ...ready, businessScene: undefined },
   { ...ready, businessScene: null },
   { ...ready, businessScene: undefined, listingKind: undefined }]
@@ -46,7 +46,7 @@ test('completeness filters agree with publication checks for every missing field
 })
 
 test('filtering before pagination includes matching records beyond the first unfiltered page', () => {
-  const records = Array.from({ length: 40 }, (_, index) => ({ id: index + 1, businessScene: 'campus', title: '铺位', coverImage: 1, district: '天河', feeText: '面议', customerInfo: index < 30 ? '' : '居民', images: [1] }))
+  const records = Array.from({ length: 40 }, (_, index) => ({ id: index + 1, businessScene: 'campus', title: index < 30 ? '' : '铺位', coverImage: 1, district: '天河', images: [1] }))
   const filtered = records.filter(record => matches(record, projectQualityWhere('ready')))
   assert.equal(filtered.length, 10)
   assert.deepEqual(filtered.slice(0, 5).map(record => record.id), [31, 32, 33, 34, 35])

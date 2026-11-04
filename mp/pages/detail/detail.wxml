@@ -56,19 +56,18 @@
 
       </view>
       <view class="project-title-large e2e-project-title" data-test="project-title">{{project.title}}</view>
-      <view class="key-figures" id="section-fees">
-        <view class="fee-figure">
+      <view class="key-figures" id="section-fees" wx:if="{{project.priceText || project.areaRangeText}}">
+        <view class="fee-figure" wx:if="{{project.priceText}}">
           <text class="figure-label">{{project.priceLabel}}</text>
           <view class="rent-value"><block wx:if="{{project.priceAmount}}"><text class="price-number">{{project.priceAmount}}</text><text class="price-unit">{{project.priceUnit}}</text></block><text wx:else>{{project.priceText}}</text></view>
         </view>
-        <view class="area-figure">
+        <view class="area-figure {{project.priceText ? '' : 'area-figure--first'}}" wx:if="{{project.areaRangeText}}">
           <text class="figure-label">面积</text>
           <view class="area-value">{{project.areaRangeText}}</view>
         </view>
       </view>
       <view class="fee-grid" wx:if="{{project.feeItems.length}}"><view class="fee-cell" wx:for="{{project.feeItems}}" wx:key="label"><text class="param-label">{{item.label}}</text><text>{{item.value}}</text></view></view>
       <view class="fee-note" wx:if="{{project.feeRemainder && project.feeRemainder !== project.priceText}}">{{project.feeRemainder}}</view>
-      <view class="rent-note" wx:if="{{project.priceLabel === '基础月租'}}">基础月租不含未列明的附加费用，具体费用请咨询确认。</view>
       <view class="update-lbl">更新于 {{formattedUpdateTime}}</view>
       <view class="detail-section" id="section-space">
         <view class="section-label">空间信息</view>
@@ -168,7 +167,7 @@
         <button class="unit-row" wx:for="{{units}}" wx:key="id" bindtap="onRelatedProject" data-id="{{item.id}}">
           <view class="unit-copy">
             <view class="unit-title">{{item.title}}</view>
-            <view class="unit-meta">{{item.areaRangeText}} · {{item.priceLabel}} {{item.priceText}}</view>
+            <view class="unit-meta" wx:if="{{item.areaRangeText || item.priceText}}">{{item.areaRangeText}}<text wx:if="{{item.priceText}}">{{item.areaRangeText ? ' · ' : ''}}{{item.priceLabel}} {{item.priceText}}</text></view>
           </view>
           <text><text class="ui-chevron" aria-hidden="true"></text></text>
         </button>
@@ -203,8 +202,8 @@
               </view>
               <view class="similar-copy">
                 <view class="similar-title ellipsis-2">{{item.title}}</view>
-                <view class="similar-area ellipsis">{{item.areaRangeText}}</view>
-                <view class="similar-price"><text class="similar-price-label">{{item.priceLabel}}</text><block wx:if="{{item.priceAmount}}"><text class="price-number">{{item.priceAmount}}</text><text class="price-unit">{{item.priceUnit}}</text></block><text wx:else>{{item.priceSummary}}</text></view>
+                <view class="similar-area ellipsis" wx:if="{{item.areaRangeText}}">{{item.areaRangeText}}</view>
+                <view class="similar-price" wx:if="{{item.priceText}}"><text class="similar-price-label">{{item.priceLabel}}</text><block wx:if="{{item.priceAmount}}"><text class="price-number">{{item.priceAmount}}</text><text class="price-unit">{{item.priceUnit}}</text></block><text wx:else>{{item.priceSummary}}</text></view>
               </view>
             </view>
           </view>
