@@ -29,7 +29,7 @@ Page({
   },
 
   onShow() {
-    if (!this._unsubscribeFavorites) this._unsubscribeFavorites = subscribeFavorites(() => this.refreshFavoriteMarks());
+    if (!this._unsubscribeFavorites) this._unsubscribeFavorites = subscribeFavorites(value => this.refreshFavoriteMarks(value));
     if (canSyncInBackground()) syncFavorites().catch(() => {});
     if (this._useLocalMock !== config.USE_LOCAL_MOCK) {
       this._useLocalMock = config.USE_LOCAL_MOCK;
@@ -39,14 +39,17 @@ Page({
     this.refreshFavoriteMarks();
   },
 
-  refreshFavoriteMarks() {
-    if (this.data.recommendedList.length > 0 || this.data.latestList.length > 0) {
-      const favs = snapshot().ids;
-      this.setData({
-        recommendedList: this.data.recommendedList.map(p => ({ ...p, isFav: isFavorite(favs, p.id) })),
-        latestList: this.data.latestList.map(p => ({ ...p, isFav: isFavorite(favs, p.id) }))
+  refreshFavoriteMarks(value) {
+    if (!this.data.recommendedList.length && !this.data.latestList.length) return;
+    const favs = (value || snapshot()).ids;
+    const patch = {};
+    for (const list of ['recommendedList', 'latestList']) {
+      this.data[list].forEach((project, index) => {
+        const active = isFavorite(favs, project.id);
+        if (active !== project.isFav) patch[`${list}[${index}].isFav`] = active;
       });
     }
+    if (Object.keys(patch).length) this.setData(patch);
   },
 
   onPullDownRefresh() {
@@ -124,8 +127,8 @@ Page({
   onHide() {
     if (this._unsubscribeFavorites) this._unsubscribeFavorites();
     this._unsubscribeFavorites = null;
-    this.onCloseServices();
-    this.onSearchBlur();
+    if (this.data.showServices) this.onCloseServices();
+    if (this.data.searchFocused) this.onSearchBlur();
   },
   noop() {},
   onCategoryTap(e) {

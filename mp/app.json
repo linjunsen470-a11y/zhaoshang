@@ -13,7 +13,6 @@
     "pages/leads/leads",
     "pages/privacy/privacy"
   ],
-  "lazyCodeLoading": "requiredComponents",
   "window": {
     "backgroundTextStyle": "light",
     "navigationBarBackgroundColor": "#FFFFFF",

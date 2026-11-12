@@ -221,6 +221,18 @@ function hydrateLocalAttachments(value) {
 }
 
 function localFallback(urlPath, method, requestData = {}) {
+  if (urlPath === '/profile') {
+    const key = 'mock_profile_' + getCurrentOpenId();
+    const profile = wx.getStorageSync(key) || { nickname: '', phone: '', phoneVerified: false, avatar: '' };
+    if (method === 'PUT') {
+      if (requestData.phoneCode) throw new Error('请在微信联网环境授权手机号');
+      Object.assign(profile, requestData);
+      if (requestData.avatar) profile.avatar = 'data:image/jpeg;base64,' + requestData.avatar;
+      if (requestData.phone !== undefined) profile.phoneVerified = false;
+      wx.setStorageSync(key, profile);
+    }
+    return profile;
+  }
   if (urlPath === '/favorites' && method === 'GET') {
     const owner = getCurrentOpenId();
     const all = (wx.getStorageSync('local_favorite_records') || []).filter(row => row.owner === owner);
@@ -409,6 +421,13 @@ function localFallback(urlPath, method, requestData = {}) {
 }
 
 module.exports = {
+  async getProfile() {
+    await auth.getAuthToken();
+    const owner = getCurrentOpenId();
+    const profile = await request({ url: '/profile', auth: true, expectedOpenId: owner });
+    return { owner, profile };
+  },
+  saveProfile: (data, owner) => request({ url: '/profile', method: 'PUT', data, auth: true, expectedOpenId: owner }),
   getFavorites,
   setFavorite: (id, active, owner) => request({ url: `/favorites/${encodeURIComponent(id)}`, method: active ? 'PUT' : 'DELETE', auth: true, expectedOpenId: owner }),
   getWechatPhone: code => request({ url: '/auth/wechat-phone', method: 'POST', data: { code }, auth: true, forceRemote: true }),

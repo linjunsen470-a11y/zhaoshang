@@ -15,4 +15,8 @@ PY
 curl "${curl_options[@]}" --fail "$origin/admin/login" -o /dev/null
 status=$(curl "${curl_options[@]}" -o /dev/null -w '%{http_code}' "$origin/api/admin/inquiries")
 [[ "$status" == 401 ]] || { echo 'Staff endpoint must reject anonymous requests' >&2; exit 1; }
+for method in GET PUT; do
+  status=$(curl "${curl_options[@]}" -X "$method" -o /dev/null -w '%{http_code}' "$origin/api/profile")
+  [[ "$status" == 401 ]] || { echo "Expected anonymous $method /api/profile to return 401, got $status" >&2; exit 1; }
+done
 echo 'HTTPS, login page and authentication checks passed'

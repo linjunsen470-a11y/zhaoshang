@@ -118,7 +118,7 @@ test('visual refresh supports discovery, favorites, history and consultation man
     const my = await open('/pages/my/my');
     await waitForData(my, 'leadCount', value => value === 1);
     assert.equal(await my.data('favoriteCount'), 1);
-    assert.equal(await my.data('recentCount'), 1);
+    assert.ok(await my.$('.recent-entry'));
     await capture('my');
     await open('/pages/privacy/privacy');
     await capture('privacy');

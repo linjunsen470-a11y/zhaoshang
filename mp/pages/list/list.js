@@ -42,18 +42,22 @@ Page({
       return;
     }
     if (this.data.isRecentOnly || this.data.isFavoritesOnly) { this.loadProjects(); return; }
-    const favorites = snapshot().ids;
-    this.setData({ projectList: this.data.projectList.map(p => ({ ...p, isFav: isFavorite(favorites, p.id) })).filter(p => !this.data.isFavoritesOnly || p.isFav) });
   },
   refreshFavorites(value) {
     const key = value.ids.join(',');
-    this.setData({ favoriteSyncStatus: value.status, favoriteSyncError: value.error });
+    const patch = {};
+    if (this.data.favoriteSyncStatus !== value.status) patch.favoriteSyncStatus = value.status;
+    if (this.data.favoriteSyncError !== value.error) patch.favoriteSyncError = value.error;
     if (this.data.isFavoritesOnly && key !== this._favoriteIdsKey && !this._updatingFavorite) {
       this._favoriteIdsKey = key;
       this.loadProjects();
     } else if (!this.data.isFavoritesOnly) {
-      this.setData({ projectList: this.data.projectList.map(project => ({ ...project, isFav: isFavorite(value.ids, project.id) })) });
+      this.data.projectList.forEach((project, index) => {
+        const active = isFavorite(value.ids, project.id);
+        if (active !== project.isFav) patch[`projectList[${index}].isFav`] = active;
+      });
     }
+    if (Object.keys(patch).length) this.setData(patch);
   },
   setFilters(params) {
     const incoming = { ...params };
@@ -187,7 +191,7 @@ Page({
       });
     }, 180);
   },
-  closeDrawer() { clearTimeout(this._countTimer); this._countRequestId = (this._countRequestId || 0) + 1; this.setData({ activeTab: '' }); },
+  closeDrawer() { clearTimeout(this._countTimer); this._countRequestId = (this._countRequestId || 0) + 1; if (this.data.activeTab) this.setData({ activeTab: '' }); },
   noop() {},
   onRemoveFilter(e) {
     const key = e.currentTarget.dataset.key;

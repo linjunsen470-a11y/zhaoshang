@@ -68,6 +68,15 @@ module.exports = Behavior({
         });
       }
 
+      if (!options.leadId) {
+        api.getProfile().then(({ profile }) => {
+          const patch = {};
+          if (!this._nameEdited && profile.nickname) patch.name = profile.nickname;
+          if (!this._phoneEdited && profile.phone) patch.phone = profile.phone;
+          if (!this.data.submitting && Object.keys(patch).length) this.setData(patch);
+        }).catch(() => {});
+      }
+
       if (options.leadId) {
         this.setData({ isEditMode: true, leadId: options.leadId, formLoading: true, formLoadError: false });
         loadLeadForEdit(api, options.leadId, lead => {
@@ -84,17 +93,20 @@ module.exports = Behavior({
     },
 
     onInputName(e) {
+      this._nameEdited = true;
       this.clearFieldError('name');
       this.setData({ name: clip(e.detail.value, config.MAX_NAME_LENGTH) });
     },
 
     onInputPhone(e) {
+      this._phoneEdited = true;
       this.clearFieldError('phone');
       this.setData({ phone: clip(e.detail.value, config.MAX_PHONE_LENGTH) });
     },
 
     async onGetPhoneNumber(e) {
       if (this.data.phoneAuthorizing || this.data.submitting) return;
+      this._phoneEdited = true;
       this.setData({ phoneAuthorizing: true });
       try {
         const phone = await authorizeWechatPhone(e);

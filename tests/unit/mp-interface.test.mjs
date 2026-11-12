@@ -18,15 +18,73 @@ test('all WeChat environments use the cloud API without enabling mock data or de
   assert.equal(storage.getStorageSync('local_projects')[0].id, 'keep-local');
 });
 
-test('my page uses the configured backend without exposing internal runtime controls', () => {
+test('my page registers before launch and opens the current account profile on a new device', async () => {
   const storage = createStorage();
-  const app = { globalData: { userInfo: {}, useLocalMock: false } };
+  let app;
   let definition;
-  loadMiniProgramModule(path.resolve('mp/pages/my/my.js'), { globals: { Page: value => { definition = value; }, getApp: () => app, wx: { ...storage, getAccountInfoSync: () => ({ miniProgram: { envVersion: 'develop' } }), showToast() {} } } });
+  const profile = { nickname: '陈先生', phone: '', avatar: '' };
+  const saved = [];
+  loadMiniProgramModule(path.resolve('mp/pages/my/my.js'), {
+    globals: { Page: value => { definition = value; }, getApp: () => app, wx: { ...storage, getAccountInfoSync: () => ({ miniProgram: { envVersion: 'develop' } }), showToast() {} } },
+    stubs: { '../../services/api.js': {
+      getProfile: async () => ({ owner: 'current-account', profile }),
+      getLeadPage: async () => ({ totalDocs: 0 }),
+      saveProfile: async (changes, owner) => { saved.push({ ...changes, owner }); return { ...profile, phone: '13812345678' }; }
+    } }
+  });
+  app = { globalData: { userInfo: {}, useLocalMock: false } };
   const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } };
   page.onShow();
+  page.onEditProfile();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(page.data.editNickname, '陈先生');
+  assert.equal(page.data.showEditModal, true);
+  page.onGetProfilePhone({ detail: { code: 'wechat-grant' } });
+  await page.onSaveEdit();
+  assert.deepEqual(saved, [{ phoneCode: 'wechat-grant', owner: 'current-account' }]);
+  assert.equal(page.data.userInfo.phone, '13812345678');
+  assert.equal(page.data.showEditModal, false);
   assert.equal(app.globalData.useLocalMock, false);
-  assert.equal(page.onToggleDemoBackend, undefined);
+  page.onHide();
+});
+
+test('repeated privacy visits remain independent of a missing profile endpoint and a failed back does not switch tabs', async () => {
+  let definition, depth = 2, profileRequests = 0;
+  const opens = [], backs = [], switches = [];
+  const globals = {
+    Page: value => { definition = value; }, getCurrentPages: () => Array(depth),
+    wx: { ...createStorage({ authOpenId: 'owner' }), navigateTo: value => opens.push(value),
+      navigateBack: value => backs.push(value), switchTab: value => switches.push(value), showToast() {} }
+  };
+  const stubs = {
+    '../../services/api.js': { getProfile: async () => { profileRequests++; throw new Error('404'); }, getLeadPage: async () => ({ totalDocs: 0 }) },
+    '../../utils/favorites.js': { snapshot: () => ({ ids: [], status: 'idle' }), subscribeFavorites: () => () => {}, syncFavorites: async () => {} }
+  };
+  const makePage = () => ({ ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } });
+  loadMiniProgramModule(path.resolve('mp/pages/my/my.js'), { globals, stubs });
+  const my = makePage();
+  loadMiniProgramModule(path.resolve('mp/pages/privacy/privacy.js'), { globals });
+  for (let visit = 1; visit <= 5; visit++) {
+    my.onShow();
+    my.onGoToPrivacy();
+    my.onGoToPrivacy();
+    assert.equal(opens.length, visit);
+    assert.equal(opens.at(-1).url, '/pages/privacy/privacy');
+    my.onHide();
+    const privacy = makePage();
+    privacy.onGoBack();
+    privacy.onGoBack();
+    assert.equal(backs.length, visit);
+    await new Promise(resolve => setImmediate(resolve));
+  }
+  backs.at(-1).fail();
+  assert.equal(switches.length, 0);
+  assert.equal(profileRequests, 1);
+  depth = 1;
+  makePage().onGoBack();
+  assert.equal(switches[0].url, '/pages/my/my');
+  my.onEditProfile();
+  assert.equal(profileRequests, 2, 'profile editor still permits an explicit retry');
 });
 
 function listPage(initialStorage = {}) {

@@ -11,6 +11,7 @@ import { Leads } from './collections/Leads'
 import { Media } from './collections/Media'
 import { Users } from './collections/Users'
 import { Favorites } from './collections/Favorites'
+import { WechatProfiles } from './collections/WechatProfiles'
 
 // For Docker / VPS deployment we will use Postgres
 // Local dev can use env var or fallback
@@ -81,6 +82,7 @@ export default buildConfig({
     Media,
     Users,
     Favorites,
+    WechatProfiles,
   ],
   editor: lexicalEditor({}),
   secret: secret || 'your-fallback-dev-secret-for-local-demo',
