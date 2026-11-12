@@ -297,3 +297,4 @@
 .unavailable-project { display: flex; align-items: center; justify-content: space-between; gap: 20rpx; margin-bottom: 20rpx; padding: 28rpx; border: 1rpx solid var(--line); border-radius: 16rpx; background: var(--wash); }
 .unavailable-title { font-size: 28rpx; font-weight: 600; }
 .unavailable-desc { margin-top: 8rpx; color: var(--muted); font-size: 24rpx; }
+.area-filter-note { padding: 0 24rpx 12rpx; color: var(--muted); font-size: 24rpx; }

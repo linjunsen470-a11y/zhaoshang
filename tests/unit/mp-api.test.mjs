@@ -143,3 +143,21 @@ test('local mock favorites stay isolated by openid and are idempotent', async ()
   await api.setFavorite('p1', false, 'unit-openid');
   assert.equal((await api.getFavorites({ page: 1 })).docs.length, 0);
 });
+
+
+test('consultations and published equipment retain older entries and count only matching rows', async () => {
+  const rows = Array.from({ length: 105 }, (_, i) => ({
+    id: String(i + 1), submitterOpenId: 'unit-openid', leadType: 'equipment_sell',
+    equipmentPublication: { status: 'online' }, createdAt: i + 1
+  }));
+  const { api } = makeLocalApi({ local_projects: [], local_leads: rows });
+  const page = await api.getLeadPage(6, 20);
+  assert.equal(page.totalDocs, 105);
+  assert.deepEqual(Array.from(page.docs, row => row.id), ['5', '4', '3', '2', '1']);
+  assert.equal(page.hasNextPage, false);
+  const equipment = await api.getEquipmentPage({ leadType: 'equipment_sell', page: 6, limit: 20 });
+  assert.equal(equipment.totalDocs, 105);
+  assert.equal(equipment.docs.length, 5);
+  const empty = await api.getEquipmentPage({ leadType: 'equipment_buy', page: 1, limit: 20 });
+  assert.equal(empty.totalDocs, 0);
+});

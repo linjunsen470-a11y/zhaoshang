@@ -56,7 +56,7 @@ function sanitizeLeadUserFields(
     renovationDetails: mergeGroup('renovationDetails', renovationFields),
     attachments: relationIds(input.attachments),
     remark: input.remark,
-    project: stable ? toDatabaseId(stable.project) : toDatabaseId(input.project || input.projectId),
+    project: stable ? toDatabaseId(stable.project) : toDatabaseId(input.projectId),
   }
 }
 

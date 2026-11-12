@@ -219,6 +219,7 @@ Page({
   onShareTimeline() { return { title: `${config.APP_NAME} · 商铺招租`, query: this.shareQuery().slice(1) }; },
   shareQuery() {
     const filters = { ...this.data.filters, q: this.data.keyword };
+    if (this.data.isRecommendedOnly) filters.recommended = 'true';
     return '?' + Object.keys(filters).filter(key => filters[key] && filters[key] !== ALL).map(key => key + '=' + encodeURIComponent(filters[key])).join('&');
   },
   onToggleFavInList(e) {

@@ -3,7 +3,7 @@
 微信小程序、Payload 员工后台和房源 API。当前为腾讯云测试环境，尚未正式上线。
 
 - 后台：<https://api.cqwushi.com/admin>
-- 小程序开发版直接连接云端；体验版与正式版地址仍需在 `mp/config/environments.js` 配置。
+- 开发版、体验版和正式版共用 `https://api.cqwushi.com/api`。在微信开发者工具中导入并上传 `mp/`，再到微信公众平台设置体验版。提审前按[小程序发布清单](docs/miniprogram-launch-checklist.md)核对合法域名及真机访问。
 - GitHub 主仓库、Gitee 手动发布、备份和回退见 [持续部署说明](docs/ci-deployment.md)。日常操作见 [CMS 指南](docs/payload-cms-quickstart.md)。
 
 ## 结构

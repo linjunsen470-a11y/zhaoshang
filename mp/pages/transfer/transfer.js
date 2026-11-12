@@ -28,7 +28,7 @@ Page({
     };
     this.saveUserInfo();
     this.setData({ submitting: true });
-    const request = this.data.isEditMode ? api.updateLead(this.data.leadId, payload) : api.submitTransfer(payload);
+    const request = this.data.isEditMode ? api.updateLead(this.data.leadId, payload) : api.submitTransfer(this.createSubmission(payload));
     request.then(res => {
       if (this.data.isEditMode) this.finishEditing();
       else this.finishCreating(`/pages/success/success?leadId=${res.id}`);

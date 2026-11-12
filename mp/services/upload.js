@@ -24,7 +24,13 @@ function chooseImages(existingCount = 0) {
         }
         resolve(files.map(file => file.tempFilePath));
       },
-      fail: () => resolve([])
+      fail: error => {
+        const reason = String(error && error.errMsg || '');
+        if (!/cancel/i.test(reason)) {
+          wx.showToast({ title: /auth|denied|permission/i.test(reason) ? '请在设置中允许相册或相机权限' : '图片选择失败，请重试', icon: 'none' });
+        }
+        resolve([]);
+      }
     });
   });
 }

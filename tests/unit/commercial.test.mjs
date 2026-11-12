@@ -17,10 +17,14 @@ test('retired scenes and their children are hidden, and available listings exclu
   assert.equal(commercial.queryLocal(records, { ids: 'full' }).docs.length, 1, 'favorites can retain a full unit');
 });
 
-test('numeric boundary filters exclude unknowns and preserve exact boundary values', () => {
+test('unknown areas appear in every area bucket while known areas and rents respect their boundaries', () => {
   const records = [49, 50, 99, 100, 200].map((area, i) => ({ id: String(i), status: 'online', businessScene: 'office', areaMin: area, areaMax: area, monthlyRentMin: area * 100, monthlyRentMax: area * 100 }));
   records.push({ id: 'unknown', status: 'online', businessScene: 'office', areaText: '50㎡', feeText: '5000元/月' });
-  assert.deepEqual(plain(commercial.queryLocal(records, { area: '50to100' }).docs.map(p => p.areaMin)).sort(), [50, 99]);
+  assert.deepEqual(plain(commercial.queryLocal(records, { area: '50to100' }).docs.map(p => p.id)).sort(), ['1', '2', 'unknown']);
+  for (const area of commercial.options.areas) {
+    assert.equal(commercial.queryLocal(records, { area: area.value, ids: 'unknown' }).totalDocs, 1);
+    assert.equal(commercial.queryLocal(records, { area: area.value, ids: 'unknown', rent: 'under5000' }).totalDocs, 0);
+  }
   assert.equal(commercial.queryLocal(records, { rent: '5000to10000' }).docs.length, 2);
   assert.equal(commercial.queryLocal(records, {}).docs.length, 6);
   assert.equal(commercial.overlaps({ areaMin: 30, areaMax: 100 }, 'areaMin', 'areaMax', { min: 100, max: 200 }), true);

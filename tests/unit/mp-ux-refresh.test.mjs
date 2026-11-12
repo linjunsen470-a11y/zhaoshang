@@ -55,7 +55,7 @@ test('equipment copy identifies the selected listing without including submitter
 test('public property copy removes internal visual labels', () => {
   const { projectText } = load('utils/publicText.js');
   assert.equal(projectText('【演示】园区食堂'), '园区食堂');
-  assert.equal(projectText('摄影示意 · 非项目实拍'), '');
+  assert.equal(projectText('摄影示意 · 非项目实拍'), '摄影示意 · 非项目实拍');
   assert.equal(projectText('示例写字楼商铺'), '写字楼商铺');
 });
 

@@ -90,6 +90,7 @@
         <text class="empty-desc">当前登录身份下还没有提交记录。</text>
         <navigator url="/pages/list/list" open-type="switchTab" class="btn btn-primary reset-btn">查看项目与铺位</navigator>
       </view>
+      <button wx:if="{{hasNextPage}}" class="btn btn-secondary" bindtap="onLoadMore" loading="{{loadingMore}}" disabled="{{loadingMore}}">加载更多</button>
     </block>
   </view>
 </view>

@@ -30,7 +30,10 @@
   },
   "simulatorPluginLibVersion": {},
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      { "type": "folder", "value": "minitest" },
+      { "type": "file", "value": "project.private.config.json" }
+    ],
     "include": []
   },
   "editorSetting": {}

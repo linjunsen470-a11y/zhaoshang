@@ -3,18 +3,19 @@ import assert from 'node:assert/strict';
 import path from 'node:path';
 import { createStorage, loadMiniProgramModule } from '../helpers/load-cjs.mjs';
 
-test('develop uses the cloud API, retains mock data and leaves release configuration explicit', () => {
+test('all WeChat environments use the cloud API without enabling mock data or development identity', () => {
   let version = 'develop';
   const storage = createStorage({ local_projects: [{ id: 'keep-local' }] });
   const config = loadMiniProgramModule(path.resolve('mp/config/index.js'), { globals: { wx: { ...storage, getAccountInfoSync: () => ({ miniProgram: { envVersion: version } }) } } });
-  assert.equal(config.refreshRuntimeConfig().USE_LOCAL_MOCK, false);
-  assert.equal(config.API_URL, 'https://api.cqwushi.com/api');
-  assert.equal(config.ALLOW_DEV_OPEN_ID, false);
-  assert.equal(config.refreshRuntimeConfig().USE_LOCAL_MOCK, false);
+  for (version of ['develop', 'trial', 'release']) {
+    const runtime = config.refreshRuntimeConfig();
+    assert.equal(runtime.ENV_VERSION, version);
+    assert.equal(runtime.API_URL, 'https://api.cqwushi.com/api');
+    assert.equal(runtime.CONFIG_ERROR, '');
+    assert.equal(runtime.USE_LOCAL_MOCK, false);
+    assert.equal(runtime.ALLOW_DEV_OPEN_ID, false);
+  }
   assert.equal(storage.getStorageSync('local_projects')[0].id, 'keep-local');
-  version = 'release';
-  assert.equal(config.refreshRuntimeConfig().ALLOW_DEV_OPEN_ID, false);
-  assert.equal(config.CONFIG_ERROR.includes('服务地址未配置'), true);
 });
 
 test('my page uses the configured backend without exposing internal runtime controls', () => {

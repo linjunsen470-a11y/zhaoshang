@@ -12,12 +12,12 @@ const SEED_PROJECTS = [
     listingKind: 'unit',
     businessScene: 'campus',
     opportunityType: 'leasing',
-    title: '广州华商学院第一食堂二楼小吃档口',
+    title: '甲校第一食堂二楼小吃档口',
     city: '广州',
     district: '增城',
-    addressText: '广州华商学院荔湖校区第一食堂二楼 A05 档口',
-    schoolName: '广州华商学院',
-    schoolAlias: '华商学院',
+    addressText: '甲校荔湖校区第一食堂二楼 A05 档口',
+    schoolName: '甲校',
+    schoolAlias: '甲校',
     showFullSchoolName: true,
     projectType: '食堂档口',
     areaText: '15m²',
@@ -41,12 +41,12 @@ const SEED_PROJECTS = [
     listingKind: 'unit',
     businessScene: 'campus',
     opportunityType: 'transfer',
-    title: '华南师范大学石牌校区商业街茶饮店转让',
+    title: '乙校石牌校区商业街茶饮店转让',
     city: '广州',
     district: '天河',
-    addressText: '华南师范大学石牌校区西区商业街 12 号铺',
-    schoolName: '华南师范大学',
-    schoolAlias: '华师',
+    addressText: '乙校石牌校区西区商业街 12 号铺',
+    schoolName: '乙校',
+    schoolAlias: '乙校',
     showFullSchoolName: true,
     projectType: '校园商业街',
     areaText: '45m²',
@@ -103,15 +103,22 @@ function wxRequest(options) {
   });
 }
 
+function localListPage(rows, data) {
+  if (!data.page) return rows;
+  const { page, limit } = data;
+  return { docs: rows.slice((page - 1) * limit, page * limit), page, totalDocs: rows.length, hasNextPage: page * limit < rows.length };
+}
+
 function normalizeResponse(urlPath, payload, method = 'GET') {
   if (urlPath === '/projects') return { ...payload, docs: payload.docs.map(commercial.decorate) };
   if (urlPath.startsWith('/projects/')) return payload ? commercial.decorate(payload) : payload;
   if ((urlPath === '/leads' || urlPath === '/equipments') && method === 'GET') {
-    return (Array.isArray(payload) ? payload : []).map(item => ({
+    const docs = (Array.isArray(payload) ? payload : payload.docs).map(item => ({
       ...item,
       projectTitle: projectText(item.projectTitle),
       attachments: normalizeAttachments(item.attachments)
     }));
+    return Array.isArray(payload) ? docs : { ...payload, docs };
   }
   if (urlPath === '/leads' && payload) {
     return { ...payload, projectTitle: projectText(payload.projectTitle), attachments: normalizeAttachments(payload.attachments) };
@@ -249,7 +256,7 @@ function localFallback(urlPath, method, requestData = {}) {
   if (urlPath === '/leads' && method === 'GET') {
     const openid = getCurrentOpenId();
     const projects = wx.getStorageSync('local_projects') || [];
-    return (wx.getStorageSync('local_leads') || [])
+    const rows = (wx.getStorageSync('local_leads') || [])
       .filter(lead => !lead.submitterOpenId || lead.submitterOpenId === openid)
       .map(lead => {
         const project = projects.find(item => String(item.id) === String(lead.projectId));
@@ -260,12 +267,15 @@ function localFallback(urlPath, method, requestData = {}) {
         };
       })
       .sort((a, b) => b.createdAt - a.createdAt);
+    return localListPage(rows, requestData);
   }
 
   if (urlPath === '/leads' && method === 'POST') {
     if (requestData.businessScene && !commercial.options.scenes.some(scene => scene.value === requestData.businessScene)) throw createApiError(400, { error: '请选择学校、工业园区或写字楼场景' });
     const leads = wx.getStorageSync('local_leads') || [];
     const projects = wx.getStorageSync('local_projects') || [];
+    const duplicate = requestData.submissionId && leads.find(lead => lead.submissionId === requestData.submissionId && lead.submitterOpenId === getCurrentOpenId());
+    if (duplicate) return duplicate;
     const maxId = leads.reduce((max, l) => {
       const num = Number(l.id);
       return (!isNaN(num) && num > max) ? num : max;
@@ -316,7 +326,7 @@ function localFallback(urlPath, method, requestData = {}) {
       if (!text) return '';
       return text.length > max ? `${text.slice(0, max)}…` : text;
     };
-    return list.map(l => ({
+    const rows = list.map(l => ({
       id: l.id,
       leadType: l.leadType,
       businessType: l.businessType,
@@ -327,6 +337,7 @@ function localFallback(urlPath, method, requestData = {}) {
       attachments: hydrateLocalAttachments(l.attachments),
       createdAt: l.createdAt
     })).sort((a, b) => b.createdAt - a.createdAt);
+    return localListPage(rows, requestData);
   }
 
   if (urlPath.startsWith('/leads/') && method === 'GET') {
@@ -404,12 +415,13 @@ module.exports = {
   getProjects: params => request({ url: '/projects', data: { limit: 100, ...params } }).then(data => data.docs),
   getProjectPage: params => request({ url: '/projects', data: { ...params, view: 'card' } }),
   getProjectDetail: id => request({ url: `/projects/${id}` }),
+  getLeadPage: (page = 1, limit = 20) => request({ url: '/leads', data: { page, limit }, auth: true }),
+  getEquipmentPage: params => request({ url: '/equipments', data: params }),
   getLeads: () => request({ url: '/leads', auth: true }),
   getLead: id => request({ url: `/leads/${id}`, auth: true }),
   submitLead: leadData => request({ url: '/leads', method: 'POST', data: leadData, auth: true }),
   submitTransfer: leadData => request({ url: '/leads', method: 'POST', data: { ...leadData, leadType: 'transfer' }, auth: true }),
   submitEquipment: leadData => request({ url: '/leads', method: 'POST', data: leadData, auth: true }),
-  getEquipments: params => request({ url: '/equipments', data: params }),
   updateLead: (id, leadData) => request({ url: `/leads/${id}`, method: 'PUT', data: leadData, auth: true }),
   deleteLead: id => request({ url: `/leads/${id}`, method: 'DELETE', auth: true })
 };

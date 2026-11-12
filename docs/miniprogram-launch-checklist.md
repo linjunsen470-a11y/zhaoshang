@@ -1,6 +1,6 @@
 # Demo 与正式发布检查清单
 
-更新：2026-11-05。企业信息、域名及备案步骤见 [企业备案与小程序上线准备](企业备案与小程序上线准备.md)；新企业账号切换见 [企业小程序切换](wechat-enterprise-switch-2026-11-02.md)；微信端操作说明见 [自动化测试](miniprogram-automation-test.md)。
+更新于 2026-11-12。企业信息、域名及备案步骤见 [企业备案与小程序上线准备](企业备案与小程序上线准备.md)；新企业账号切换见 [企业小程序切换](wechat-enterprise-switch-2026-11-02.md)；微信端操作说明见 [自动化测试](miniprogram-automation-test.md)。
 
 ## 本地 demo
 
@@ -27,10 +27,14 @@ node scripts/mp-check-templates.mjs
 
 ## 体验版 / 正式发布
 
-先补齐真实配置，再运行 `pnpm launch:check`：
+在微信开发者工具中导入 `mp/`，核对企业 AppID 后点击「上传」，填写版本号和说明。上传会生成开发版本。进入微信公众平台的版本管理，将该版本设为体验版。
 
-- [ ] trial HTTPS API 地址：`mp/config/environments.js`。
-- [ ] release HTTPS API 地址：同上；trial/release 保持关闭 Mock 与开发 OpenID。
+当前三种版本连接同一业务库。上传前可用公开列表做只读检查；咨询提交、编辑和删除的自动化测试使用隔离库。提审前运行 `pnpm launch:check`，并完成下列验收。
+
+11 月 12 日上传准备已验证三个环境的 API 配置、全部面积档的 4 套房源、各详情及封面。当前本机仍关闭域名校验。配置现用域名后再开启校验；小程序备案号按实际核发值填写，生成正式分享码时再将服务端 `WECHAT_CODE_ENV_VERSION` 切换为 `release`。
+
+- [x] 三个环境共用 `https://api.cqwushi.com/api`，均关闭本地 Mock 与开发 OpenID。配置入口为 `mp/config/environments.js`。
+- [ ] 在该 AppID 的公众平台「开发管理 → 开发设置 → 服务器域名」核对 request、uploadFile 和 downloadFile，填写 `https://api.cqwushi.com`（不带 `/api`）。开启开发者工具域名校验，再用关闭调试的体验版复测。
 - [ ] 核对真实顾问电话，填写管局核发的小程序备案号：`mp/config/index.js`。
 - [ ] 确认企业小程序 `wx4f94db3b93564c34` 的注册主体；按微信平台要求完成主体认证、服务类目和小程序备案。
 - [ ] 独立随机 `MINIPROGRAM_TOKEN_SECRET`，至少 32 字符且与 `PAYLOAD_SECRET` 不同。
@@ -49,7 +53,7 @@ node scripts/mp-check-templates.mjs
 - [ ] 原生 Payload 项目接口拒绝匿名读取，公开自定义接口保持脱敏。
 - [ ] 新 tools 镜像发布后，按 [附件清理说明](attachment-cleanup.md)预览并启用每日任务。
 
-- [ ] HTTPS、公众平台 request/uploadFile/downloadFile 合法域名已配置，微信开发者工具保持开启域名校验并复测；仅本地调试 HTTP Mock API 时临时关闭，复测前重新开启。
+- [ ] 体验版显示房源 19、20、21、22；逐套打开详情和封面，复测四档面积筛选。
 - [ ] 真实微信 code 登录与两个账号的咨询/附件隔离通过。
 - [ ] CMS admin/editor 权限、上架/下架、咨询处理与真实小程序码通过。
 - [ ] iOS / Android 真机验证图片上传/预览、401 刷新、键盘、安全区、分享、电话与隐私授权。

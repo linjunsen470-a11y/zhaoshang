@@ -170,6 +170,7 @@ export const Leads: CollectionConfig = {
     delete: ({ req: { user } }) => isAdminUser(user),
   },
   fields: [
+    { name: 'submissionKey', type: 'text', unique: true, access: { update: () => false }, admin: { hidden: true, readOnly: true } },
     { name: 'seedKey', type: 'text', unique: true, admin: { hidden: true } },
     { name: 'projectTitle', type: 'text', label: '关联房源标题', admin: { hidden: true, readOnly: true } },
     {

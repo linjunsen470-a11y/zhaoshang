@@ -1,3 +1,4 @@
+import { pageNumber } from '../../../lib/commercial'
 import {
   PUBLIC_EQUIPMENT_LEAD_TYPES,
   getPayloadInstance,
@@ -39,8 +40,9 @@ export async function GET(request: Request) {
   const result = await payload.find({
     collection: 'leads',
     where: where as never,
-    limit: 100,
-    sort: '-createdAt',
+    page: pageNumber(searchParams.get('page'), 1, 100000),
+    limit: pageNumber(searchParams.get('limit'), 100, 100),
+    sort: ['-createdAt', '-id'],
     depth: 1,
     overrideAccess: true,
   })
@@ -83,5 +85,5 @@ export async function GET(request: Request) {
     }
   })
 
-  return json(equipments)
+  return json(searchParams.has('page') ? { docs: equipments, page: result.page, totalDocs: result.totalDocs, hasNextPage: result.hasNextPage } : equipments)
 }

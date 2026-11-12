@@ -16,6 +16,7 @@ Page({
   data: {
     phone: '',
     leadsList: [],
+    page: 0, hasNextPage: false, loadingMore: false,
     loading: true,
     loadError: false,
     statusMap: {
@@ -46,15 +47,21 @@ Page({
     this.refreshLeads();
   },
 
-  refreshLeads(callback) {
-    this.setData({ loading: true, loadError: false });
+  onLoadMore() { this.refreshLeads(null, true); },
+
+  refreshLeads(callback, append = false) {
+    if (append && (!this.data.hasNextPage || this.data.loadingMore || this.data.loading)) return;
+    const page = append ? this.data.page + 1 : 1;
+    const requestId = this._requestId = (this._requestId || 0) + 1;
+    this.setData({ loading: !append, loadingMore: append, loadError: false });
     const userInfo = wx.getStorageSync('userInfo') || getApp().globalData.userInfo || {};
     const phone = userInfo.phone || '';
     this.setData({ phone });
 
-    api.getLeads()
+    return api.getLeadPage(page)
       .then(res => {
-        const formatted = (res || []).map(lead => ({
+        if (requestId !== this._requestId) return;
+        const formatted = res.docs.map(lead => ({
           ...lead,
           expanded: false,
           attachments: normalizeAttachments(lead.attachments),
@@ -65,14 +72,16 @@ Page({
         }));
 
         this.setData({
-          leadsList: formatted,
+          leadsList: append ? this.data.leadsList.concat(formatted.filter(row => !this.data.leadsList.some(prev => prev.id === row.id))) : formatted,
+          page: res.page, hasNextPage: res.hasNextPage, loadingMore: false,
           loading: false
         });
         if (callback) callback();
       })
       .catch(err => {
+        if (requestId !== this._requestId) return;
         console.error(err);
-        this.setData({ loading: false, loadError: true });
+        this.setData({ loading: false, loadingMore: false, loadError: !append });
         wx.showToast({ title: '加载咨询历史失败', icon: 'none' });
         if (callback) callback();
       });

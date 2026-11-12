@@ -50,7 +50,7 @@
   <view class="edit-modal-mask" wx:if="{{showEditModal}}" catchtouchmove="noop">
     <view class="edit-modal-box">
       <view class="modal-title">编辑联系信息</view>
-      <view class="modal-desc">填写或授权手机号，之后咨询时自动带入。称呼可不填。</view>
+      <view class="modal-desc">填写或授权手机号，之后咨询时自动带入。清空后保存可删除本机联系方式。</view>
       <view class="modal-form-item">
         <label class="modal-label" for="profile-name">称呼（选填）</label>
         <input id="profile-name" type="text" class="modal-input" aria-label="称呼" maxlength="{{maxNameLength}}" placeholder="例如：陈先生" bindinput="onNicknameInput" value="{{editNickname}}" />

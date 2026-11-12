@@ -68,8 +68,10 @@ test('project relationships and publication remain independent', () => {
 })
 test('database filters use numeric ranges before pagination; no text amount guessing', () => {
   const filters = commercialFilters(new URLSearchParams('area=50to100&rent=5000to10000&businessScene=office'))
-  assert.ok(filters.some(f => JSON.stringify(f) === JSON.stringify({ areaMin: { less_than: 100 } })))
-  assert.ok(filters.some(f => JSON.stringify(f) === JSON.stringify({ areaMax: { greater_than_equal: 50 } })))
+  assert.deepEqual(filters.find(f => f.or)?.or, [
+    { and: [{ areaMin: { exists: false } }, { areaMax: { exists: false } }] },
+    { and: [{ areaMin: { exists: true } }, { areaMax: { greater_than_equal: 50 } }, { areaMin: { less_than: 100 } }] },
+  ])
   assert.ok(filters.some(f => JSON.stringify(f) === JSON.stringify({ monthlyRentMin: { less_than: 10000 } })))
   assert.equal(JSON.stringify(filters).includes('feeText'), false)
   assert.throws(() => commercialFilters(new URLSearchParams('rent=invalid')))

@@ -93,6 +93,7 @@
         <text class="section-title">{{activeTab === 'more' ? '更多筛选' : (activeTab === 'rent' ? '基础月租' : (activeTab === 'area' ? '面积' : '区域'))}}</text>
         <button class="sheet-close" bindtap="closeDrawer" aria-label="关闭筛选"><text class="ui-close" aria-hidden="true"></text></button>
       </view>
+      <view wx:if="{{activeTab === 'area'}}" class="area-filter-note">未提供面积的房源会显示在每个面积区间。</view>
       <scroll-view scroll-y class="sheet-scroll">
         <block wx:if="{{activeTab === 'more'}}">
           <view class="filter-group" wx:for="{{moreGroups}}" wx:for-item="group" wx:key="key">

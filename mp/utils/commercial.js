@@ -115,10 +115,10 @@ function decorate(p) {
 }
 function parentId(p) { return p.parentProject && typeof p.parentProject === 'object' ? p.parentProject.id : p.parentProject; }
 function publicRecord(p, all) {
-  if (!p || !PUBLIC.includes(p.status) || !withinScope(p)) return false;
+  if (!p || p.emergencyHidden || !PUBLIC.includes(p.status) || !withinScope(p)) return false;
   if (!parentId(p)) return true;
   const parent = all.find(item => String(item.id) === String(parentId(p)));
-  return Boolean(parent && parent.listingKind === 'project' && PUBLIC.includes(parent.status) && withinScope(parent));
+  return Boolean(parent && !parent.emergencyHidden && parent.listingKind === 'project' && PUBLIC.includes(parent.status) && withinScope(parent));
 }
 function overlaps(p, min, max, range) {
   return typeof p[min] === 'number' && typeof p[max] === 'number'
@@ -140,12 +140,12 @@ function queryLocal(all, params) {
   if (params.recommended === true || params.recommended === 'true') docs = docs.filter(p => p.isRecommended);
   if (params.ids !== undefined) { const ids = String(params.ids).split(','); docs = docs.filter(p => ids.includes(String(p.id))); }
   if (params.business && params.business !== '全部') docs = docs.filter(p => (p.suitableBusiness || []).includes(params.business));
-  if (params.q) { const q = params.q.toLowerCase().trim(); docs = docs.filter(p => [p.title, p.venueName, p.schoolName, p.schoolAlias, p.district, p.addressText, ...(p.suitableBusiness || [])].some(v => String(v || '').toLowerCase().includes(q))); }
+  if (params.q) { const q = params.q.toLowerCase().trim(); docs = docs.filter(p => [p.title, p.venueName, p.locationLabel, p.district, p.addressText, ...(p.suitableBusiness || [])].some(v => String(v || '').toLowerCase().includes(q))); }
   [['area', options.areas, 'areaMin', 'areaMax'], ['rent', options.rents, 'monthlyRentMin', 'monthlyRentMax']].forEach(([key, ranges, min, max]) => {
     if (!params[key] || params[key] === '全部') return;
     const range = ranges.find(r => r.value === params[key]);
     if (!range) throw new Error('筛选无效');
-    docs = docs.filter(p => overlaps(p, min, max, range));
+    docs = docs.filter(p => (key === 'area' && p[min] == null && p[max] == null) || overlaps(p, min, max, range));
   });
   const timestamp = value => typeof value === 'number' ? value : Date.parse(value) || 0;
   docs.sort((a, b) => (params.sort === 'latest' ? 0 : (b.sort || 0) - (a.sort || 0)) || timestamp(b.createdAt) - timestamp(a.createdAt) || String(b.id).localeCompare(String(a.id)));

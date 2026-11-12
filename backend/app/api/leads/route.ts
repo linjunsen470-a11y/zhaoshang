@@ -1,3 +1,5 @@
+import { pageNumber } from '../../../lib/commercial'
+import { createHash } from 'node:crypto'
 import { commercialIsPublic, commercialScene } from '../../../lib/commercial'
 import type { Where } from 'payload'
 import {
@@ -52,14 +54,15 @@ export async function GET(request: Request) {
     where: {
       and: andConditions,
     },
-    limit: 100,
-    sort: '-createdAt',
+    page: pageNumber(searchParams.get('page'), 1, 100000),
+    limit: pageNumber(searchParams.get('limit'), 100, 100),
+    sort: ['-createdAt', '-id'],
     depth: 1,
     overrideAccess: true,
   })
 
   const leads = await mapLeads(result.docs)
-  return json(leads)
+  return json(searchParams.has('page') ? { docs: leads, page: result.page, totalDocs: result.totalDocs, hasNextPage: result.hasNextPage } : leads)
 }
 
 export async function POST(request: Request) {
@@ -101,23 +104,49 @@ export async function POST(request: Request) {
   const requiredError = validateLeadCreateRequirements(input)
   if (requiredError) return json({ error: requiredError }, 400)
 
+  if (input.project !== undefined || (input.projectId != null && (
+    !['number', 'string'].includes(typeof input.projectId) || !/^[1-9]\d*$/.test(String(input.projectId)) || !Number.isSafeInteger(Number(input.projectId))
+  ))) return json({ error: '关联房源编号无效' }, 400)
+  const data = sanitizeLeadCreateInput(input, auth.openid)
+
+  let submissionKey: string | undefined
+  if (input.submissionId !== undefined) {
+    if (typeof input.submissionId !== 'string' || !/^[a-z0-9-]{16,80}$/i.test(input.submissionId)) {
+      return json({ error: '提交编号格式无效' }, 400)
+    }
+    submissionKey = createHash('sha256').update(JSON.stringify([auth.openid, input.submissionId])).digest('hex')
+  }
+  const payload = await getPayloadInstance()
+  const existingSubmission = async () => (await payload.find({
+    collection: 'leads', where: { and: [{ submissionKey: { equals: submissionKey } }, { submitterOpenId: { equals: auth.openid } }] },
+    limit: 1, depth: 1, overrideAccess: true,
+  })).docs[0]
+  if (submissionKey) {
+    const existing = await existingSubmission()
+    if (existing) return json(await mapLead(existing))
+  }
   const attachmentError = await validateAttachmentOwnership(input.attachments, auth.openid)
   if (attachmentError) return attachmentError
 
-  const payload = await getPayloadInstance()
-  if (input.projectId || input.project) {
+  if (data.project !== undefined) {
     try {
-      const project = await payload.findByID({ collection: 'projects', id: String(input.projectId || input.project), depth: 1, overrideAccess: true })
+      const project = await payload.findByID({ collection: 'projects', id: data.project, depth: 1, overrideAccess: true })
       if (!commercialIsPublic(project) || project.status === 'full') return json({ error: '该项目暂不接受咨询' }, 400)
-      input.businessScene = commercialScene(project)
+      data.businessScene = commercialScene(project)
     } catch { return json({ error: '咨询项目不存在' }, 400) }
   }
-  const doc = await payload.create({
-    collection: 'leads',
-    data: sanitizeLeadCreateInput(input, auth.openid),
-    overrideAccess: true,
-  })
-
-  return json(await mapLead(doc), 201)
+  try {
+    const doc = await payload.create({
+      collection: 'leads', data: { ...data, submissionKey }, overrideAccess: true,
+    })
+    return json(await mapLead(doc), 201)
+  } catch (error) {
+    // A concurrent retry may have committed under the unique key.
+    if (submissionKey) {
+      const existing = await existingSubmission()
+      if (existing) return json(await mapLead(existing))
+    }
+    throw error
+  }
 }
 

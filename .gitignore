@@ -61,6 +61,7 @@ mcps/
 # WeChat DevTools local output
 project.private.config.json
 miniprogram_npm/
+/mp/minitest/
 
 # Deployment state and private keys
 .vercel/

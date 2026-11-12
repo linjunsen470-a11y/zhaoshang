@@ -30,7 +30,7 @@ Page({
     this.updateFavorites(snapshot());
     syncFavorites().catch(() => {});
     this.setData({ recentCount: recentIds().length });
-    api.getLeads().then(leads => this.setData({ leadCount: leads.length })).catch(() => this.setData({ leadCount: null }));
+    api.getLeadPage(1, 1).then(result => this.setData({ leadCount: result.totalDocs })).catch(() => this.setData({ leadCount: null }));
     const localInfo = wx.getStorageSync('userInfo');
     if (localInfo) {
       this.setData({
@@ -93,7 +93,7 @@ Page({
     if (this.data.phoneAuthorizing) return;
     const { editNickname, editPhone } = this.data;
 
-    if (!validatePhone(editPhone)) {
+    if (editPhone && !validatePhone(editPhone)) {
       wx.showToast({ title: '请输入有效手机号或使用微信授权', icon: 'none' });
       return;
     }

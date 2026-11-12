@@ -80,4 +80,4 @@ HTTPS 证书目前通过 DNS 手动签发，发布流水线不负责证书续期
 
 ## 本轮待发布事项（2026-11-05）
 
-企业账号与收藏代码、审计修复尚需用户手动同步 Gitee 并运行流水线。收藏结构按 [数据库说明](schema-setup.md) 显式更新；新 tools 镜像上线后按 [附件清理说明](attachment-cleanup.md) 启用每日任务。正式域名、备案及 trial/release 配置仍待办理，本次 GitHub 推送不代表已部署或具备发布条件。
+企业账号与收藏代码、审计修复尚需用户手动同步 Gitee 并运行流水线。收藏结构按 [数据库说明](schema-setup.md) 显式更新；新 tools 镜像上线后按 [附件清理说明](attachment-cleanup.md) 启用每日任务。该次部署时正式域名及备案仍在办理；当前 trial/release 地址见[小程序发布清单](miniprogram-launch-checklist.md)，本次 GitHub 推送不代表已部署或具备发布条件。

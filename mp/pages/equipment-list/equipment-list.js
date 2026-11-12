@@ -19,6 +19,7 @@ Page({
     ],
     activeTab: '全部',
     equipmentList: [],
+    page: 0, hasNextPage: false, loadingMore: false,
     loading: true,
     loadError: false
   },
@@ -34,19 +35,23 @@ Page({
     });
   },
 
-  loadData(callback) {
+  onLoadMore() { this.loadData(null, true); },
+
+  loadData(callback, append = false) {
+    if (append && (!this.data.hasNextPage || this.data.loadingMore || this.data.loading)) return;
+    const page = append ? this.data.page + 1 : 1;
     const requestId = this._requestId = (this._requestId || 0) + 1;
-    this.setData({ loading: true, loadError: false });
+    this.setData({ loading: !append, loadingMore: append, loadError: false });
     
     const params = {};
     if (this.data.activeTab !== '全部') {
       params.leadType = this.data.activeTab;
     }
 
-    api.getEquipments(params)
+    return api.getEquipmentPage({ ...params, page, limit: 20 })
       .then(res => {
         if (requestId !== this._requestId) return;
-        const formatted = (res || []).map(item => ({
+        const formatted = res.docs.map(item => ({
           ...item,
           attachments: normalizeAttachments(item.attachments),
           formattedDate: formatTime(item.createdAt),
@@ -55,7 +60,8 @@ Page({
         }));
 
         this.setData({
-          equipmentList: formatted,
+          equipmentList: append ? this.data.equipmentList.concat(formatted.filter(row => !this.data.equipmentList.some(prev => prev.id === row.id))) : formatted,
+          page: res.page, hasNextPage: res.hasNextPage, loadingMore: false,
           loading: false
         });
         if (callback) callback();
@@ -63,7 +69,7 @@ Page({
       .catch(err => {
         if (requestId !== this._requestId) return;
         console.error('获取设备列表失败:', err);
-        this.setData({ loading: false, loadError: true });
+        this.setData({ loading: false, loadingMore: false, loadError: !append });
         wx.showToast({ title: '获取列表失败', icon: 'none' });
         if (callback) callback();
       });

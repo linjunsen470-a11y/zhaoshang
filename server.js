@@ -1,4 +1,5 @@
 import http from 'http';
+import { publicCampusLabel, redactPublicProject, scrubSchoolText } from './backend/lib/publicSchool.ts';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -121,15 +122,20 @@ const commercialOptions = JSON.parse(fs.readFileSync(path.join(__dirname, 'backe
 const sceneOf = p => p.businessScene || '';
 const parentId = p => p.parentProject && typeof p.parentProject === 'object' ? p.parentProject.id : p.parentProject;
 function isPublic(p, all) {
-  if (!p || !PUBLIC_STATUSES.has(p.status) || !commercialOptions.scenes.some(scene => scene.value === sceneOf(p)) || p.projectType === '校外临校铺位') return false;
+  if (!p || p.emergencyHidden || !PUBLIC_STATUSES.has(p.status) || !commercialOptions.scenes.some(scene => scene.value === sceneOf(p)) || p.projectType === '校外临校铺位') return false;
   if (!parentId(p)) return true;
   const parent = all.find(row => String(row.id) === String(parentId(p)));
-  return !!parent && parent.listingKind === 'project' && PUBLIC_STATUSES.has(parent.status) && commercialOptions.scenes.some(scene => scene.value === sceneOf(parent)) && parent.projectType !== '校外临校铺位';
+  return !!parent && !parent.emergencyHidden && parent.listingKind === 'project' && PUBLIC_STATUSES.has(parent.status) && commercialOptions.scenes.some(scene => scene.value === sceneOf(parent)) && parent.projectType !== '校外临校铺位';
 }
 function publicProject(p, all) {
   const parent = all.find(row => String(row.id) === String(parentId(p)));
   const { remark, sourceLead, sourceLeadKey, seedKey, ...publicFields } = p;
-  return { ...publicFields, listingKind: p.listingKind || 'unit', businessScene: sceneOf(p), parentProject: parent && isPublic(parent, all) ? { id: parent.id, title: parent.title, status: parent.status } : null };
+  const visible = redactPublicProject(publicFields, p);
+  return {
+    ...visible, venueName: p.businessScene === 'campus' ? '' : visible.venueName,
+    listingKind: p.listingKind || 'unit', businessScene: sceneOf(p),
+    parentProject: parent && isPublic(parent, all) ? { id: parent.id, title: scrubSchoolText(parent.title || '', parent), status: parent.status } : null
+  };
 }
 
 function normalizeProject(raw) {
@@ -166,6 +172,13 @@ function normalizeLead(raw, projects) {
   return lead;
 }
 
+function listPage(rows, query) {
+  if (!query.page) return rows;
+  const page = Math.max(1, Number(query.page) || 1);
+  const limit = Math.min(100, Math.max(1, Number(query.limit) || 100));
+  return { docs: rows.slice((page - 1) * limit, page * limit), page, totalDocs: rows.length, hasNextPage: page * limit < rows.length };
+}
+
 function filterProjects(projects, query) {
   const group = query.sceneGroup && query.sceneGroup !== ALL ? commercialOptions.browseGroups.find(item => item.value === query.sceneGroup) : null;
   if (query.sceneGroup && query.sceneGroup !== ALL && !group) throw new Error('sceneGroup 筛选无效');
@@ -181,13 +194,13 @@ function filterProjects(projects, query) {
   if (query.business && query.business !== ALL) result = result.filter(p => p.suitableBusiness.includes(query.business));
   if (query.q) {
     const q = query.q.toLowerCase().trim();
-    result = result.filter(p => [p.title, p.schoolName, p.schoolAlias, p.venueName, p.district, p.addressText, ...p.suitableBusiness].some(v => String(v || '').toLowerCase().includes(q)));
+    result = result.filter(p => [p.title, p.businessScene === 'campus' ? publicCampusLabel(p.city, p.district) : p.venueName, p.district, p.addressText, ...p.suitableBusiness].some(v => String(v || '').toLowerCase().includes(q)));
   }
   for (const [key, ranges, min, max] of [['area', commercialOptions.areas, 'areaMin', 'areaMax'], ['rent', commercialOptions.rents, 'monthlyRentMin', 'monthlyRentMax']]) {
     if (!query[key] || query[key] === ALL) continue;
     const range = ranges.find(r => r.value === query[key]);
     if (!range) throw new Error('筛选无效');
-    result = result.filter(p => typeof p[min] === 'number' && typeof p[max] === 'number' && p[max] >= range.min && (range.max === null || p[min] < range.max));
+    result = result.filter(p => (key === 'area' && p[min] == null && p[max] == null) || typeof p[min] === 'number' && typeof p[max] === 'number' && p[max] >= range.min && (range.max === null || p[min] < range.max));
   }
   const timestamp = v => typeof v === 'number' ? v : Date.parse(v) || 0;
   result.sort((a, b) => (query.sort === 'latest' ? 0 : b.sort - a.sort) || timestamp(b.createdAt) - timestamp(a.createdAt) || String(b.id).localeCompare(String(a.id)));
@@ -243,7 +256,7 @@ const server = http.createServer(async (req, res) => {
       if (query.projectId) result = result.filter(l => l.projectId === query.projectId);
       if (query.status && query.status !== ALL) result = result.filter(l => l.status === query.status);
       if (query.leadType && query.leadType !== ALL) result = result.filter(l => (l.leadType || 'leasing') === query.leadType);
-      sendJSON(result.sort((a, b) => b.createdAt - a.createdAt));
+      sendJSON(listPage(result.sort((a, b) => b.createdAt - a.createdAt), query));
       return;
     }
 
@@ -269,7 +282,10 @@ const server = http.createServer(async (req, res) => {
     if (urlPath === '/api/leads' && req.method === 'POST') {
       try {
         const rawBody = await readBody(req);
+        const previous = rawBody.submissionId && data.leads.find(l => l.submissionId === rawBody.submissionId && l.submitterOpenId === openid);
+        if (previous) { sendJSON(previous); return; }
         const userFields = pickLeadUserFields(rawBody);
+        if (rawBody.submissionId) userFields.submissionId = rawBody.submissionId;
         const payload = normalizeLead(userFields, data.projects);
         payload.submitterOpenId = openid;
         if (!payload.phone) {
@@ -371,7 +387,7 @@ const server = http.createServer(async (req, res) => {
         attachments: l.attachments || [],
         createdAt: l.createdAt
       })).sort((a, b) => b.createdAt - a.createdAt);
-      sendJSON(mapped);
+      sendJSON(listPage(mapped, query));
       return;
     }
 

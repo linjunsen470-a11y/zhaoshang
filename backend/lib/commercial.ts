@@ -102,8 +102,13 @@ export function commercialFilters(params: URLSearchParams): Where[] {
     const range = ranges.find(item => item.value === value)
     if (!range) throw new Error(`${param} 筛选无效`)
     // Stored ranges are closed (min=max is a single unit); filters are [min,max).
-    conditions.push({ [lo]: { exists: true } }, { [hi]: { greater_than_equal: range.min } })
-    if (range.max !== null) conditions.push({ [lo]: { less_than: range.max } })
+    const overlap: Where[] = [{ [lo]: { exists: true } }, { [hi]: { greater_than_equal: range.min } }]
+    if (range.max !== null) overlap.push({ [lo]: { less_than: range.max } })
+    if (param === 'area') {
+      conditions.push({ or: [{ and: [{ areaMin: { exists: false } }, { areaMax: { exists: false } }] }, { and: overlap }] })
+    } else {
+      conditions.push(...overlap)
+    }
   }
   return conditions
 }

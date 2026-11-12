@@ -13,7 +13,9 @@ import {
 test('mini-program leasing smoke journey', { timeout: 120_000 }, async () => {
   let context;
   let leadId = '';
+  let submitAttempted = false;
   let authToken = '';
+  const remark = `smoke-${Date.now()}`;
   try {
     const projectsResponse = await fetch(`${apiUrl}/projects?public=true`);
     const onlineProject = (await projectsResponse.json()).docs.find(project => project.status === 'online');
@@ -34,27 +36,15 @@ test('mini-program leasing smoke journey', { timeout: 120_000 }, async () => {
     assert.equal((await miniProgram.currentPage()).path, 'pages/apply/apply', 'invalid phone must not submit');
 
     await (await apply.$('.e2e-phone-input')).input('13812345678');
-    const remark = `smoke-${Date.now()}`;
+    authToken = await miniProgram.evaluate(() => wx.getStorageSync('authToken'));
     await (await apply.$('.e2e-remark-input')).input(remark);
     await apply.callMethod('onSubmitForm');
     assert.equal((await miniProgram.currentPage()).path, 'pages/apply/apply', 'privacy consent must be required');
     await apply.callMethod('onTogglePrivacy');
+    submitAttempted = true;
     await apply.callMethod('onSubmitForm');
-    await waitForData(apply, 'submitting', value => value === false, 20_000);
-
-    let success;
-    const currentAfterSubmit = await miniProgram.currentPage();
-    if (currentAfterSubmit.path === 'pages/success/success') {
-      success = currentAfterSubmit;
-      leadId = String(success.query.leadId || '');
-    } else {
-      authToken = await miniProgram.evaluate(() => wx.getStorageSync('authToken'));
-      const response = await fetch(`${apiUrl}/leads`, { headers: { Authorization: `Bearer ${authToken}` } });
-      assert.equal(response.status, 200);
-      const created = (await response.json()).find(lead => lead.remark === remark);
-      leadId = String(created?.id || '');
-      success = null;
-    }
+    const success = await waitForPage(miniProgram, 'pages/success/success', 20_000);
+    leadId = String(success.query.leadId || '');
     assert.ok(leadId, 'successful POST /leads must propagate the created leadId');
     console.log(`[smoke] created lead ${leadId}`);
     recordStage(context, `lead-created:${leadId}`);
@@ -104,6 +94,11 @@ test('mini-program leasing smoke journey', { timeout: 120_000 }, async () => {
     throw error;
   } finally {
     if (context?.miniProgram) {
+      if (submitAttempted && !authToken) authToken = await context.miniProgram.evaluate(() => wx.getStorageSync('authToken')).catch(() => '');
+      if (submitAttempted && !leadId && authToken) {
+        const response = await fetch(`${apiUrl}/leads`, { headers: { Authorization: `Bearer ${authToken}` } }).catch(() => null);
+        if (response?.ok) leadId = (await response.json()).find(lead => lead.remark === remark)?.id;
+      }
       if (leadId && authToken) {
         await fetch(`${apiUrl}/leads/${leadId}`, {
           method: 'DELETE',

@@ -49,7 +49,7 @@
 
 使用 `node scripts/mp-design-preview.mjs --serve` 查看基于实际 WXML/WXSS 的浏览器布局预览。它不替代微信原生控件与真机验收。
 
-实施结果、复现命令、69 个宽度／状态组合的检查结果及未完成的真机／截图项目，见 [小程序界面升级与验收记录](./miniprogram-interface-acceptance-2026-10-15.md)。图片生成提示词和使用限制见 [演示素材说明](../mp/images/demo/README.md)。
+实施结果、复现命令、69 个宽度／状态组合的检查结果及未完成的真机／截图项目，见 [小程序界面升级与验收记录](./miniprogram-interface-acceptance-2026-10-15.md)。本地演示使用的 `mp/images/demo/campus.jpg` 于 2026-10-15 由图像生成工具制作，展示时标注为示意图。
 
 ## 第一轮其他端记录
 

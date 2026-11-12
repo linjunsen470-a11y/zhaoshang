@@ -38,6 +38,12 @@ module.exports = Behavior({
     detached() { clearTimeout(this._navTimer); }
   },
   methods: {
+    createSubmission(payload) {
+      if (!this._submissionId) {
+        this._submissionId = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2).padEnd(12, '0') + '-' + Math.random().toString(36).slice(2);
+      }
+      return { ...payload, submissionId: this._submissionId };
+    },
     finishCreating(url) {
       // Keep the completed form locked even if navigation fails.
       wx.redirectTo({

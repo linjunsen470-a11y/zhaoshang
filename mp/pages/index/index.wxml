@@ -80,7 +80,7 @@
     <view class="section-container latest-section" wx:if="{{latestList.length || !recommendedList.length}}">
       <view class="section-header">
         <view class="section-title">精选房源</view>
-        <navigator class="section-more" url="/pages/list/list" open-type="switchTab">查看全部 <text class="ui-chevron" aria-hidden="true"></text></navigator>
+        <button class="section-more" bindtap="onServiceTap" data-action="list">查看全部 <text class="ui-chevron" aria-hidden="true"></text></button>
       </view>
       <view wx:if="{{latestList.length}}">
         <view class="latest-card property-row e2e-latest-card" data-test="latest-project-card" wx:for="{{latestList}}" wx:key="id" bindtap="onProjectDetail" data-id="{{item.id}}" data-status="{{item.status}}" role="button" aria-label="{{item.title}}">

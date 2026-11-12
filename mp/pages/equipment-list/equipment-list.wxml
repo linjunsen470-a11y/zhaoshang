@@ -77,6 +77,7 @@
         <text class="empty-desc">没有找到相关设备？可以先提交供需信息，资料审核通过后再公开展示。</text>
         <button class="btn btn-primary reset-btn" bindtap="onPublishTap">提交设备供需</button>
       </view>
+      <button wx:if="{{hasNextPage}}" class="btn btn-secondary" bindtap="onLoadMore" loading="{{loadingMore}}" disabled="{{loadingMore}}">加载更多</button>
     </block>
   </view>
   <!-- 悬浮发布按钮 -->
