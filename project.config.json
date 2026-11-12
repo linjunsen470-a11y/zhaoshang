@@ -3,7 +3,9 @@
     "urlCheck": true,
     "es6": true,
     "postcss": true,
-    "minified": false,
+    "minified": true,
+    "ignoreDevUnusedFiles": true,
+    "ignoreUploadUnusedFiles": true,
     "uglifyFileName": false,
     "enhance": true,
     "packNpmRelationList": [],
@@ -13,7 +15,8 @@
       "outputPath": ""
     },
     "useCompilerPlugins": false,
-    "minifyWXML": true
+    "minifyWXML": true,
+    "minifyWXSS": true
   },
   "compileType": "miniprogram",
   "miniprogramRoot": "mp/",
@@ -45,7 +48,9 @@
         "value": "docs"
       }
     ],
-    "include": []
+    "include": [
+      { "type": "file", "value": "images/icons/share.LICENSE.txt" }
+    ]
   },
   "appid": "wx4f94db3b93564c34",
   "editorSetting": {}

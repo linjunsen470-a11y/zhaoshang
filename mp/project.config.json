@@ -8,7 +8,9 @@
     "es6": true,
     "enhance": true,
     "postcss": true,
-    "minified": false,
+    "minified": true,
+    "ignoreDevUnusedFiles": true,
+    "ignoreUploadUnusedFiles": true,
     "compileWorklet": false,
     "uglifyFileName": false,
     "uploadWithSourceMap": false,
@@ -34,7 +36,9 @@
       { "type": "folder", "value": "minitest" },
       { "type": "file", "value": "project.private.config.json" }
     ],
-    "include": []
+    "include": [
+      { "type": "file", "value": "images/icons/share.LICENSE.txt" }
+    ]
   },
   "editorSetting": {}
 }
