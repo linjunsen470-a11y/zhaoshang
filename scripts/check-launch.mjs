@@ -38,6 +38,8 @@ for (const key of ['PAYLOAD_SECRET', 'MINIPROGRAM_TOKEN_SECRET']) {
 check(process.env.PAYLOAD_SECRET !== process.env.MINIPROGRAM_TOKEN_SECRET, '两个服务密钥必须不同')
 check(process.env.WECHAT_AUTH_MODE === 'wechat', 'WECHAT_AUTH_MODE 必须为 wechat')
 check(!placeholder(process.env.WECHAT_APP_SECRET), 'WECHAT_APP_SECRET 尚未配置真实值')
+const app = JSON.parse(readFileSync(new URL('mp/app.json', root), 'utf8'))
+check(app.lazyCodeLoading === 'requiredComponents', 'mp/app.json 须启用组件按需注入（lazyCodeLoading: requiredComponents）')
 const project = JSON.parse(readFileSync(new URL('mp/project.config.json', root), 'utf8'))
 check(project.setting?.urlCheck === true, '微信开发者工具须开启合法域名校验')
 for (const file of ['project.private.config.json', 'mp/project.private.config.json']) {
