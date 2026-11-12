@@ -10,7 +10,7 @@ test('removing a favorite restarts pagination and returning from detail refreshe
   const storage = createStorage({ favorite_sync_state: favoriteState(['first', 'second', 'third']) });
   const calls = [];
   let definition;
-  load('pages/list/list.js', {
+  load('pages/favorites/favorites.js', {
     globals: { Page: value => { definition = value; }, wx: { ...storage, showToast() {} } },
     stubs: { '../../services/api.js': { getProjectPage: async params => {
       calls.push(params);
@@ -19,7 +19,6 @@ test('removing a favorite restarts pagination and returning from detail refreshe
     } } }
   });
   const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } };
-  page.setFilters({ favs: true });
   Object.assign(page.data, { page: 2, projectList: [{ id: 'first' }, { id: 'second' }], totalDocs: 3 });
   await page.onToggleFavInList({ currentTarget: { dataset: { id: 'first' } } });
   assert.equal(calls[0].page, 1);
@@ -101,12 +100,12 @@ test('draft counts discard late results and recent browsing keeps its private sc
   const timers = [];
   const requests = [];
   let definition;
-  load('pages/list/list.js', {
+  load('pages/recent/recent.js', {
     globals: { Page: value => { definition = value; }, wx: storage, setTimeout: callback => { timers.push(callback); return timers.length; }, clearTimeout() {} },
     stubs: { '../../services/api.js': { getProjectPage: params => new Promise(resolve => requests.push({ params, resolve })) } },
   });
   const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } };
-  page.setFilters({ recent: true, sceneGroup: 'workplace' });
+  page.setFilters({ sceneGroup: 'workplace' });
   assert.equal(page.data.selectedChips.some(chip => chip.key === 'sceneGroup'), false);
   page.onTabTap({ currentTarget: { dataset: { tab: 'more' } } });
   timers.shift()();

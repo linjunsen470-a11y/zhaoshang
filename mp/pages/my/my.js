@@ -32,10 +32,18 @@ Page({
     editNickname: '',
     editPhone: '',
     editAvatar: '',
+    useLocalAvatarPicker: false,
+    choosingAvatar: false,
     bindingPhone: false,
     phoneFeedback: '',
     profileStatus: 'loading',
     saving: false
+  },
+
+  onLoad() {
+    if (typeof wx.getDeviceInfo === 'function' && wx.getDeviceInfo().platform === 'devtools') {
+      this.setData({ useLocalAvatarPicker: true });
+    }
   },
 
   onShow() {
@@ -82,16 +90,42 @@ Page({
   },
 
   startDraft() {
+    this._draftId = (this._draftId || 0) + 1;
     this._avatarPath = '';
     const { nickname, phone, avatar } = this.data.userInfo;
     this.setData({ editNickname: nickname, editPhone: phone, editAvatar: avatar, phoneFeedback: '' });
   },
 
   onChooseAvatar(e) {
-    const path = e.detail.avatarUrl;
-    if (!path || this.data.saving) return;
+    this.setDraftAvatar(e.detail && e.detail.avatarUrl);
+  },
+
+  setDraftAvatar(path) {
+    if (!path || !this.data.showEditModal || this.data.saving) return;
     this._avatarPath = path;
     this.setData({ editAvatar: path });
+  },
+
+  async onChooseLocalAvatar() {
+    if (!this.data.showEditModal || this.data.saving || this.data.choosingAvatar) return;
+    const draftId = this._draftId;
+    this.setData({ choosingAvatar: true });
+    try {
+      const result = await new Promise((resolve, reject) => wx.chooseMedia({
+        count: 1, mediaType: ['image'], sourceType: ['album'], sizeType: ['compressed'],
+        success: resolve, fail: reject
+      }));
+      if (draftId !== this._draftId) return;
+      const file = result.tempFiles && result.tempFiles[0];
+      if (!file || !file.tempFilePath) throw new Error('empty selection');
+      this.setDraftAvatar(file.tempFilePath);
+    } catch (error) {
+      if (draftId === this._draftId && !/cancel/i.test(error && error.errMsg || '')) {
+        wx.showToast({ title: '未能选择图片，请重试', icon: 'none' });
+      }
+    } finally {
+      this.setData({ choosingAvatar: false });
+    }
   },
 
   onRemoveAvatar() {
@@ -137,7 +171,7 @@ Page({
   noop() {},
 
   async onSaveEdit() {
-    if (this.data.saving || this.data.bindingPhone || this.data.profileStatus !== 'ready') return;
+    if (this.data.saving || this.data.choosingAvatar || this.data.bindingPhone || this.data.profileStatus !== 'ready') return;
     const { editNickname, editPhone, editAvatar, userInfo } = this.data;
     if (editPhone && !validatePhone(editPhone)) {
       wx.showToast({ title: '请输入有效手机号或使用微信授权', icon: 'none' });
@@ -176,13 +210,11 @@ Page({
   },
 
   onGoToFavorites() {
-    wx.setStorageSync('pendingListFilter', { favs: true });
-    wx.switchTab({ url: '/pages/list/list' });
+    wx.navigateTo({ url: '/pages/favorites/favorites' });
   },
 
   onGoToRecent() {
-    wx.setStorageSync('pendingListFilter', { recent: true });
-    wx.switchTab({ url: '/pages/list/list' });
+    wx.navigateTo({ url: '/pages/recent/recent' });
   },
   onCallService() {
     getApp().callAdvisor();

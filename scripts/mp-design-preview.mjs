@@ -8,7 +8,12 @@ import { createStorage, loadMiniProgramModule } from '../tests/helpers/load-cjs.
 const root = path.resolve('mp');
 const output = path.resolve('test-results/visual-refresh/preview');
 fs.mkdirSync(output, { recursive: true });
-const pages = ['index', 'list', 'detail', 'apply', 'transfer', 'equipment', 'renovation', 'my', 'leads', 'equipment-list', 'success', 'privacy'];
+const manifest = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8'));
+const pages = manifest.pages.map(route => {
+  const config = JSON.parse(fs.readFileSync(path.join(root, route + '.json'), 'utf8'));
+  return { name: path.basename(route), title: config.navigationBarTitleText || manifest.window.navigationBarTitleText };
+});
+fs.writeFileSync(path.join(output, 'pages.json'), JSON.stringify(pages));
 const storage = createStorage();
 const app = { globalData: { useLocalMock: true, userInfo: {}, devOpenId: 'visual-review', apiUrl: 'http://127.0.0.1:5174/api' } };
 const wx = { ...storage, getAccountInfoSync: () => ({ miniProgram: { envVersion: 'develop' } }), showToast() {}, showLoading() {}, hideLoading() {}, showModal() {}, pageScrollTo() {}, setNavigationBarTitle() {}, navigateTo() {}, navigateBack() {}, stopPullDownRefresh() {} };
@@ -20,7 +25,7 @@ storage.setStorageSync('local_leads', [
   { id: 'visual-1', submitterOpenId: 'visual-review', name: '陈先生', phone: '13800000000', leadType: 'leasing', projectTitle: '园区员工食堂招商', projectId: 'demo-park', businessType: '咖啡', budgetRange: '10-20万', regionPreference: '天河', status: 'contacted', remark: '希望选择临街、采光良好的空间，计划下月开业。', createdAt: Date.now() - 86400000 },
   { id: 'visual-2', submitterOpenId: 'visual-review', name: '陈先生', phone: '13800000000', leadType: 'equipment_sell', businessType: '双门冷藏柜', budgetRange: '2800 元，可议', status: 'new', equipmentDetails: { equipmentName: '双门冷藏柜', specText: '双门 · 220V', equipmentCondition: '正常使用，九成新', expectedPrice: '2800 元，可议' }, regionPreference: '广州天河', equipmentPublication: { status: 'online', publicRemark: '可预约看设备，支持同城自提。' }, createdAt: Date.now() }
 ]);
-for (const name of pages) {
+for (const { name } of pages) {
   let definition;
   loadMiniProgramModule(path.join(root, 'pages/' + name + '/' + name + '.js'), { globals: { ...globals, Page: value => { definition = value; } }, stubs: { '../../services/api.js': api } });
   const behaviors = definition.behaviors || [];

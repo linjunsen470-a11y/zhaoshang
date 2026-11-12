@@ -1,6 +1,6 @@
 # 腾讯云接入参考
 
-当前部署由 [GitHub Actions](../../docs/ci-deployment.md) 管理，唯一编排文件为仓库根目录 `docker-compose.yml`。
+用户手动同步 Gitee 并启动流水线，镜像经腾讯 CCR 部署到 VPS，详见[持续部署与回退](../../docs/ci-deployment.md)，唯一编排文件为仓库根目录 `docker-compose.yml`。
 
 本目录保留现有 Nginx 配置示例、SSH 隧道工具和手动备份脚本，供维护和排障使用。公网 HTTPS 已启用，日常访问 https://api.cqwushi.com/admin ，不再依赖隧道。
 

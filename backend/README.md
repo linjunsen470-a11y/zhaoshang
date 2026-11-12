@@ -6,6 +6,8 @@ Payload CMS 3 + Next.js 16 + PostgreSQL backend for campus and commercial listin
 
 2026-10-29 同步修复新增紧急停显、来源元数据和地区枚举；2026-10-30 已移除历史分类标记及旧格式转换。2026-10-31 本机演示库已更新结构并验证房源加载；其他数据库仍需按 [初始化说明](../docs/schema-setup.md) 单独准备，腾讯视图筛选仍待完成。详见 [同步修复记录](../docs/tencent-sync-fixes-2026-10-29.md)。
 
+账号资料使用需登录的 `GET /api/profile` 与 `PUT /api/profile`。手机号授权绑定与头像保存的调用方式见[微信授权说明](../docs/wechat-contact-authorization.md)。
+
 ## Admin
 
 Payload is the only admin interface. Workspace entry points:

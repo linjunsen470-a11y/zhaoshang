@@ -19,8 +19,6 @@ input[type=checkbox],input[type=radio]{appearance:auto;accent-color:#204c3c;widt
 <style id="page-style"></style>
 <body><main id="app"></main>
 <script>
-const pages = ['index','list','detail','apply','transfer','equipment','renovation','my','leads','equipment-list','success','privacy'];
-const titles = ['商业空间','找商铺','项目与铺位','找铺咨询','委托转让','设备供需登记','商铺装修','我的','咨询记录','设备供需','提交成功','隐私政策'];
 const query = new URLSearchParams(location.search);
 const page = query.get('page'), state = query.get('state') || 'normal';
 const sourceUrl = file => '/source/' + file;
@@ -81,7 +79,21 @@ async function css(file, seen = new Set()) {
   }
   return text.replace(/\bpage\s*{/g,'body {').replace(/(-?[\d.]+)rpx/g,(_,n)=>Number(n)/7.5+'vw');
 }
+async function markup(file) {
+  const source = await (await fetch(sourceUrl(file))).text();
+  const includes = [...source.matchAll(/<include\s+src="([^"]+)"\s*\/>/g)];
+  let expanded = source;
+  for (const [tag, src] of includes) {
+    const relative = new URL(src, 'http://preview/' + file).pathname.slice(1);
+    const child = await markup(relative);
+    expanded = expanded.replace(tag, () => child);
+  }
+  return expanded;
+}
 async function main() {
+  const manifest = await (await fetch('/pages.json')).json();
+  const pages = manifest.map(item => item.name);
+  const titles = manifest.map(item => item.title);
   if (!pages.includes(page)) {
     document.querySelector('#app').innerHTML = '<div class="review-index"><h1>商业空间 · 界面升级</h1><p>根据实际 WXML、WXSS 与演示数据生成。此处检查布局；原生控件和业务交互以开发者工具、真机为准。</p>'+pages.map((p,i)=>'<p><a href="/?page='+p+'">'+titles[i]+'</a></p>').join('')+'<p>状态预览：'+['filters','empty','error','loading'].map(s=>'<a href="/?page=list&state='+s+'">'+s+'</a>　').join('')+'<a href="/?page=detail&state=missing">缺图与长内容</a>　<a href="/?page=apply&state=invalid">表单错误</a></p></div>';
     return;
@@ -97,11 +109,11 @@ async function main() {
   if (state==='missing') Object.assign(data.project,{images:[],coverImage:'',isDemoImage:false,title:'一个用于检查长标题与复杂费用排版的社区商业项目及临街铺位',priceText:'3000—18000元/月，另计物业管理费用'});
   const shared = await Promise.all(['property', 'lead-form', 'loading'].map(async name => parse(await (await fetch(sourceUrl('templates/' + name + '.wxml'))).text())));
   const templates = Object.fromEntries(shared.flatMap(tree => tree.children.filter(n=>n.tag==='template').map(n=>[n.attrs.name,n])));
-  const markup = parse(await (await fetch(sourceUrl('pages/'+page+'/'+page+'.wxml'))).text());
+  const tree = parse(await markup('pages/'+page+'/'+page+'.wxml'));
   document.querySelector('#page-style').textContent = await css('app.wxss') + '\n' + await css('pages/'+page+'/'+page+'.wxss');
   const hasTabs = ['index','list','my'].includes(page);
   document.body.classList.toggle('has-tabs',hasTabs);
-  document.querySelector('#app').innerHTML = '<div class="preview-nav">'+titles[pages.indexOf(page)]+'</div>'+render(markup.children,data,templates)+(hasTabs?'<nav class="preview-tabs">'+['index','list','my'].map((p,i)=>'<a href="/?page='+p+'"><img src="/images/tab_'+['home','list','my'][i]+(p===page?'_sel':'')+'.png">'+['首页','找铺','我的'][i]+'</a>').join('')+'</nav>':'');
+  document.querySelector('#app').innerHTML = '<div class="preview-nav">'+titles[pages.indexOf(page)]+'</div>'+render(tree.children,data,templates)+(hasTabs?'<nav class="preview-tabs">'+['index','list','my'].map((p,i)=>'<a href="/?page='+p+'"><img src="/images/tab_'+['home','list','my'][i]+(p===page?'_sel':'')+'.png">'+['首页','找铺','我的'][i]+'</a>').join('')+'</nav>':'');
   window.previewReady = true;
 }
 main().catch(error=>{ document.querySelector('#app').textContent=error.stack; });

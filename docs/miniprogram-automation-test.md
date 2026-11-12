@@ -6,11 +6,11 @@
 
 | 层级 | 命令 | 默认运行位置 | 用途 |
 | --- | --- | --- | --- |
-| 客户端单元测试 | `pnpm test:unit` | 本地、PR CI | 表单、路由、项目公开状态、附件、local mock CRUD、401 刷新 |
-| 后端规则/API 测试 | `pnpm test:api` | 本地、PR CI | 线索清洗与边界校验；配置隔离环境后执行真实 HTTP 合约 |
+| 客户端单元测试 | `pnpm test:unit` | 本地、手动 CI | 表单、路由、项目公开状态、附件、local mock CRUD、401 刷新 |
+| 后端规则/API 测试 | `pnpm test:api` | 本地、手动 CI | 线索清洗与边界校验；配置隔离环境后执行真实 HTTP 合约 |
 | 微信 DevTools E2E | `pnpm test:mp:smoke` / `pnpm test:mp:full` | 开发机、专用 Windows runner | 真实页面事件、路由、渲染和关键用户旅程 |
 
-`pnpm test:ci` 是普通 PR 闸门，不要求安装微信开发者工具。
+`pnpm test:ci` 可在本机或 GitHub 手动检查工作流中运行，覆盖「我的」到个人列表的路由、公开找铺范围和账号资料保存。WXML 与 WXSS 使用 `node scripts/mp-check-templates.mjs` 调用微信编译器单独检查。
 
 需要 JUnit 报告时可运行 `pnpm test:mp:smoke:junit` 或 `pnpm test:mp:full:junit`；命令会自动创建 `test-results/mp-e2e/`，该目录清空后也可正常生成报告。
 

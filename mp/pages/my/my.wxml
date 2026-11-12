@@ -54,7 +54,10 @@
       <block wx:else>
         <view class="modal-desc">保存后，可在其他手机用同一微信账号查看。</view>
         <view class="profile-avatar-row">
-          <button class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" disabled="{{saving}}">
+          <button wx:if="{{useLocalAvatarPicker}}" class="avatar-picker" bindtap="onChooseLocalAvatar" disabled="{{saving || choosingAvatar}}">
+            <image src="{{editAvatar || '/images/icons/my.png'}}" mode="aspectFill" />选择本地头像
+          </button>
+          <button wx:else class="avatar-picker" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar" disabled="{{saving}}">
             <image src="{{editAvatar || '/images/icons/my.png'}}" mode="aspectFill" />选择头像
           </button>
           <button wx:if="{{editAvatar}}" class="text-link" bindtap="onRemoveAvatar" disabled="{{saving}}">移除头像</button>
@@ -74,7 +77,7 @@
       </block>
       <view class="modal-actions">
         <button class="btn btn-secondary" disabled="{{saving || bindingPhone}}" bindtap="onCancelEdit">关闭</button>
-        <button class="btn btn-primary" bindtap="onSaveEdit" loading="{{saving}}" disabled="{{saving || bindingPhone || profileStatus !== 'ready'}}">保存</button>
+        <button class="btn btn-primary" bindtap="onSaveEdit" loading="{{saving}}" disabled="{{saving || choosingAvatar || bindingPhone || profileStatus !== 'ready'}}">保存</button>
       </view>
     </view>
   </view>

@@ -1,5 +1,7 @@
 # 腾讯云测试部署记录
 
+当天稍后已开通公网 HTTPS。[域名启用记录](tencent-https-demo-2026-10-31.md)  后续部署入口见[持续部署说明](ci-deployment.md)。
+
 日期：2026-10-31（Asia/Singapore）。状态：云端隔离测试环境已部署并通过 SSH 隧道验收；公网域名 HTTPS 尚未启用。
 
 ## 服务器与入口

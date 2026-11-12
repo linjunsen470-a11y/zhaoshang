@@ -10,6 +10,8 @@
     "pages/renovation/renovation",
     "pages/success/success",
     "pages/my/my",
+    "pages/recent/recent",
+    "pages/favorites/favorites",
     "pages/leads/leads",
     "pages/privacy/privacy"
   ],

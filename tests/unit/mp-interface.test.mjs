@@ -55,6 +55,58 @@ test('my page registers before launch and opens the current account profile on a
   page.onHide();
 });
 
+test('simulator avatar selection handles double taps, cancellation, stale results and saving the new image', async () => {
+  let definition;
+  const requests = [], saves = [], messages = [];
+  let platform = 'devtools';
+  const wx = {
+    ...createStorage(), getDeviceInfo: () => ({ platform }),
+    chooseMedia: opts => requests.push(opts), showToast: opts => messages.push(opts.title),
+    compressImage: opts => opts.success({ tempFilePath: opts.src }),
+    getFileSystemManager: () => ({ readFile: opts => opts.success({ data: 'encoded-picture' }) })
+  };
+  loadMiniProgramModule(path.resolve('mp/pages/my/my.js'), {
+    globals: { Page: value => { definition = value; }, wx, getApp: () => ({ globalData: {} }) },
+    stubs: { '../../services/api.js': { saveProfile: async patch => {
+      saves.push({ ...patch });
+      return { nickname: '', phone: '', avatar: 'stored-photo' };
+    } } }
+  });
+  const makePage = () => ({ ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } });
+  const page = makePage();
+  page.onLoad();
+  assert.equal(page.data.useLocalAvatarPicker, true);
+  page.setData({ profileStatus: 'ready' });
+  page.onEditProfile();
+  const first = page.onChooseLocalAvatar();
+  await page.onChooseLocalAvatar();
+  assert.equal(requests.length, 1);
+  requests[0].fail({ errMsg: 'chooseMedia:fail cancel' });
+  await first;
+  assert.equal(messages.length, 0);
+  assert.equal(page.data.choosingAvatar, false);
+  const second = page.onChooseLocalAvatar();
+  page.onCancelEdit();
+  page.onEditProfile();
+  requests[1].success({ tempFiles: [{ tempFilePath: '/stale.jpg' }] });
+  await second;
+  assert.equal(page.data.editAvatar, '');
+  const third = page.onChooseLocalAvatar();
+  requests[2].success({ tempFiles: [{ tempFilePath: '/selected.jpg' }] });
+  await third;
+  assert.equal(page.data.editAvatar, '/selected.jpg');
+  await page.onSaveEdit();
+  assert.deepEqual(saves, [{ avatar: 'encoded-picture' }]);
+  assert.equal(page.data.userInfo.avatar, 'stored-photo');
+  platform = 'ios';
+  const phone = makePage();
+  phone.onLoad();
+  assert.equal(phone.data.useLocalAvatarPicker, false);
+  phone.onEditProfile();
+  phone.onChooseAvatar({ detail: { avatarUrl: '/wechat-avatar.jpg' } });
+  assert.equal(phone.data.editAvatar, '/wechat-avatar.jpg');
+});
+
 test('repeated privacy visits remain independent of a missing profile endpoint and a failed back does not switch tabs', async () => {
   let definition, depth = 2, profileRequests = 0;
   const opens = [], backs = [], switches = [];
@@ -94,12 +146,12 @@ test('repeated privacy visits remain independent of a missing profile endpoint a
   assert.equal(profileRequests, 2, 'profile editor still permits an explicit retry');
 });
 
-function listPage(initialStorage = {}) {
+function listPage(initialStorage = {}, route = 'list') {
   let definition;
   const requests = [];
   const navigations = [];
   let apiError;
-  loadMiniProgramModule(path.resolve('mp/pages/list/list.js'), {
+  loadMiniProgramModule(path.resolve(`mp/pages/${route}/${route}.js`), {
     globals: { Page: value => { definition = value; }, console: { error() {} }, wx: { ...createStorage(initialStorage), showToast() {}, navigateTo: options => navigations.push(options.url) } },
     stubs: { '../../services/api.js': { getProjectPage: async params => { requests.push(params); if (apiError) throw apiError; return { docs: [], page: 1, hasNextPage: false }; } } }
   });
@@ -109,6 +161,45 @@ function listPage(initialStorage = {}) {
 }
 const event = dataset => ({ currentTarget: { dataset } });
 
+test('personal lists open from My and Browse all resets the public listing tab', () => {
+  const storage = createStorage({ recent_projects: ['viewed'], pendingListFilter: { recent: true } });
+  const routes = [], requests = [];
+  const wx = { ...storage, navigateTo: ({ url }) => routes.push(url), switchTab: ({ url }) => routes.push(url) };
+  const load = route => {
+    let definition;
+    loadMiniProgramModule(path.resolve('mp' + route + '.js'), {
+      globals: { Page: value => { definition = value; }, wx },
+      stubs: { '../../services/api.js': { getProjectPage: async params => {
+        requests.push(params); return { docs: [], page: 1, totalDocs: 0, hasNextPage: false };
+      } } }
+    });
+    return { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } };
+  };
+  const my = load('/pages/my/my');
+  my.onGoToFavorites();
+  assert.equal(routes.pop(), '/pages/favorites/favorites');
+  my.onGoToRecent();
+  const route = routes.pop();
+  assert.equal(route, '/pages/recent/recent');
+  const history = load(route);
+  history.onLoad({});
+  history.onShow();
+  assert.equal(requests.at(-1).ids, 'viewed');
+  history.onHide();
+  const browse = load('/pages/list/list');
+  browse.onLoad({ favs: true });
+  browse.onShow();
+  assert.equal(requests.at(-1).ids, undefined);
+  browse.setFilters({ q: '校园' });
+  const favorites = load('/pages/favorites/favorites');
+  favorites.onBrowseAll();
+  assert.equal(routes.pop(), '/pages/list/list');
+  browse.onShow();
+  assert.equal(browse.data.hasFilters, false);
+  assert.equal(requests.at(-1).ids, undefined);
+  assert.equal(requests.at(-1).available, 'true');
+});
+
 test('retired links fall back to current scenes and availability defaults respect favorites and explicit status', async () => {
   const { page, requests } = listPage();
   page.setFilters({ businessScene: 'mall' });
@@ -116,10 +207,10 @@ test('retired links fall back to current scenes and availability defaults respec
   assert.equal(page.data.filters.businessScene, '全部');
   await page.loadProjects();
   assert.equal(requests.at(-1).available, 'true');
-  page.setFilters({ favs: true });
-  await page.loadProjects();
-  assert.equal(requests.length, 1, 'empty favorites must not request all projects');
-  assert.equal(page.data.projectList.length, 0);
+  const favorites = listPage({}, 'favorites');
+  await favorites.page.loadProjects();
+  assert.equal(favorites.requests.length, 0, 'empty favorites must not request all projects');
+  assert.equal(favorites.page.data.projectList.length, 0);
   page.setFilters({ status: 'full' });
   await page.loadProjects();
   assert.equal(requests.at(-1).status, 'full');
@@ -220,8 +311,8 @@ test('more filters are staged, cancellation discards changes and confirmation re
 });
 
 test('scene changes clear campus-only filters while preserving other filters and favorites scope', () => {
-  const { page, requests } = listPage({ favorite_sync_state: { activeOwner: '', sequence: 0, accounts: [{ owner: '', ids: ['42'], pending: [], status: 'idle', error: '' }] } });
-  page.setFilters({ projectType: '食堂档口', district: '天河', favs: true });
+  const { page, requests } = listPage({ favorite_sync_state: { activeOwner: '', sequence: 0, accounts: [{ owner: '', ids: ['42'], pending: [], status: 'idle', error: '' }] } }, 'favorites');
+  page.setFilters({ projectType: '食堂档口', district: '天河' });
   assert.equal(page.data.filters.businessScene, 'campus');
   page.onQuickFilter(event({ key: 'businessScene', value: 'office' }));
   assert.equal(page.data.filters.projectType, '全部');

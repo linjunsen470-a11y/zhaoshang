@@ -62,6 +62,7 @@ mcps/
 project.private.config.json
 miniprogram_npm/
 /mp/minitest/
+*.wxapkg
 
 # Deployment state and private keys
 .vercel/

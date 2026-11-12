@@ -86,12 +86,13 @@ test('visual refresh supports discovery, favorites, history and consultation man
     assert.ok(await detail.$('.availability-notice'));
     await call(detail, 'onToggleFavorite');
     assert.equal(await detail.data('isFavorited'), true);
-    const recent = await open('/pages/list/list?recent=true');
+    const recent = await open('/pages/recent/recent');
     assert.equal((await recent.data('projectList'))[0].id, project.id);
     await capture('recent');
-    const favorites = await open('/pages/list/list?favs=true');
+    const favorites = await open('/pages/favorites/favorites');
     assert.equal((await favorites.data('projectList'))[0].id, project.id);
-    assert.ok(await favorites.$('.collection-header'));
+    assert.ok(await favorites.$('.results-heading'));
+    assert.equal(await favorites.$('.collection-actions'), null);
     assert.equal(await favorites.$('.sticky-header'), null);
     const apply = await open('/pages/apply/apply?projectId=' + project.id);
     await waitForData(apply, 'projectTitle', Boolean);

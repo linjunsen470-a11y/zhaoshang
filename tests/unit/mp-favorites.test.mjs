@@ -197,12 +197,11 @@ test('recent entries can be removed individually or cleared on this device', () 
 test('the scoped list displays an unavailable placeholder and can remove it', async () => {
   const storage = createStorage({ recent_projects: ['gone', 'visible'] });
   let definition;
-  loadMiniProgramModule(path.resolve('mp/pages/list/list.js'), {
+  loadMiniProgramModule(path.resolve('mp/pages/recent/recent.js'), {
     globals: { Page: value => { definition = value; }, wx: storage },
     stubs: { '../../services/api.js': { getProjectPage: async () => ({ docs: [{ id: 'visible', title: '可见项目' }], page: 1, hasNextPage: false }) } },
   });
   const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } };
-  page.setFilters({ recent: true });
   await page.loadProjects();
   assert.equal(page.data.totalDocs, 2);
   assert.equal(page.data.projectList[0].unavailable, true);
@@ -219,14 +218,13 @@ test('favorites paginate by the saved order while preserving unavailable entries
     accounts: [{ owner: 'owner-a', ids, pending: [], status: 'synced', error: '' }],
   } });
   let definition;
-  loadMiniProgramModule(path.resolve('mp/pages/list/list.js'), {
+  loadMiniProgramModule(path.resolve('mp/pages/favorites/favorites.js'), {
     globals: { Page: value => { definition = value; }, wx: storage },
     stubs: { '../../services/api.js': { getProjectPage: async params => ({
       docs: params.ids.split(',').filter(id => id !== '3').reverse().map(id => ({ id })), page: 1, hasNextPage: false,
     }) } },
   });
   const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } };
-  page.setFilters({ favs: true });
   await page.loadProjects();
   assert.equal(page.data.totalDocs, 25);
   assert.equal(page.data.projectList[2].unavailable, true);
@@ -242,12 +240,11 @@ test('clearing recent history asks for confirmation and does not affect favorite
   } });
   let confirmation;
   let definition;
-  loadMiniProgramModule(path.resolve('mp/pages/list/list.js'), {
+  loadMiniProgramModule(path.resolve('mp/pages/recent/recent.js'), {
     globals: { Page: value => { definition = value; }, wx: { ...storage, showModal: options => { confirmation = options; } } },
     stubs: { '../../services/api.js': { getProjectPage: async () => ({ docs: [], page: 1, hasNextPage: false }) } },
   });
   const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } };
-  page.setFilters({ recent: true });
   page.onClearRecent();
   confirmation.success({ confirm: false });
   assert.equal(storage.getStorageSync('recent_projects').length, 2);

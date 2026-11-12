@@ -1,5 +1,7 @@
 # 公网 HTTPS 与演示房源更新
 
+三个小程序版本目前均使用本文的 HTTPS API。当前房源、详情和封面验证见[上线审计](miniprogram-release-audit-2026-11-12.md)。
+
 2026-10-31：`https://api.cqwushi.com` 已启用有效 Let's Encrypt 证书，管理后台为 `/admin`。原主站仍正常。
 
 - HTTP 验证两次失败，证书机构访问到了另一个 IP；通过用户添加 DNS TXT 完成所有权验证，证书有效期至 2027-01-29。

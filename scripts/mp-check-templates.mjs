@@ -4,7 +4,11 @@ import { execFileSync } from 'node:child_process';
 const root = path.resolve('mp');
 const output = path.resolve('test-results/visual-refresh');
 fs.mkdirSync(output, { recursive: true });
-const compilerDir = process.env.MP_COMPILER_DIR || 'D:/Program Files (x86)/Tencent/wechat-dev/code/package.nw/node_modules/wcc-exec';
+const installRoot = 'D:/Program Files (x86)/Tencent/wechat-dev';
+const compilerDir = process.env.MP_COMPILER_DIR || ['resources/app.asar.unpacked', 'code/package.nw']
+  .map(dir => path.join(installRoot, dir, 'node_modules/wcc-exec'))
+  .find(dir => fs.existsSync(path.join(dir, 'wcc.exe')));
+if (!compilerDir) throw new Error('请将 MP_COMPILER_DIR 指向开发者工具的 wcc-exec 目录');
 function files(dir, extension) {
   return fs.readdirSync(path.join(root, dir), { withFileTypes: true }).flatMap(entry => {
     const relative = (dir ? dir + '/' : '') + entry.name;

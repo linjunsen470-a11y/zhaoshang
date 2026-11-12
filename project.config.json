@@ -23,6 +23,7 @@
   "simulatorPluginLibVersion": {},
   "packOptions": {
     "ignore": [
+      { "type": "suffix", "value": ".wxapkg" },
       {
         "type": "folder",
         "value": "backend"

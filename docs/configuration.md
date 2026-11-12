@@ -47,3 +47,5 @@ git push origin HEAD
 ```
 
 GitHub 工作流只接受 `workflow_dispatch`，推送不触发检查、镜像构建或部署。Gitee 同步和流水线由用户手动处理。代码变更应在本机或手动检查工作流中按风险验证。
+
+微信开发者工具上传目录为 `mp/`。本机项目私有配置、测试输出及导出的 `.wxapkg` 由 Git 忽略。打包配置也排除了 `.wxapkg`，上传前可在开发者工具核对包内文件；共享编译设置保存在 `mp/project.config.json`。

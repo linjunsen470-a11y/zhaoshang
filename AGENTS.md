@@ -22,7 +22,7 @@ Docs belong in `docs/`; `docs/ci-deployment.md` is the deployment source of trut
 - `docker compose up -d`: starts the cloud stack from immutable images; includes a private `db` service. CI builds and publishes images before SSH deployment.
 - `pnpm test:ci`: runs client/backend unit tests; real HTTP contracts require explicit isolated-environment configuration.
 
-Open the mini-program with WeChat DevTools using `mp/project.config.json`.
+Open and upload the `mp/` directory in WeChat DevTools using `mp/project.config.json`. The public list, favorites, and recent history are separate routes sharing `mp/pages/list/projectList.js` and `mp/templates/project-list-content.wxml`. Personal lists open from My using native back navigation.
 
 ## Coding Style & Naming Conventions
 

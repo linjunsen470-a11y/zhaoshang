@@ -35,7 +35,7 @@ ssh -N -L 18081:127.0.0.1:18081 -o StrictHostKeyChecking=yes -o UserKnownHostsFi
 
 ## 代码同步与检查
 
-官网静态文件独立于后端镜像发布；推送 GitHub 不会自动更新 VPS。部署时从目标 Git 提交打包且仅上传 `index.html`、`about.html`、`services.html`、`contact.html`、`css/style.css` 和 `js/main.js`，解压至新的 `/var/www/jinyi-website/releases/` 版本目录，核对文件哈希后原子切换 `current`。网站文件和 Nginx 配置通过 `.gitattributes` 固定 LF 换行，避免 Windows 打包时与 Git 提交及服务器文件产生字节差异。验证成功后，将该提交的完整 SHA 写入 `/var/www/jinyi-website/deployed-revision`，保留上一版本以便回退。
+微信开发者工具上传小程序的操作见[发布清单](../../docs/miniprogram-launch-checklist.md)。官网静态文件独立于后端镜像发布；推送 GitHub 不会自动更新 VPS。部署时从目标 Git 提交打包且仅上传 `index.html`、`about.html`、`services.html`、`contact.html`、`css/style.css` 和 `js/main.js`，解压至新的 `/var/www/jinyi-website/releases/` 版本目录，核对文件哈希后原子切换 `current`。网站文件和 Nginx 配置通过 `.gitattributes` 固定 LF 换行，避免 Windows 打包时与 Git 提交及服务器文件产生字节差异。验证成功后，将该提交的完整 SHA 写入 `/var/www/jinyi-website/deployed-revision`，保留上一版本以便回退。
 
 在仓库根目录运行：
 
