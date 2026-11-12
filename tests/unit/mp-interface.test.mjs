@@ -29,7 +29,7 @@ test('my page registers before launch and opens the current account profile on a
     stubs: { '../../services/api.js': {
       getProfile: async () => ({ owner: 'current-account', profile }),
       getLeadPage: async () => ({ totalDocs: 0 }),
-      saveProfile: async (changes, owner) => { saved.push({ ...changes, owner }); return { ...profile, phone: '13812345678' }; }
+      saveProfile: async (changes, owner) => { saved.push({ ...changes, owner }); return { ...profile, phone: '13812345678', phoneVerified: true }; }
     } }
   });
   app = { globalData: { userInfo: {}, useLocalMock: false } };
@@ -39,9 +39,16 @@ test('my page registers before launch and opens the current account profile on a
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(page.data.editNickname, '陈先生');
   assert.equal(page.data.showEditModal, true);
-  page.onGetProfilePhone({ detail: { code: 'wechat-grant' } });
-  await page.onSaveEdit();
+  page.onNicknameInput({ detail: { value: '新称呼' } });
+  const grant = page.onGetProfilePhone({ detail: { code: 'wechat-grant' } });
+  await page.onGetProfilePhone({ detail: { code: 'duplicate-grant' } });
+  await grant;
   assert.deepEqual(saved, [{ phoneCode: 'wechat-grant', owner: 'current-account' }]);
+  assert.equal(page.data.editPhone, '13812345678');
+  assert.equal(page.data.editNickname, '新称呼');
+  assert.equal(page.data.phoneFeedback, '微信手机号已绑定');
+  await page.onSaveEdit();
+  assert.deepEqual(saved[1], { nickname: '新称呼', owner: 'current-account' });
   assert.equal(page.data.userInfo.phone, '13812345678');
   assert.equal(page.data.showEditModal, false);
   assert.equal(app.globalData.useLocalMock, false);

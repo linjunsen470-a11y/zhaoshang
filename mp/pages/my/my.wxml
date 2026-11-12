@@ -66,15 +66,15 @@
         <view class="modal-form-item">
           <label class="modal-label">手机号码</label>
           <view class="profile-phone-authorization">
-            <input id="profile-phone" type="number" class="modal-input profile-phone-input" aria-label="手机号" maxlength="{{maxPhoneLength}}" placeholder="请输入手机号" bindinput="onProfilePhoneInput" value="{{editPhone}}" disabled="{{saving}}" />
-            <button class="btn btn-secondary" open-type="getPhoneNumber" aria-label="授权获取微信手机号" bindgetphonenumber="onGetProfilePhone" disabled="{{saving}}">{{hasPhoneCode ? '重新授权' : '微信授权获取'}}</button>
+            <input id="profile-phone" type="number" class="modal-input profile-phone-input" aria-label="手机号" maxlength="{{maxPhoneLength}}" placeholder="请输入手机号" bindinput="onProfilePhoneInput" value="{{editPhone}}" disabled="{{saving || bindingPhone}}" />
+            <button class="btn btn-secondary" open-type="getPhoneNumber" aria-label="授权获取微信手机号" bindgetphonenumber="onGetProfilePhone" loading="{{bindingPhone}}" disabled="{{saving || bindingPhone}}">授权并绑定</button>
           </view>
         </view>
-        <text wx:if="{{hasPhoneCode}}">已授权，保存后绑定微信手机号</text>
+        <text wx:if="{{phoneFeedback}}" aria-live="polite">{{phoneFeedback}}</text>
       </block>
       <view class="modal-actions">
-        <button class="btn btn-secondary" disabled="{{saving}}" bindtap="onCancelEdit">取消</button>
-        <button class="btn btn-primary" bindtap="onSaveEdit" loading="{{saving}}" disabled="{{saving || profileStatus !== 'ready'}}">保存</button>
+        <button class="btn btn-secondary" disabled="{{saving || bindingPhone}}" bindtap="onCancelEdit">关闭</button>
+        <button class="btn btn-primary" bindtap="onSaveEdit" loading="{{saving}}" disabled="{{saving || bindingPhone || profileStatus !== 'ready'}}">保存</button>
       </view>
     </view>
   </view>

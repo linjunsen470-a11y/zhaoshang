@@ -32,7 +32,8 @@ Page({
     editNickname: '',
     editPhone: '',
     editAvatar: '',
-    hasPhoneCode: false,
+    bindingPhone: false,
+    phoneFeedback: '',
     profileStatus: 'loading',
     saving: false
   },
@@ -81,10 +82,9 @@ Page({
   },
 
   startDraft() {
-    this._phoneCode = '';
     this._avatarPath = '';
     const { nickname, phone, avatar } = this.data.userInfo;
-    this.setData({ editNickname: nickname, editPhone: phone, editAvatar: avatar, hasPhoneCode: false });
+    this.setData({ editNickname: nickname, editPhone: phone, editAvatar: avatar, phoneFeedback: '' });
   },
 
   onChooseAvatar(e) {
@@ -104,19 +104,32 @@ Page({
   },
 
   onProfilePhoneInput(e) {
-    this._phoneCode = '';
-    this.setData({ editPhone: clip(e.detail.value, config.MAX_PHONE_LENGTH), hasPhoneCode: false });
+    this.setData({ editPhone: clip(e.detail.value, config.MAX_PHONE_LENGTH), phoneFeedback: '' });
   },
 
-  onGetProfilePhone(e) {
-    if (this.data.saving || /deny|cancel/i.test(e.detail.errMsg || '')) return;
-    if (!e.detail.code) return wx.showToast({ title: '未取得手机号，请重试', icon: 'none' });
-    this._phoneCode = e.detail.code;
-    this.setData({ hasPhoneCode: true });
+  async onGetProfilePhone(e) {
+    if (this.data.saving || this.data.bindingPhone || this.data.profileStatus !== 'ready') return;
+    const { code, errMsg = '' } = e.detail || {};
+    if (!code) {
+      const cancelled = /user deny|user denied|cancel/i.test(errMsg);
+      this.setData({ phoneFeedback: cancelled ? '已取消授权，可重新授权或手动输入。' : '微信未返回手机号授权码，可重新授权或手动输入。' });
+      return;
+    }
+    this.setData({ bindingPhone: true, phoneFeedback: '正在绑定微信手机号…' });
+    try {
+      const profile = await api.saveProfile({ phoneCode: code }, this._owner);
+      if (!profile.phoneVerified || !validatePhone(profile.phone)) throw new Error('未确认绑定结果，请重新打开资料查看。');
+      const userInfo = { ...this.data.userInfo, phone: profile.phone, phoneVerified: true };
+      this.setData({ userInfo, editPhone: profile.phone, phoneFeedback: '微信手机号已绑定' });
+    } catch (error) {
+      this.setData({ phoneFeedback: error.message || '绑定失败，请重新授权。' });
+    } finally {
+      this.setData({ bindingPhone: false });
+    }
   },
 
   onCancelEdit() {
-    if (this.data.saving) return;
+    if (this.data.saving || this.data.bindingPhone) return;
     this.startDraft();
     this.setData({ showEditModal: false });
   },
@@ -124,9 +137,9 @@ Page({
   noop() {},
 
   async onSaveEdit() {
-    if (this.data.saving || this.data.profileStatus !== 'ready') return;
+    if (this.data.saving || this.data.bindingPhone || this.data.profileStatus !== 'ready') return;
     const { editNickname, editPhone, editAvatar, userInfo } = this.data;
-    if (!this._phoneCode && editPhone && !validatePhone(editPhone)) {
+    if (editPhone && !validatePhone(editPhone)) {
       wx.showToast({ title: '请输入有效手机号或使用微信授权', icon: 'none' });
       return;
     }
@@ -134,8 +147,7 @@ Page({
     try {
       const changes = {};
       if (editNickname !== userInfo.nickname) changes.nickname = editNickname;
-      if (this._phoneCode) changes.phoneCode = this._phoneCode;
-      else if (editPhone !== userInfo.phone) changes.phone = editPhone;
+      if (editPhone !== userInfo.phone) changes.phone = editPhone;
       if (this._avatarPath) changes.avatar = await readAvatar(this._avatarPath);
       else if (!editAvatar && userInfo.avatar) changes.avatar = '';
       const profile = Object.keys(changes).length ? await api.saveProfile(changes, this._owner) : userInfo;
