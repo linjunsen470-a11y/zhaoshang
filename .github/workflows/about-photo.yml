@@ -1,0 +1,78 @@
+name: Publish the about page photograph
+on:
+  push:
+    branches: [main]
+    paths: [.github/workflows/about-photo.yml]
+permissions:
+  contents: read
+concurrency:
+  group: production-website
+  cancel-in-progress: false
+jobs:
+  photo:
+    if: github.event.before == '82c403baccb78c7e8b22f5179dfc3b760fbc61a3'
+    runs-on: ubuntu-latest
+    environment: tencent-test
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Publish verified static files
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          umask 077
+          key=$(mktemp)
+          trap 'rm -f "$key"' EXIT
+          printf '%s\n' "$SSH_KEY" | tr -d '\r' > "$key"
+          unset SSH_KEY
+          ssh=(ssh -T -i "$key" -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=deploy/known_hosts ubuntu@134.175.44.80)
+          stage=$("${ssh[@]}" mktemp -d /tmp/jinyi-photo-XXXXXXXX)
+          [[ $stage =~ ^/tmp/jinyi-photo-[a-zA-Z0-9]{8}$ ]]
+          trap '"${ssh[@]}" rm -rf -- "$stage"; rm -f "$key"' EXIT
+          tar -C website -cf - about.html images/tea-table.webp | "${ssh[@]}" tar -xf - -C "$stage"
+          old=$(git show HEAD^:website/about.html | sha256sum | cut -d' ' -f1)
+          page=$(sha256sum website/about.html | cut -d' ' -f1)
+          photo=$(sha256sum website/images/tea-table.webp | cut -d' ' -f1)
+          "${ssh[@]}" sudo -n bash -s -- "$stage" "$GITHUB_SHA" "$old" "$page" "$photo" <<'REMOTE'
+          set -euo pipefail
+          exec 9<>/opt/zhaoshang-test/.deploy.lock
+          flock -n 9
+          cd /var/www/jinyi-website
+          previous=$(readlink -f current)
+          previous_rev=$(cat deployed-revision)
+          printf '%s  %s\n' "$3" current/about.html "$4" "$1/about.html" "$5" "$1/images/tea-table.webp" | sha256sum -c -
+          release=$(mktemp -d "$PWD/releases/$2-XXXXXXXX")
+          cp -a "$previous/." "$release/"
+          chmod 755 "$release"
+          install -m 644 "$1/images/tea-table.webp" "$release/images/tea-table.webp"
+          install -m 644 "$1/about.html" "$release/about.html"
+          rm -- "$release/images/partner-team.webp"
+          work=$(mktemp -d "$PWD/.photo-XXXXXXXX")
+          trap 'rm -rf -- "$work"' EXIT
+          restore() {
+            ln -s "$previous" "$work/previous"
+            mv -Tf "$work/previous" current
+            printf '%s\n' "$previous_rev" > "$work/revision"
+            chmod 644 "$work/revision"
+            mv -Tf "$work/revision" deployed-revision
+          }
+          ln -s "$release" "$work/next"
+          mv -Tf "$work/next" current
+          trap restore ERR
+          for file in about.html images/tea-table.webp; do
+            curl -fsS --resolve jinyifangchan.com:443:127.0.0.1 --max-time 15 "https://jinyifangchan.com/$file" -o "$work/response"
+            cmp "$work/response" "$release/$file"
+          done
+          printf '%s\n' "$2" > "$work/revision"
+          chmod 644 "$work/revision"
+          mv -Tf "$work/revision" deployed-revision
+          trap - ERR
+          REMOTE
+          for file in about.html images/tea-table.webp; do
+            curl -fsS --retry 2 --max-time 20 "https://jinyifangchan.com/$file" -o "$RUNNER_TEMP/live"
+            cmp "$RUNNER_TEMP/live" "website/$file"
+          done

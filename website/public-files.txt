@@ -7,6 +7,6 @@ js/main.js
 images/jinyi.webp
 images/lunch-service.webp
 images/menu-counter.webp
-images/partner-team.webp
+images/tea-table.webp
 images/ingredients.webp
 images/dining-tables.webp
