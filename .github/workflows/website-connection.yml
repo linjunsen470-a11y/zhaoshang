@@ -1,0 +1,92 @@
+name: Website connection check
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/website-connection.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  network:
+    # The initial installation also runs the owner-requested check.
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.before == '5effbbfb31be8516d4362603a1e1e3770f77e5e3')
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 5effbbfb31be8516d4362603a1e1e3770f77e5e3
+          persist-credentials: false
+      - name: Inspect public website
+        shell: bash
+        run: |
+          getent ahostsv4 jinyifangchan.com | awk '{print $1}' | sort -u
+          for target in domain origin; do
+            options=()
+            if [[ "$target" == origin ]]; then
+              options+=(--resolve jinyifangchan.com:443:134.175.44.80)
+            fi
+            if curl -sS --connect-timeout 6 --max-time 12 "${options[@]}" \
+              -o "$RUNNER_TEMP/home" -w "$target HTTPS %{http_code}\n" https://jinyifangchan.com/; then
+              if grep -Fq 'id="lead-form"' "$RUNNER_TEMP/home"; then echo "$target business homepage found"; fi
+              if grep -Fq '>粤ICP备2026186178号</a>' "$RUNNER_TEMP/home"; then echo "$target ICP link found"; fi
+            fi
+          done
+      - name: Check SSH connection and pinned server identity
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import socket
+          with socket.create_connection(("134.175.44.80", 22), timeout=10) as connection:
+              banner = connection.recv(255)
+              if not banner.startswith(b"SSH-"):
+                  raise SystemExit("TCP connected, but no SSH banner")
+              print("TCP connected and SSH server responded")
+          PY
+          ssh-keyscan -T 10 -t ed25519 134.175.44.80 > "$RUNNER_TEMP/server.pub"
+          expected=$(ssh-keygen -lf deploy/known_hosts | awk '{print $2}')
+          observed=$(ssh-keygen -lf "$RUNNER_TEMP/server.pub" | awk '{print $2}')
+          [[ -n "$expected" && "$expected" == "$observed" ]] || { echo 'Host identity mismatch'; exit 1; }
+          echo 'SSH host identity matches deploy/known_hosts'
+
+  inspect:
+    needs: network
+    runs-on: ubuntu-latest
+    environment: tencent-test
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: 5effbbfb31be8516d4362603a1e1e3770f77e5e3
+          persist-credentials: false
+      - name: Read website release and homepage
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          set -eu
+          [[ -n "$SSH_KEY" ]] || { echo 'No DEPLOY_SSH_KEY available to this website check'; exit 1; }
+          umask 077
+          key=$(mktemp)
+          trap 'rm -f "$key"' EXIT
+          printf '%s\n' "$SSH_KEY" | tr -d '\r' > "$key"
+          unset SSH_KEY
+          ssh -F /dev/null -T -p 22 -i "$key" -o BatchMode=yes -o IdentitiesOnly=yes \
+            -o ConnectTimeout=12 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=deploy/known_hosts \
+            ubuntu@134.175.44.80 bash -s <<'REMOTE'
+          set -eu
+          echo 'SSH authentication succeeded'
+          for file in /opt/zhaoshang-test/deployed-revision /var/www/jinyi-website/deployed-revision; do
+            if [[ -r "$file" ]]; then
+              rev=$(cat "$file")
+              if [[ "$rev" =~ ^[a-f0-9]{40}$ ]]; then echo "$file $rev"; fi
+            fi
+          done
+          page=$(mktemp)
+          trap 'rm -f "$page"' EXIT
+          curl -fsS --noproxy '*' --max-time 15 http://127.0.0.1:3300/ -o "$page"
+          if grep -Fq 'id="lead-form"' "$page"; then echo 'Upstream has business website'; fi
+          if grep -Fq '>粤ICP备2026186178号</a>' "$page"; then echo 'Upstream has approved ICP link'; fi
+          REMOTE
