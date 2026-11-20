@@ -22,6 +22,14 @@
 
 服务器已有独立 Nginx 配置和根域名证书。脚本沿用现有 HAProxy SNI 路由。静态预览监听 `127.0.0.1:18081`，裸 IP 的 HTTP 入口提供静态企业页面。六个静态资源与当前版本分别位于 `/var/www/jinyi-website/current` 和 `/var/www/jinyi-website/deployed-revision`。发布包只取 Git 提交中明确列出的公开文件；服务器上的应用环境变量沿用既有部署配置。
 
+## 使用 GitHub Actions 单独更新官网
+
+在 GitHub Actions 手动运行 **Website connection check**，从 `main` 使用 `tencent-test` 环境核对腾讯云 SSH 指纹、域名、线上首页和当前应用镜像 ID。需要单独发布官网时，手动运行 **Release the business website**，填写刚查到的完整 `sha256:…` 镜像 ID。工作流读取该环境已有的 `DEPLOY_SSH_KEY`。主机和指纹在仓库中固定，生产应用凭据只在服务器本地使用。
+
+运行器构建 Next.js 产物，服务器对照现有 tools 镜像的应用源码及依赖清单。允许更改的应用文件为业务首页及其样式。匹配后，将构建产物装入沿用线上运行环境的新应用镜像，用临时回环端口验证房源区、咨询入口及备案号，再仅重启 Compose 的 `payload` 服务。正常流程沿用原数据库、媒体卷、同步服务和 tools 镜像。
+
+应用切换失败时脚本恢复原环境文件并启动旧镜像。成功运行的日志分别记录应用配置备份和 Nginx 备份路径。若需事后恢复，先恢复下文所述的上一版官网虚拟主机，再按对应版本及备份恢复 `APP_IMAGE` 和部署记录，只重启 `payload`。涉及其他后端文件或数据库结构的更新仍走常规发布流程。
+
 ## 验收、回退与续期
 
 在已检出所发版本、已配置项目 SSH 密钥的机器上执行以下检查。最后一条同时核对 GitHub、VPS 配置和文件哈希、根域名 A 记录、HTTP 跳转、HTTPS 首页、样式和备案链接。仅省略 GitHub 对照时使用 `--skip-github`。

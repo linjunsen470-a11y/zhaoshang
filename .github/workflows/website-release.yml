@@ -19,7 +19,7 @@ concurrency:
 
 jobs:
   release:
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.before == 'd83436b25c6ec706600e933c9e0b74fcafdafe1a')
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.before == '80479cdfe46dd2b954c63587ac1446bdfac5c315')
     runs-on: ubuntu-latest
     environment: tencent-test
     timeout-minutes: 25
@@ -61,6 +61,9 @@ jobs:
           remote=$("${ssh[@]}" mktemp -d /tmp/jinyi-website-XXXXXXXX)
           [[ "$remote" =~ ^/tmp/jinyi-website-[a-zA-Z0-9]{8}$ ]]
           trap '"${ssh[@]}" rm -rf -- "$remote"; rm -f "$key"' EXIT
+          tar -C "$RUNNER_TEMP/website" -czf - source.manifest deploy/website/{replace-app.sh,source-manifest.mjs} |
+            "${ssh[@]}" tar xzf - -C "$remote"
+          "${ssh[@]}" sudo -n bash "$remote/deploy/website/replace-app.sh" "$GITHUB_SHA" "$BASE_IMAGE" --check
           archive="$RUNNER_TEMP/website.tgz"
           digest=$(sha256sum "$archive" | cut -d' ' -f1)
           "${ssh[@]}" "cat > '$remote/website.tgz'" < "$archive"

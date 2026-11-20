@@ -14,22 +14,36 @@ compose=(docker compose -f compose.yml)
 id=$("${compose[@]}" ps -q payload)
 base=$(docker inspect --format '{{.Config.Image}}' "$id")
 [[ $(docker inspect --format '{{.Image}}' "$id") == "$expected_base" ]] || { echo 'Application image changed; recheck the running version.' >&2; exit 1; }
-tools_image=$("${compose[@]}" config --format json | python3 -c '
+tools_image=$("${compose[@]}" --profile "*" config --format json | python3 -c '
 import json, sys
 services = json.load(sys.stdin)["services"]
 assert services["payload"]["image"] == sys.argv[1]
 assert str(services["payload"]["environment"]["PAYLOAD_DB_PUSH"]).lower() == "false"
 print(services["tools"]["image"])
 ' "$base")
-[[ ${base##*:} == "${tools_image##*:}" ]] || { echo 'Application and tools versions differ.' >&2; exit 1; }
+# A prior website-only release adds layers to the runtime paired with these tools.
+runtime="${base%:*}:${tools_image##*:}"
+if [[ $base != "$runtime" ]]; then
+  docker image inspect "$runtime" "$base" | python3 -c '
+import json, sys
+runtime, current = [item["RootFS"]["Layers"] for item in json.load(sys.stdin)]
+if not runtime or current[:len(runtime)] != runtime:
+    raise SystemExit("Live application is not based on the runtime paired with the tools image")
+'
+fi
 
 docker run --rm -i --read-only --network none --entrypoint node "$tools_image" --input-type=module - \
   < "$staging/deploy/website/source-manifest.mjs" > "$staging/live.manifest"
 diff -u "$staging/source.manifest" "$staging/live.manifest"
 echo 'Verified that all application sources outside the website changes match the live release.'
+if [[ ${3:-} == --check ]]; then exit 0; fi
 
 candidate="zhaoshang-local/wechat-app:website-$revision"
-docker build --network=none --pull=false -t "$candidate" --build-arg "BASE=$base" -f - "$staging/bundle" <<'DOCKER'
+if [[ $base == "$candidate" && $(cat deployed-revision) == "$revision" ]]; then
+  bash "$app/releases/$revision/deploy/website/activate.sh"
+  exit
+fi
+docker build --network=none --pull=false -t "$candidate" --build-arg "BASE=$runtime" -f - "$staging/bundle" <<'DOCKER'
 ARG BASE
 FROM ${BASE}
 COPY --chown=1001:1001 .next/ /app/.next/
@@ -101,6 +115,7 @@ changed=true
 mv -Tf "$tmp/new.env" .env
 "${compose[@]}" up -d --no-deps --wait --wait-timeout 150 payload
 [[ $(docker inspect --format '{{.Config.Image}}' "$("${compose[@]}" ps -q payload)") == "$candidate" ]]
+if [[ -f deployed-revision ]]; then cp -p deployed-revision "$tmp/revision"; fi
 printf '%s\n' "$revision" > "$tmp/revision"
 mv -Tf "$tmp/revision" deployed-revision
 bash "$release/deploy/website/activate.sh"

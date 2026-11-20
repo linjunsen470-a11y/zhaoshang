@@ -90,6 +90,7 @@ for asset in about.html services.html contact.html; do
 done
 
 printf '%s\n' "$revision" > "$tmp/revision"
+chmod 0644 "$tmp/revision"
 mv -Tf "$tmp/revision" "$site/deployed-revision"
 switching=false
 printf 'Activated %s at the origin. Previous configuration: %s\n' "$revision" "$backup"

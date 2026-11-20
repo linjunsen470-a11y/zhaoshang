@@ -8,7 +8,8 @@
 - 用户同步目标提交至 Gitee 后，手动运行 main 的 `.workflow/gitee-verify.yml`。两个 BuildKit 任务成功后，自动执行 SSH 部署阶段。
 - 镜像经腾讯 CCR 到 VPS；不再使用 VPS registry 或镜像 tar 直传。试验 registry 容器和 Nginx `/v2/` 入口已移除，数据卷暂保留。
 - 腾讯云后台由用户设置自动清理，保留最近 **10 个版本**。仓库不再维护清理脚本或要求 CAM 删除凭据。回退前应确认目标标签仍在 CCR 或本机。
-- 正式域名的招商首页随应用镜像发布。流水线额外准备同版本的静态企业页面与 Nginx 配置，官网流量切换由实例终端单独执行。[官网切换、验收与回退](../deploy/website/README.md)
+- 仅更新官网首页或样式时，可以手动使用 GitHub 的 `Website connection check` 和 `Release the business website`。操作步骤见[官网单独发布](../deploy/website/README.md#使用-github-actions-单独更新官网)。
+- 常规 Gitee 发布中，正式域名的招商首页随应用镜像发布。流水线额外准备同版本的静态企业页面与 Nginx 配置，官网流量切换由实例终端单独执行。[官网切换、验收与回退](../deploy/website/README.md)
 
 ## 构建与凭据
 
