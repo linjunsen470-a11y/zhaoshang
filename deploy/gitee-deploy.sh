@@ -14,7 +14,11 @@ cp deploy/known_hosts "$key_dir/known_hosts"
 args=(-i "$key_dir/key" -o BatchMode=yes -o StrictHostKeyChecking=yes -o "UserKnownHostsFile=$key_dir/known_hosts" -o ConnectTimeout=20 -o ServerAliveInterval=15)
 destination=ubuntu@134.175.44.80
 release=/opt/zhaoshang-test/releases/$revision
-ssh "${args[@]}" "$destination" "mkdir -p '$release'"
+ssh "${args[@]}" "$destination" mkdir -p "$release"
+# Stage the separate, operator-activated website cutover from the same revision.
+git archive "$revision" -- deploy/website/{activate.sh,nginx-public.conf} \
+  website/{index.html,about.html,services.html,contact.html,css/style.css,js/main.js} > "$key_dir/website.tar"
+ssh "${args[@]}" "$destination" tar xf - -C "$release" < "$key_dir/website.tar"
 scp "${args[@]}" deploy/deploy.sh deploy/check.sh docker-compose.yml "$destination:$release/"
 ssh "${args[@]}" "$destination" bash -s -- "$revision" <<'REMOTE'
 set -euo pipefail

@@ -58,7 +58,6 @@ dd a, .footer-inner a { text-decoration: none; }
 .site-footer { padding: 24px 0; border-top: 1px solid #e0e8e2; background: #fff; }
 .footer-inner { color: #687b71; font-size: 13px; text-align: center; }
 .footer-inner p { margin: 3px 0; }
-.icp-badge:empty { display: none; }
 
 @media (max-width: 760px) {
   .container { width: calc(100% - 32px); }

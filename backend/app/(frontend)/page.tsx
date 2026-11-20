@@ -102,6 +102,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<{ p
       <section className="web-lead-section" id="lead-form"><div className="web-content web-lead-layout"><div><p className="web-eyebrow">需求匹配</p><h2>先说需求，<br />顾问帮你缩小选择。</h2><p>提交后，我们会与你确认经营品类、费用承受范围和营业安排，再协助匹配房源与沟通看铺。</p><ol className="web-service-steps"><li>登记经营需求</li><li>确认条件并匹配房源</li><li>协助看铺与后续沟通</li></ol><details className="web-support-services"><summary>转让、餐饮设备等配套服务</summary><p>如已有店铺需要转让，或有餐饮设备出售、求购需求，可在右侧选择对应需求类型。</p></details></div>
         <div>{query.projectId && !selectedProject ? <p className="web-selection-notice" role="status">原房源暂不可咨询，你可以提交通用需求，让顾问寻找其他选择。</p> : null}<LeadForm key={selectedProject?.id || initialScene || 'general'} action={submitWebsiteLead} selectedProject={selectedProject} initialScene={initialScene} /></div>
       </div></section>
-    </main><footer className="web-site-footer web-content">饭堂与商铺 · 专注固定服务客群的经营空间</footer>
+    </main>
+    <footer className="web-site-footer web-content">
+      <p>广州锦奕咨询服务有限公司</p>
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026186178号</a>
+    </footer>
   </>
 }

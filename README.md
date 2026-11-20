@@ -12,7 +12,7 @@
 | --- | --- |
 | `mp/` | 微信小程序，使用 `mp/project.config.json` 打开 |
 | `backend/` | Payload CMS、Next.js 网站及 API |
-| `website/` | 独立公司网站，不随后端流水线部署；见 [官网部署与同步](deploy/website/README.md) |
+| `website/` | 静态企业信息页和备用首页，正式域名使用 backend 的招商首页。[官网切换与回退](deploy/website/README.md) |
 | `deploy/` | SSH 发布、上线检查及 Nginx 配置参考 |
 | `docker-compose.yml` | 唯一云端编排：PostgreSQL、后台、维护工具和可选同步进程 |
 | `server.js`、`data.json` | 本地 Mock API 与示例数据 |

@@ -1,64 +1,41 @@
-# 企业官网：腾讯云部署与备案后开通
+# jinyifangchan.com 官网切换
 
-精简后的 `website/` 四个页面及 CSS、JS 独立部署到腾讯云 `134.175.44.80`。`/var/www/jinyi-website/current` 指向当前版本目录，`/var/www/jinyi-website/deployed-revision` 记录其对应的完整 Git 提交。四个页面均内联样式；样式维护方法见 [官网说明](../../website/README.md)。部署目录不包含后端、环境变量、数据库或营业执照图片。
+正式首页使用 Next.js 招商业务站，展示房源并接收咨询。HTTPS 从腾讯云 HAProxy 按域名进入 Nginx，再由 Nginx 把首页请求（含表单 POST）和 `/_next/static/` 交给服务器本地的 `127.0.0.1:3300`。原有企业信息、业务、联系方式页面保留原链接，`/index.html` 跳转到新首页。小程序 API、媒体和员工后台继续使用现有 API 域名。
 
-官网与现有服务共享 Nginx 和 HAProxy，但使用独立虚拟主机：
+## 核对备案信息
 
-- 私有预览：Nginx `127.0.0.1:18081`，配置见 `nginx-preview.conf`。
-- 正式域名：`jinyifangchan.com` 的 HTTP 与 HTTPS 配置见 `nginx-public.conf`。HAProxy 仅为该域名添加了精确 SNI 路由，规则见 `haproxy-sni.conf.example`；其他域名及默认后端保持原规则。
-- 2026-11-01 按用户要求启用 `/var/www/jinyi-website/public-enabled`，该 VPS 的正式域名入口已开放。域名目前仍解析到 Railway，正常解析访问的结果可能不同。
-- 新增 `nginx-ip.conf`，让 `http://134.175.44.80/` 直接显示官网。外网实测返回 200，腾讯云未拦截此裸 IP 访问；该地址可被公众访问，不应假设云服务商一定会阻断它。
-- 现有 HAProxy 配置变更前的备份为 `/var/backups/jinyi-website/20261101T051831Z/haproxy.cfg`。回退前先比较当前配置，避免覆盖后续新增的其他服务配置。
-- Let's Encrypt 证书仅覆盖 `jinyifangchan.com`，有效期至 **2027-01-30**；`www.jinyifangchan.com` 尚未配置。
+项目方已确认网站 ICP 首次备案通过，提供的广东主体备案号为 **粤ICP备2026186178号**。业务首页及四个静态页面在页脚中央提供工信部链接。切换前在腾讯云「我的备案 → 互联网信息服务」核对域名、主办单位、网站名称和服务内容。若登记信息随网站更替而改变，按订单要求办理变更，维持腾讯云备案接入。[广东管局备案要求](https://cloud.tencent.com/document/product/243/51709) · [广东备案号悬挂说明](https://support.huaweicloud.com/icp_faq/icp_05_0205.html)
 
-## 私有预览
+## 发布和切换
 
-在仓库根目录运行，保持终端打开：
+1. 由仓库所有者将目标 GitHub 提交同步至 Gitee 并手动运行发布流水线。应用镜像包含新版首页。流水线同时把六个静态资源、独立的官网虚拟主机配置和切换脚本准备到同一版本目录。后端发布成功后，在腾讯云实例终端执行下方命令。
+2. 脚本检查运行版本、房源查询、咨询表单和备案链接，备份原官网配置，切换静态资源并在 `nginx -t` 通过后重载。脚本通过本机 HAProxy 的真实域名及证书验证首页和企业页面。切换期间校验失败会恢复原入口。输出的备份目录位于 `/var/backups/jinyi-website/`。
 
-```powershell
-ssh -N -L 18081:127.0.0.1:18081 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=deploy/known_hosts ubuntu@134.175.44.80
-```
+   ```bash
+   cd /opt/zhaoshang-test
+   revision=$(cat deployed-revision)
+   sudo bash "releases/$revision/deploy/website/activate.sh"
+   ```
 
-在同一台电脑访问 `http://127.0.0.1:18081/`。这是通过 SSH 的私有预览，不是供管局公网访问的地址。预览端口只绑定服务器回环地址。
+3. 核对域名管理平台的当前解析。2026-11-01 的记录曾指向 Railway，切换时以实际权威记录为准。源站检查通过后，如根域名尚未直达腾讯云，将 `@` 指向 **A 134.175.44.80**。处理同名冲突的 CNAME、旧 A 或指向其他服务的 AAAA，保留原值及 TTL 以便回退。其他子域名、MX 和验证 TXT 独立管理。
+4. 从外网打开正式首页，检查浏览房源、打开咨询表单、图片和页脚工信部链接，并检查原企业信息页。业务咨询的提交测试使用隔离环境，避免在运营台账中写入测试线索。[正式首页](https://jinyifangchan.com/) · [企业信息](https://jinyifangchan.com/about.html)
 
-## 备案与 DNS
+服务器已有独立 Nginx 配置和根域名证书。脚本沿用现有 HAProxy SNI 路由。静态预览监听 `127.0.0.1:18081`，裸 IP 的 HTTP 入口提供静态企业页面。六个静态资源与当前版本分别位于 `/var/www/jinyi-website/current` 和 `/var/www/jinyi-website/deployed-revision`。发布包只取 Git 提交中明确列出的公开文件；服务器上的应用环境变量沿用既有部署配置。
 
-腾讯云说明，首次备案或新增未备案网站在取得备案号前不得公开访问；接入备案、变更备案的规则可能不同，以[腾讯云备案期间说明](https://cloud.tencent.com/document/product/243/19637)及具体订单要求为准。当前根域名 `@` 的 CNAME 指向 `nud58xnl.up.railway.app`，该地址与 VPS 不同。2026-11-01 按用户要求停止 Railway 临时网站的运行部署，根域名和临时域名均返回 404，域名和服务配置仍保留；随后按用户要求开放 VPS 域名及 IP 入口。网站名称、主体和业务内容应与实际备案信息一致；[广东管局备案要求](https://cloud.tencent.com/document/product/243/51709)及订单审核结果为准。
+## 验收、回退与续期
 
-备案通过且腾讯云接入完成后，域名管理人可将根域名的 Railway CNAME 替换为：
+在已检出所发版本、已配置项目 SSH 密钥的机器上执行以下检查。最后一条同时核对 GitHub、VPS 配置和文件哈希、根域名 A 记录、HTTP 跳转、HTTPS 首页、样式和备案链接。仅省略 GitHub 对照时使用 `--skip-github`。
 
-| 主机记录 | 类型 | 记录值 |
-| --- | --- | --- |
-| `@` | `A` | `134.175.44.80` |
-
-先检查同一主机记录是否有其他冲突的 CNAME、A 或 AAAA；不要更改其他子域名、MX 或无关的 TXT 记录。证书签发时添加的 `_acme-challenge` TXT 已完成本次验证，以后手动签发时值会改变。域名入口目前已开放，DNS 切换后需检查实际解析和 HTTPS。
-
-## 代码同步与检查
-
-官网静态文件独立于后端镜像发布；推送 GitHub 不会自动更新 VPS。部署时从目标 Git 提交打包且仅上传 `index.html`、`about.html`、`services.html`、`contact.html`、`css/style.css` 和 `js/main.js`，解压至新的 `/var/www/jinyi-website/releases/` 版本目录，核对文件哈希后原子切换 `current`。网站文件和 Nginx 配置通过 `.gitattributes` 固定 LF 换行，避免 Windows 打包时与 Git 提交及服务器文件产生字节差异。验证成功后，将该提交的完整 SHA 写入 `/var/www/jinyi-website/deployed-revision`，保留上一版本以便回退。
-
-在仓库根目录运行：
-
-```powershell
+```bash
 node scripts/sync-website-inline-css.mjs --check
 node --test tests/unit/company-readiness.test.mjs tests/unit/site-server.test.mjs
 node deploy/website/verify.mjs
 ```
 
-最后一条命令对照本地 `HEAD`、GitHub `origin/main`、VPS 上的六个静态文件、三份 Nginx 配置、HAProxy 路由和公网 HTTP 响应。推送之前可用 `node deploy/website/verify.mjs --skip-github` 仅核对本地提交和 VPS。该检查不表示 VPS 后端镜像标签必须与官网提交相同；后端按[后端部署流程](../../docs/ci-deployment.md)单独发布。
+首次切换后如需临时恢复静态首页，可在 VPS 上将该次备份的 `nginx-public.conf` 恢复为 `/etc/nginx/sites-available/jinyi-website-public.conf`，运行 `sudo nginx -t && sudo systemctl reload nginx`。保留刚发布的静态目录即可继续展示备案号。DNS 若已正确指向腾讯云，恢复静态首页只需改此虚拟主机。业务镜像的回退见[后端回退说明](../../docs/ci-deployment.md#手动回退)。
 
-## 备案后开通与证书续期
+2026-11-01 的运维记录显示根域名证书通过手动 DNS 验证签发，到期日为 2027-01-30。切换时用 `sudo certbot certificates` 核实实况。若仍使用手动验证，根域名指向 VPS 且公网 ACME 路径可达后，可运行 `sudo certbot reconfigure --cert-name jinyifangchan.com --webroot --webroot-path /var/www/letsencrypt` 并检查定时任务及 Nginx 重载钩子。现有配置覆盖根域名，启用 www 需要相应域名路由和证书。
 
-1. 从腾讯云和管局确认网站备案及接入完成。把**实际网站备案号**填入 `website/js/main.js` 的 `SITE_ICP_NUMBER`，部署更新后的静态文件，并在私有预览中检查备案号及工信部链接。不要填示例号或小程序备案号。
-2. 由域名管理人按上表修改 DNS，确认根域名解析到目标服务器。VPS 上的正式域名入口已经开放。
-3. 当前证书使用手动 DNS 验证签发，**不会自动续期**。DNS 已指向服务器、腾讯云放通访问且公网 80 端口的 ACME 路径可达后，运行下列命令将该证书切换到 webroot 续期；命令先使用 Let's Encrypt 测试环境验证，成功后才保存续期配置。检查服务器已有的 Certbot 定时器和续期后 Nginx reload hook，并确认结果确实成功。
+## 公安联网备案
 
-   ```bash
-   sudo certbot reconfigure --cert-name jinyifangchan.com --webroot --webroot-path /var/www/letsencrypt
-   ```
-
-4. 确认备案号已部署、证书和接入无误后，从外网检查 HTTPS 证书、全部页面、样式及页脚备案号。按接入商要求办理后续公安联网备案。
-
-如需关闭公网访问，删除 `/var/www/jinyi-website/public-enabled` 只关闭域名入口，还必须同时停用 `/etc/nginx/sites-enabled/jinyi-website-ip.conf` 并在 `nginx -t` 通过后重载 Nginx；否则裸 IP 仍可访问。关闭前应确认用户当前意图。
-
-手动 DNS 签发的证书到期前必须完成上述续期配置或再次手动续签；现有 Certbot 定时器本身不能自动续签无认证 hook 的手动证书。若 DNS 或审核进度延迟，尤其要在 2027-01-30 前处理。
+网站开通之日起 30 日内，由主办单位登录全国互联网安全管理服务平台提交公安联网备案申请。可用腾讯云提供的数据码导入主体和网站信息，再补充接入商、域名注册商等信息。数据码自获取之日起有效期为 30 天，仅在申报平台使用。审核通过后 30 日内，从平台取得正式公安备案号、图标和链接，按平台代码添加到业务首页及静态页面页脚。[全国互联网安全管理服务平台](https://beian.mps.gov.cn/) · [腾讯云办理指引](https://cloud.tencent.com/document/product/243/19142) · [数据码使用说明](https://cloud.tencent.com/document/product/243/120137)

@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { resolve4 } from 'node:dns/promises';
 import { get } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -71,6 +72,28 @@ await Promise.all(files.filter(file => file.url).map(async file => {
   if (await fetchHash(file.url) !== file.expected) throw new Error(`Public response differs: ${file.source}`);
 }));
 
+const domain = 'jinyifangchan.com';
+const addresses = await resolve4(domain);
+if (!addresses.length || addresses.some(address => address !== '134.175.44.80')) {
+  throw new Error(`Unexpected A records for ${domain}: ${addresses.join(', ')}`);
+}
+const homeUrl = `https://${domain}/`;
+const publicGet = url => fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(12000) });
+const redirect = await publicGet(`http://${domain}/`);
+if (redirect.status !== 301 || redirect.headers.get('location') !== homeUrl) {
+  throw new Error('Public HTTP does not redirect to the HTTPS homepage');
+}
+const home = await publicGet(homeUrl);
+const html = await home.text();
+if (home.status !== 200 || !html.includes('id="scene-campus"') || !html.includes('id="lead-form"') ||
+    !/<a [^>]*href="https:\/\/beian\.miit\.gov\.cn\/"[^>]*>粤ICP备2026186178号<\/a>/.test(html)) {
+  throw new Error('Public HTTPS homepage failed its listings, consultation form or ICP link check');
+}
+const css = html.match(/href="(\/_next\/static\/[^"]+\.css[^"]*)"/)?.[1];
+if (!css || (await publicGet(new URL(css, homeUrl))).status !== 200) {
+  throw new Error('Public HTTPS homepage stylesheet is unavailable');
+}
+
 if (args[0] !== '--skip-github') {
   const result = execFileSync('git', ['ls-remote', '--exit-code', 'origin', 'refs/heads/main'], {
     cwd: root, encoding: 'utf8', timeout: 30000, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' }
@@ -78,4 +101,4 @@ if (args[0] !== '--skip-github') {
   if (result.split(/\s+/)[0] !== revision) throw new Error('GitHub origin/main differs from HEAD');
 }
 
-console.log(`Verified ${revision}: ${assets.length} website files, ${configs.length} Nginx files, HAProxy route and public HTTP responses${args[0] === '--skip-github' ? ' (GitHub not checked)' : ', including GitHub origin/main'}.`);
+console.log(`Verified ${revision}: static website files, Nginx, HAProxy, public DNS, HTTP redirect and the HTTPS business homepage${args[0] === '--skip-github' ? ' (GitHub not checked)' : ', including GitHub origin/main'}.`);

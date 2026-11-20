@@ -72,7 +72,8 @@ body {
 .web-selected-project { display: grid; gap: 8px; padding: 16px; border-radius: 8px; background: #eaf2ed; color: #204c3c; font-size: 14px; line-height: 1.7; }
 .web-selected-project > span, .web-selected-project > a { font-size: 12px; }
 .web-selection-notice { padding: 16px; border-radius: 8px; background: #eaf2ed; color: #204c3c; line-height: 1.8; font-size: 14px; }
-.web-site-footer { padding-top: 25px; padding-bottom: 25px; color: #67746d; font-size: 12px; }
+.web-site-footer { padding-top: 25px; padding-bottom: 25px; color: #526258; font-size: 14px; text-align: center; }
+.web-site-footer a { text-decoration: underline; text-underline-offset: 3px; }
 @media (max-width: 700px) {
   .web-content, .web-site-header { width: calc(100% - 36px); }
   .web-site-header { padding: 16px 0; }
