@@ -2,7 +2,7 @@
 
 正式首页使用 Next.js 展示商铺选址与企业用餐业务，引导访客在微信搜索「岭南旺铺」。HTTPS 从腾讯云 HAProxy 按域名进入 Nginx，再由 Nginx 把首页请求和 `/_next/static/` 交给服务器本地的 `127.0.0.1:3300`。原有企业信息、业务、联系方式页面保留原链接，`/index.html` 跳转到新首页。小程序 API、媒体和员工后台继续使用现有 API 域名。
 
-2026-11-20 18:44（北京时间），已通过 GitHub Actions 切换至版本 `3cfccd0`。公网验收通过域名 HTTPS、首页房源区、咨询入口、备案链接、样式和三个原企业页面。运行日志记录了回退所需的两个备份目录。[生产发布及验收记录](https://github.com/linjunsen470-a11y/zhaoshang/actions/runs/44720964714)
+2026-11-20 19:13（北京时间），官网版本 `b453afe` 已通过 GitHub Actions 上线。公网验收通过 HTTPS 首页、小程序名称、备案链接、画册照片、品牌标志、样式及三个企业信息页面。此次发布的日志记录了应用和 Nginx 的回退目录。[本次发布及公网验收记录](https://github.com/linjunsen470-a11y/zhaoshang/actions/runs/44724843519)
 
 ## 核对备案信息
 

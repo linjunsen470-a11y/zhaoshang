@@ -7,10 +7,6 @@ on:
         type: string
         required: true
 
-  push:
-    branches: [main]
-    paths: [.github/workflows/website-release.yml]
-
 permissions:
   contents: read
 
@@ -20,7 +16,7 @@ concurrency:
 
 jobs:
   release:
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.before == '722d7b3f02b1ca27ea70af9e0f0226ab392e849e')
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: tencent-test
     timeout-minutes: 25
@@ -48,7 +44,7 @@ jobs:
         shell: bash
         env:
           SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          BASE_IMAGE: ${{ inputs.base_image || 'sha256:1bf1a2f10fb20e7f630b0c725cc2403a106889cca5f512ce2e95491453ba1491' }}
+          BASE_IMAGE: ${{ inputs.base_image }}
         run: |
           set -euo pipefail
           [[ "$BASE_IMAGE" =~ ^sha256:[0-9a-f]{64}$ && "$GITHUB_SHA" =~ ^[a-f0-9]{40}$ ]]
