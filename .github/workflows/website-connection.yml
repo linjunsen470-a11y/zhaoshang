@@ -11,7 +11,7 @@ permissions:
 jobs:
   network:
     # The initial installation also runs the owner-requested check.
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.before == '5effbbfb31be8516d4362603a1e1e3770f77e5e3')
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.before == '0fc3a813319de87a27071102abfcfe53adcd0aa3')
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
@@ -84,6 +84,20 @@ jobs:
               if [[ "$rev" =~ ^[a-f0-9]{40}$ ]]; then echo "$file $rev"; fi
             fi
           done
+          cd /opt/zhaoshang-test
+          id=$(sudo -n docker compose -f compose.yml ps -q payload)
+          image=$(sudo -n docker inspect --format '{{.Config.Image}}' "$id")
+          printf 'Application image: %s\n' "$image"
+          sudo -n docker inspect --format 'Network {{range $name, $_ := .NetworkSettings.Networks}}{{$name}} {{end}}' "$id"
+          sudo -n docker inspect --format 'Image identity {{.Image}}' "$id"
+          awk '/MemAvailable:/ { print "Available memory KiB", $2 }' /proc/meminfo
+          df -Pm /var/lib/docker /var/www | awk 'NR>1 {print "Available disk MiB", $4}'
+          sudo -n readlink -f /etc/nginx/sites-enabled/jinyi-website-public.conf
+          sudo -n readlink -f /var/www/jinyi-website/current
+          if sudo -n test -f /opt/zhaoshang-test/deployed-revision; then
+            rev=$(sudo -n cat /opt/zhaoshang-test/deployed-revision)
+            if [[ "$rev" =~ ^[a-f0-9]{40}$ ]]; then echo "Privileged application revision $rev"; fi
+          fi
           page=$(mktemp)
           trap 'rm -f "$page"' EXIT
           curl -fsS --noproxy '*' --max-time 15 http://127.0.0.1:3300/ -o "$page"
