@@ -3,7 +3,8 @@ import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 
 const changed = new Set([
-  'page.tsx', 'layout.tsx', 'globals.css', 'LeadForm.tsx', 'MiniProgramSearch.tsx', 'dining-room.webp', 'jinyi.webp'
+  'page.tsx', 'layout.tsx', 'globals.css', 'LeadForm.tsx', 'MiniProgramSearch.tsx', 'dining-room.webp',
+  'serving-counter.webp', 'claypot-meal.webp', 'jinyi.webp'
 ].map(name => 'app/(frontend)/' + name));
 function list(file) {
   if (statSync(file).isDirectory()) {

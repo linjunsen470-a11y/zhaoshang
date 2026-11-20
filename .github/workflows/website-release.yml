@@ -7,6 +7,10 @@ on:
         type: string
         required: true
 
+  push:
+    branches: [main]
+    paths: [.github/workflows/website-release.yml]
+
 permissions:
   contents: read
 
@@ -16,7 +20,7 @@ concurrency:
 
 jobs:
   release:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.before == '186acea5700eae5c089f56622ea7c80bc7319abc')
     runs-on: ubuntu-latest
     environment: tencent-test
     timeout-minutes: 25
@@ -44,7 +48,7 @@ jobs:
         shell: bash
         env:
           SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          BASE_IMAGE: ${{ inputs.base_image }}
+          BASE_IMAGE: ${{ inputs.base_image || 'sha256:04b7f34943f8d2e42072954b0d5bfa146d7d1145c743858c4440c954fc1b542e' }}
         run: |
           set -euo pipefail
           [[ "$BASE_IMAGE" =~ ^sha256:[0-9a-f]{64}$ && "$GITHUB_SHA" =~ ^[a-f0-9]{40}$ ]]
@@ -82,4 +86,4 @@ jobs:
             curl -fsS --max-time 15 "$origin/$page" -o page
             cmp "website/website/$page" page
           done
-          echo 'Verified public HTTPS, mini-program name, ICP link, photograph, logo, stylesheet and company pages'
+          echo 'Verified public HTTPS, mini-program name, ICP link, photographs, logo, stylesheet and company pages'
