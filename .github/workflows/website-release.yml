@@ -7,6 +7,10 @@ on:
         type: string
         required: true
 
+  push:
+    branches: [main]
+    paths: [.github/workflows/website-release.yml]
+
 permissions:
   contents: read
 
@@ -16,7 +20,7 @@ concurrency:
 
 jobs:
   release:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.before == '708f087b22b5a4d4195a775c35ef94c032e3316f')
     runs-on: ubuntu-latest
     environment: tencent-test
     timeout-minutes: 25
@@ -30,7 +34,8 @@ jobs:
           set -euo pipefail
           target="$RUNNER_TEMP/website"
           mkdir -p "$target/bundle"
-          git archive HEAD -- website/{index.html,about.html,services.html,contact.html,css/style.css,js/main.js} \
+          mapfile -t assets < website/public-files.txt
+          git archive HEAD -- website/public-files.txt "${assets[@]/#/website/}" \
             deploy/website/{activate.sh,replace-app.sh,nginx-public.conf,source-manifest.mjs} | tar xf - -C "$target"
           (cd backend && node ../deploy/website/source-manifest.mjs) > "$target/source.manifest"
           docker build --target builder -t jinyi-website-builder backend
@@ -44,7 +49,7 @@ jobs:
         shell: bash
         env:
           SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          BASE_IMAGE: ${{ inputs.base_image }}
+          BASE_IMAGE: ${{ inputs.base_image || 'sha256:681a025288e6b16d6665e551d6d7f07e98c999c2a3dadec29b4fe8780d970f6f' }}
         run: |
           set -euo pipefail
           [[ "$BASE_IMAGE" =~ ^sha256:[0-9a-f]{64}$ && "$GITHUB_SHA" =~ ^[a-f0-9]{40}$ ]]
@@ -78,8 +83,9 @@ jobs:
           origin=https://jinyifangchan.com
           node --input-type=module -e "import { checkHomepage } from './deploy/website/check-homepage.mjs'; await checkHomepage(process.argv[1])" "$origin/"
           cd "$RUNNER_TEMP"
-          for page in about.html services.html contact.html; do
+          while IFS= read -r page; do
+            [[ $page != index.html ]] || continue
             curl -fsS --max-time 15 "$origin/$page" -o page
             cmp "website/website/$page" page
-          done
+          done < website/website/public-files.txt
           echo 'Verified public HTTPS, mini-program name, ICP link, photographs, logo, stylesheet and company pages'

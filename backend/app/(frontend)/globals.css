@@ -75,3 +75,30 @@ h1 {
   nav { gap: 13px; }
   .site-footer { flex-direction: column; padding-block: 16px; }
 }
+
+.field-story, .explore { width: min(1180px, 88%); margin-inline: auto; }
+.field-story { display: grid; grid-template-columns: 1.12fr 1fr; align-items: center; gap: clamp(32px, 7vw, 106px); padding-block: clamp(52px, 6vw, 100px); }
+.field-photo img { display: block; width: 100%; height: auto; aspect-ratio: 1.65; object-fit: cover; }
+.field-copy h2, .explore strong { font-family: "Songti SC", "Noto Serif CJK SC", STSong, SimSun, serif; font-weight: 500; }
+.field-copy h2 { margin: 0 0 18px; font-size: clamp(29px, 2.8vw, 46px); line-height: 1.4; }
+.field-copy p { max-width: 27em; font-size: 16px; line-height: 1.95; color: #48574c; }
+.field-copy a { display: inline-block; margin-top: 22px; padding-block: 4px; border-bottom: 1px solid #7f8c78; font-size: 14px; }
+.field-copy a span { margin-left: 10px; }
+.explore { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4%; padding-bottom: clamp(42px, 5vw, 78px); }
+.explore a { display: grid; gap: 8px; border-top: 1px solid #bfc6b6; padding-top: 18px; }
+.explore strong { font-size: clamp(22px, 2vw, 30px); }
+.explore span { font-size: 14px; color: #526153; }
+.explore i { float: right; font-style: normal; }
+.site-footer { border-top: 1px solid #d6d9cd; }
+@media (max-width: 700px) {
+  .field-story, .explore { width: calc(100% - 40px); }
+  .field-story { grid-template-columns: 1fr; gap: 22px; padding-block: 36px; }
+  .field-copy h2 { margin-bottom: 10px; }
+  .field-copy p { font-size: 15px; }
+  .field-copy a { margin-top: 12px; }
+  .explore { grid-template-columns: 1fr; gap: 14px; }
+  .explore a { grid-template-columns: 1fr auto; align-items: baseline; padding-top: 14px; }
+  .explore strong { font-size: 19px; }
+  .explore span { font-size: 12px; }
+  .explore i { margin-left: 5px; }
+}

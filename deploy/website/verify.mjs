@@ -15,7 +15,7 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 const git = (...params) => execFileSync('git', params, { cwd: root, encoding: 'utf8' }).trim();
 const revision = git('rev-parse', '--verify', 'HEAD^{commit}');
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
-const assets = ['index.html', 'about.html', 'services.html', 'contact.html', 'css/style.css', 'js/main.js'];
+const assets = git('show', revision + ':website/public-files.txt').split(/\r?\n/);
 const configs = ['nginx-ip.conf', 'nginx-preview.conf', 'nginx-public.conf'];
 const files = [
   ...assets.map(file => ({ source: `website/${file}`, remote: `/var/www/jinyi-website/current/${file}`, url: `/${file}` })),

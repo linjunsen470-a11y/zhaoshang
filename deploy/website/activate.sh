@@ -8,7 +8,7 @@ app=/opt/zhaoshang-test
 site=/var/www/jinyi-website
 vhost=/etc/nginx/sites-available/jinyi-website-public.conf
 domain=jinyifangchan.com
-assets=(index.html about.html services.html contact.html css/style.css js/main.js)
+mapfile -t assets < "$release/website/public-files.txt"
 
 [[ $EUID == 0 && $revision =~ ^[0-9a-f]{40}$ && $release == "$app/releases/$revision" ]]
 # A website-only application release already holds this lock on descriptor 9.
@@ -84,7 +84,8 @@ for _ in {1..10}; do
   sleep 1
 done
 [[ $ready == true ]] || { echo 'TLS origin did not serve the new homepage.' >&2; exit 1; }
-for asset in about.html services.html contact.html; do
+for asset in "${assets[@]}"; do
+  [[ $asset != index.html ]] || continue
   "${origin[@]}" "https://$domain/$asset" -o "$tmp/page"
   cmp "$candidate/$asset" "$tmp/page"
 done

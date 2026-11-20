@@ -1,17 +1,18 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { resolve } from 'node:path';
+import { extname, resolve } from 'node:path';
 
-const assets = {
-  '/': ['index.html', 'text/html'],
-  '/index.html': ['index.html', 'text/html'],
-  '/about.html': ['about.html', 'text/html'],
-  '/services.html': ['services.html', 'text/html'],
-  '/contact.html': ['contact.html', 'text/html'],
-  '/css/style.css': ['css/style.css', 'text/css'],
-  '/js/main.js': ['js/main.js', 'text/javascript']
+const types = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.webp': 'image/webp'
 };
+const files = readFileSync(new URL('./public-files.txt', import.meta.url), 'utf8').trim().split(/\r?\n/);
+const assets = new Map(files.map(file => ['/' + file, file]));
+assets.set('/', 'index.html');
 
 export async function serve(request, response) {
   if (request.method !== 'GET' && request.method !== 'HEAD') {
@@ -25,15 +26,15 @@ export async function serve(request, response) {
     response.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Bad request');
     return;
   }
-  const asset = Object.hasOwn(assets, pathname) ? assets[pathname] : undefined;
+  const asset = assets.get(pathname);
   if (!asset) {
     response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' }).end('Not found');
     return;
   }
   try {
-    const body = await readFile(new URL(asset[0], import.meta.url));
+    const body = await readFile(new URL(asset, import.meta.url));
     response.writeHead(200, {
-      'Content-Type': `${asset[1]}; charset=utf-8`,
+      'Content-Type': types[extname(asset)],
       'Content-Length': body.length,
       'X-Content-Type-Options': 'nosniff'
     });

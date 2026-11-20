@@ -10,7 +10,7 @@ export async function checkHomepage(homeUrl) {
 
   const stylesheet = html.match(/href="(\/_next\/static\/[^"]+\.css[^"]*)"/)?.[1];
   const images = Array.from(html.matchAll(/<img\b[^>]*\ssrc="(\/_next\/static\/[^"]+)"/g), match => match[1]);
-  if (!stylesheet || new Set(images).size !== 4) throw new Error('Expected a stylesheet, brand logo and three distinct photographs');
+  if (!stylesheet || new Set(images).size !== 5) throw new Error('Expected a stylesheet, brand logo and four distinct photographs');
   for (const asset of [stylesheet, ...images]) {
     const response = await get(new URL(asset, homeUrl));
     const type = response.headers.get('content-type') || '';

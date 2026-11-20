@@ -16,8 +16,10 @@ destination=ubuntu@134.175.44.80
 release=/opt/zhaoshang-test/releases/$revision
 ssh "${args[@]}" "$destination" mkdir -p "$release"
 # Stage the separate, operator-activated website cutover from the same revision.
+git show "$revision:website/public-files.txt" > "$key_dir/public-files.txt"
+mapfile -t assets < "$key_dir/public-files.txt"
 git archive "$revision" -- deploy/website/{activate.sh,nginx-public.conf} \
-  website/{index.html,about.html,services.html,contact.html,css/style.css,js/main.js} > "$key_dir/website.tar"
+  website/public-files.txt "${assets[@]/#/website/}" > "$key_dir/website.tar"
 ssh "${args[@]}" "$destination" tar xf - -C "$release" < "$key_dir/website.tar"
 scp "${args[@]}" deploy/deploy.sh deploy/check.sh docker-compose.yml "$destination:$release/"
 ssh "${args[@]}" "$destination" bash -s -- "$revision" <<'REMOTE'

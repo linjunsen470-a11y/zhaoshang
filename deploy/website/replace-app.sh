@@ -53,7 +53,8 @@ DOCKER
 release="$app/releases/$revision"
 install -d -m 0755 "$release/deploy/website"
 install -m 0644 "$staging/deploy/website/"{activate.sh,nginx-public.conf} "$release/deploy/website/"
-for file in index.html about.html services.html contact.html css/style.css js/main.js; do
+mapfile -t assets < "$staging/website/public-files.txt"
+for file in public-files.txt "${assets[@]}"; do
   install -D -m 0644 "$staging/website/$file" "$release/website/$file"
 done
 

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import claypotMeal from './claypot-meal.webp'
 import diningRoom from './dining-room.webp'
 import logo from './jinyi.webp'
+import lunchHour from './lunch-hour.webp'
 import servingCounter from './serving-counter.webp'
 import MiniProgramSearch from './MiniProgramSearch'
 
@@ -21,18 +22,36 @@ export default function Home() {
         </nav>
       </header>
 
-      <main id="main" className="gallery">
-        <section className="opening" aria-labelledby="opening-title">
-          <Image className="space-photo" src={diningRoom} alt="木格栅天花下，餐饮档口沿着开阔的用餐区排开" unoptimized loading="eager" fetchPriority="high" />
-          <div className="opening-content">
-            <h1 id="opening-title">下一间店，<br />开在哪里？</h1>
-            <div id="mini-program">
-              <MiniProgramSearch />
+      <main id="main">
+        <div className="gallery">
+          <section className="opening" aria-labelledby="opening-title">
+            <Image className="space-photo" src={diningRoom} alt="木格栅天花下，餐饮档口沿着开阔的用餐区排开" unoptimized loading="eager" fetchPriority="high" />
+            <div className="opening-content">
+              <h1 id="opening-title">下一间店，<br />开在哪里？</h1>
+              <div id="mini-program">
+                <MiniProgramSearch />
+              </div>
             </div>
+          </section>
+          <Image className="counter-photo" src={servingCounter} alt="开放式出餐台前，厨师正为顾客备餐" unoptimized loading="eager" />
+          <Image className="meal-photo" src={claypotMeal} alt="一份配着米饭、时蔬和汤的砂锅菜" unoptimized loading="eager" />
+        </div>
+
+        <section className="field-story" aria-labelledby="field-title">
+          <div className="field-photo">
+            <Image src={lunchHour} alt="午餐时段，顾客在餐饮档口点餐、落座用餐" unoptimized loading="lazy" />
+          </div>
+          <div className="field-copy">
+            <h2 id="field-title">从午市，看一个铺位。</h2>
+            <p>到店里走一圈，看午餐时人从哪里来、在哪个窗口停下。找铺时，也把出餐动线、厨房条件和开放时段一起看清楚。</p>
+            <a href="/services.html#leasing">了解商铺选址 <span aria-hidden="true">↗</span></a>
           </div>
         </section>
-        <Image className="counter-photo" src={servingCounter} alt="开放式出餐台前，厨师正为顾客备餐" unoptimized loading="eager" />
-        <Image className="meal-photo" src={claypotMeal} alt="一份配着米饭、时蔬和汤的砂锅菜" unoptimized loading="eager" />
+        <div className="explore">
+          <a href="/services.html#catering"><strong>为企业安排用餐</strong><span>驻场食堂与集中配餐 <i aria-hidden="true">↗</i></span></a>
+          <a href="/about.html"><strong>认识锦奕</strong><span>商务对接与现场团队 <i aria-hidden="true">↗</i></span></a>
+          <a href="/contact.html"><strong>聊聊你的需求</strong><span>看铺、试餐与商务联系 <i aria-hidden="true">↗</i></span></a>
+        </div>
       </main>
 
       <footer className="site-footer">
