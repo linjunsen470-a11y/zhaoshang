@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: '饭堂与商铺｜学校、园区与写字楼招租',
-  description: '专注学校、工业园区、写字楼等封闭或半封闭物业，提供饭堂档口与配套商铺查询、需求匹配及顾问跟进服务。',
+  title: '锦奕｜商铺选址与餐饮对接',
+  description: '广州锦奕咨询服务有限公司提供商铺选址与企业用餐对接服务。在微信搜索小程序「岭南旺铺」了解铺位详情。',
 }
 
 export default function RootLayout({
@@ -12,7 +12,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="zh-CN" className="h-full antialiased">
+    <html lang="zh-CN">
       <body>{children}</body>
     </html>
   )

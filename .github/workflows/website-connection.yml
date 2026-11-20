@@ -25,7 +25,7 @@ jobs:
             fi
             if curl -sS --connect-timeout 6 --max-time 12 "${options[@]}" \
               -o "$RUNNER_TEMP/home" -w "$target HTTPS %{http_code}\n" https://jinyifangchan.com/; then
-              if grep -Fq 'id="lead-form"' "$RUNNER_TEMP/home"; then echo "$target business homepage found"; fi
+              if grep -Fq '岭南旺铺' "$RUNNER_TEMP/home"; then echo "$target business homepage found"; fi
               if grep -Fq '>粤ICP备2026186178号</a>' "$RUNNER_TEMP/home"; then echo "$target ICP link found"; fi
             fi
           done
@@ -95,6 +95,6 @@ jobs:
           page=$(mktemp)
           trap 'rm -f "$page"' EXIT
           curl -fsS --noproxy '*' --max-time 15 http://127.0.0.1:3300/ -o "$page"
-          if grep -Fq 'id="lead-form"' "$page"; then echo 'Upstream has business website'; fi
+          if grep -Fq '岭南旺铺' "$page"; then echo 'Upstream has business website'; fi
           if grep -Fq '>粤ICP备2026186178号</a>' "$page"; then echo 'Upstream has approved ICP link'; fi
           REMOTE

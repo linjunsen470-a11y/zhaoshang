@@ -18,10 +18,10 @@ flock -w 120 9
 [[ -L "$site/current" && -d "$site/current" && -f "$vhost" ]]
 [[ $(readlink -f /etc/nginx/sites-enabled/jinyi-website-public.conf) == "$vhost" ]]
 
-# Check the running image and its database before changing the public entry.
+# Check the running homepage before changing the public entry.
 check_home() {
-  grep -Fq 'id="scene-campus"' "$1" &&
-    grep -Fq 'id="lead-form"' "$1" &&
+  grep -Fq 'id="mini-program"' "$1" &&
+    grep -Fq '岭南旺铺' "$1" &&
     grep -Eq '<a [^>]*href="https://beian\.miit\.gov\.cn/"[^>]*>粤ICP备2026186178号</a>' "$1"
 }
 tmp=$(mktemp -d "$site/.switch.XXXXXXXX")
@@ -51,7 +51,7 @@ cleanup() {
 trap cleanup EXIT
 trap 'exit 1' HUP INT TERM
 curl -fsS --noproxy '*' --max-time 25 http://127.0.0.1:3300/ -o "$tmp/home"
-check_home "$tmp/home" || { echo 'Running homepage failed its filing, listings or form check.' >&2; exit 1; }
+check_home "$tmp/home" || { echo 'Running homepage failed its mini-program or ICP link check.' >&2; exit 1; }
 
 backup_root=/var/backups/jinyi-website
 install -d -m 0700 "$backup_root"

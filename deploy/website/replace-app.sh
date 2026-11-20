@@ -92,12 +92,12 @@ address=$(docker port "$trial" 3000/tcp)
 [[ $address =~ ^127\.0\.0\.1:[0-9]+$ ]]
 for _ in {1..35}; do
   if curl -fsS --max-time 8 "http://$address/" -o "$tmp/home" 2>/dev/null &&
-     grep -Fq 'id="scene-campus"' "$tmp/home" && grep -Fq 'id="lead-form"' "$tmp/home" &&
+     grep -Fq 'id="mini-program"' "$tmp/home" && grep -Fq '岭南旺铺' "$tmp/home" &&
      grep -Fq '>粤ICP备2026186178号</a>' "$tmp/home"; then break; fi
   sleep 2
 done
-grep -Fq 'id="scene-campus"' "$tmp/home"
-grep -Fq 'id="lead-form"' "$tmp/home"
+grep -Fq 'id="mini-program"' "$tmp/home"
+grep -Fq '岭南旺铺' "$tmp/home"
 grep -Fq '>粤ICP备2026186178号</a>' "$tmp/home"
 docker rm -f "$trial" >/dev/null
 trial=

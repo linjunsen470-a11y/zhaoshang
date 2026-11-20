@@ -2,7 +2,9 @@
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 
-const changed = new Set(['app/(frontend)/page.tsx', 'app/(frontend)/globals.css']);
+const changed = new Set([
+  'page.tsx', 'layout.tsx', 'globals.css', 'LeadForm.tsx', 'MiniProgramSearch.tsx', 'dining-room.webp', 'jinyi.webp'
+].map(name => 'app/(frontend)/' + name));
 function list(file) {
   if (statSync(file).isDirectory()) {
     return readdirSync(file).sort().flatMap(entry => list(file + '/' + entry));

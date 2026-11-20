@@ -7,6 +7,10 @@ on:
         type: string
         required: true
 
+  push:
+    branches: [main]
+    paths: [.github/workflows/website-release.yml]
+
 permissions:
   contents: read
 
@@ -16,7 +20,7 @@ concurrency:
 
 jobs:
   release:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.before == '44c80887f46078138639dd8506cec5148667c47b')
     runs-on: ubuntu-latest
     environment: tencent-test
     timeout-minutes: 25
@@ -44,7 +48,7 @@ jobs:
         shell: bash
         env:
           SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          BASE_IMAGE: ${{ inputs.base_image }}
+          BASE_IMAGE: ${{ inputs.base_image || 'sha256:2400d43bb2b2ed0b5dfbd7b88c1c5b5bae6d0040bbeb182db75ad5e1a65a581c' }}
         run: |
           set -euo pipefail
           [[ "$BASE_IMAGE" =~ ^sha256:[0-9a-f]{64}$ && "$GITHUB_SHA" =~ ^[a-f0-9]{40}$ ]]
@@ -76,15 +80,10 @@ jobs:
         run: |
           set -euo pipefail
           origin=https://jinyifangchan.com
+          node --input-type=module -e "import { checkHomepage } from './deploy/website/check-homepage.mjs'; await checkHomepage(process.argv[1])" "$origin/"
           cd "$RUNNER_TEMP"
-          curl -fsS --retry 2 --max-time 20 "$origin/" -o home
-          grep -Fq 'id="scene-campus"' home
-          grep -Fq 'id="lead-form"' home
-          grep -Eq '<a [^>]*href="https://beian\.miit\.gov\.cn/"[^>]*>粤ICP备2026186178号</a>' home
-          css=$(python3 -c 'import re; print(re.search(r"""href="(/_next/static/[^"]+\.css[^"]*)""", open("home").read())[1])')
-          curl -fsS --max-time 15 "$origin$css" -o /dev/null
           for page in about.html services.html contact.html; do
             curl -fsS --max-time 15 "$origin/$page" -o page
             cmp "website/website/$page" page
           done
-          echo 'Verified public HTTPS, listing sections, consultation form, ICP link, stylesheet and company pages'
+          echo 'Verified public HTTPS, mini-program name, ICP link, photograph, logo, stylesheet and company pages'

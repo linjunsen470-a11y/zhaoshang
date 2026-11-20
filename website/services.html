@@ -7,80 +7,66 @@
   <meta name="description" content="广州锦奕咨询服务有限公司提供商业空间招商、商户选址及商用设备转让相关咨询。">
   <style data-source="css/style.css">
 * { box-sizing: border-box; }
-
 :root {
   color-scheme: light;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
-  color: #172a27;
-  background: #f6f8f6;
-  line-height: 1.7;
+  --ink: #1c392f;
+  --body: #46564c;
+  --rule: #d4d7ca;
+  --serif: "Songti SC", "Noto Serif CJK SC", "STSong", "SimSun", serif;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--ink); background: #f9f8f3; line-height: 1.8;
 }
-
-body { margin: 0; }
-a { color: #175d50; }
-a:hover { color: #0d4037; }
-a:focus-visible { outline: 3px solid #cfad5d; outline-offset: 4px; }
-.container { width: min(1100px, calc(100% - 48px)); margin: 0 auto; }
-.skip-link { position: absolute; top: -80px; left: 12px; z-index: 5; padding: 8px 14px; background: #fff; }
-.skip-link:focus { top: 12px; }
-
-.site-header { border-bottom: 1px solid #e0e8e2; background: #fff; }
-.header-inner { min-height: 92px; display: flex; align-items: center; justify-content: space-between; gap: 26px; }
-.brand { display: flex; align-items: center; gap: 12px; color: #173c34; font-size: 16px; font-weight: 700; line-height: 1.35; text-decoration: none; }
-.brand small { display: block; margin-top: 3px; color: #687d74; font-size: 10px; font-weight: 600; letter-spacing: .12em; }
-.brand-mark { display: grid; width: 42px; height: 42px; flex: 0 0 42px; place-items: center; border-radius: 8px; background: #1c594c; color: #fff; font-size: 22px; }
-.navigation { display: flex; flex-wrap: wrap; gap: 6px 24px; }
-.navigation a { padding: 8px 0; color: #4b5f58; font-size: 14px; text-decoration: none; white-space: nowrap; }
-.navigation a:hover, .navigation a[aria-current="page"] { color: #175d50; }
-.navigation a[aria-current="page"] { font-weight: 700; }
-
-.main-content { min-height: calc(100vh - 240px); padding: 78px 0 90px; }
-.hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, .9fr); align-items: center; gap: 72px; padding: 32px 0; }
-.eyebrow { margin: 0 0 14px; color: #467366; font-size: 12px; font-weight: 700; letter-spacing: .1em; }
-h1, h2, p { margin-top: 0; }
-h1 { margin-bottom: 20px; color: #163e35; font-size: clamp(32px, 4vw, 46px); line-height: 1.25; letter-spacing: -.03em; }
-h2 { color: #203d35; font-size: 19px; line-height: 1.45; }
-.lead { max-width: 600px; margin-bottom: 0; color: #4c6259; font-size: 17px; }
-.hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 22px; margin-top: 32px; }
-.button { display: inline-block; padding: 10px 22px; border-radius: 6px; background: #1c594c; color: #fff; font-size: 14px; font-weight: 600; text-decoration: none; }
-.button:hover { background: #14483d; color: #fff; }
-.text-link { font-size: 14px; font-weight: 600; text-decoration: none; }
-
-.company-card, .information-card, .service-item { border: 1px solid #e0e8e2; border-radius: 10px; background: #fff; }
-.company-card { padding: 30px; box-shadow: 0 12px 36px rgba(30, 64, 52, .05); }
-.company-card h2 { margin-bottom: 24px; }
-.company-card dl, .information-card dl { margin: 0; }
-.company-card dl div, .information-card dl div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 18px; padding: 15px 0; border-top: 1px solid #edf1ee; }
-dt { color: #677a71; font-size: 14px; }
-dd { min-width: 0; margin: 0; color: #263d35; font-size: 14px; overflow-wrap: anywhere; }
-dd a, .footer-inner a { text-decoration: none; }
-.page-heading { max-width: 700px; margin-bottom: 38px; }
-.information-card { max-width: 820px; padding: 12px 28px 24px; }
-.information-card dl div { padding: 22px 0; }
-.information-card dl div:first-child { border-top: 0; }
-.service-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-.service-item { padding: 28px; }
-.service-item h2 { margin-bottom: 12px; }
-.service-item p { margin-bottom: 0; color: #586d62; font-size: 15px; }
-
-.site-footer { padding: 24px 0; border-top: 1px solid #e0e8e2; background: #fff; }
-.footer-inner { color: #687b71; font-size: 13px; text-align: center; }
-.footer-inner p { margin: 3px 0; }
-
-@media (max-width: 760px) {
-  .container { width: calc(100% - 32px); }
-  .header-inner { align-items: flex-start; flex-direction: column; gap: 10px; padding: 18px 0 12px; }
-  .brand { font-size: 14px; }
-  .navigation { gap: 4px 22px; }
-  .main-content { min-height: 0; padding: 48px 0 60px; }
-  .hero { grid-template-columns: 1fr; gap: 36px; padding: 0; }
-  .company-card { padding: 24px; }
-  .service-list { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 420px) {
-  .company-card dl div, .information-card dl div { grid-template-columns: 1fr; gap: 4px; }
-  .information-card { padding: 8px 20px 20px; }
+body { margin: 0; min-height: 100vh; display: flex; flex-direction: column; }
+.container { width: min(1264px, 88%); margin-inline: auto; }
+a { color: inherit; text-underline-offset: 4px; }
+a:focus-visible { outline: 2px solid #a46831; outline-offset: 4px; }
+.skip-link { position: absolute; top: -70px; left: 12px; background: white; padding: 8px; }
+.skip-link:focus { top: 8px; }
+.header-inner { min-height: 88px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--rule); }
+.brand { display: inline-flex; gap: 6px; align-items: baseline; text-decoration: none; }
+.brand-mark { font: 600 29px/1.2 var(--serif); letter-spacing: .04em; }
+.brand small { font: 600 10px/1.2 Georgia, serif; letter-spacing: .1em; }
+.navigation { display: flex; align-items: center; flex-wrap: wrap; gap: 4px clamp(16px, 3vw, 40px); }
+.navigation a { font-size: 14px; text-decoration: none; }
+.navigation a:hover, .navigation a[aria-current="page"] { text-decoration: underline; text-underline-offset: 6px; }
+.main-content { flex: 1; padding-block: clamp(45px, 6vw, 96px); }
+h1, h2, p, dl, dd { margin: 0; }
+h1, h2 { font-family: var(--serif); font-weight: 500; line-height: 1.38; }
+h1 { font-size: clamp(38px, 4.6vw, 66px); }
+h2 { font-size: 22px; }
+.lead, .hero p, .service-item p, dd { color: var(--body); }
+.lead { font-size: 17px; max-width: 38em; margin-top: 16px; }
+.hero { display: grid; grid-template-columns: 1.1fr 1fr; align-items: start; gap: 8%; }
+.eyebrow { margin-bottom: 14px; font-size: 13px; letter-spacing: .06em; }
+.hero .lead { margin-bottom: 12px; }
+.hero-actions { display: flex; gap: 20px; align-items: center; margin-top: 25px; font-size: 14px; }
+.button { padding: 8px 18px; background: var(--ink); border-radius: 3px; color: white; text-decoration: none; }
+.page-heading { margin-bottom: 36px; }
+.company-card, .information-card, .service-list { border-top: 1px solid var(--rule); }
+.company-card { padding-top: 20px; }
+.company-card h2 { margin-bottom: 14px; }
+.information-card { max-width: 880px; }
+dl div { display: grid; grid-template-columns: 135px 1fr; gap: 22px; padding: 18px 0; border-bottom: 1px solid var(--rule); }
+dt { color: #626c61; font-size: 14px; }
+dd { overflow-wrap: anywhere; }
+.service-list { display: grid; grid-template-columns: 1fr 1fr; column-gap: 6%; }
+.service-item { border-bottom: 1px solid var(--rule); padding-block: 24px; }
+.service-item p { margin-top: 8px; }
+.site-footer { padding: 22px 0; border-top: 1px solid var(--rule); background: #edf0e7; }
+.footer-inner { text-align: center; color: #4e6053; font-size: 12px; }
+.footer-inner p { margin: 2px 0; }
+.footer-inner a { text-decoration: none; }
+.footer-inner a:hover { text-decoration: underline; }
+@media (max-width: 650px) {
+  .container { width: calc(100% - 40px); }
+  .header-inner { min-height: 70px; flex-wrap: wrap; padding: 12px 0; gap: 8px 14px; }
+  .brand-mark { font-size: 25px; }
+  .navigation { gap: 5px 13px; }
+  .navigation a { font-size: 13px; }
+  .hero, .service-list { grid-template-columns: 1fr; }
+  .hero { row-gap: 34px; }
+  .page-heading { margin-bottom: 23px; }
+  dl div { grid-template-columns: 1fr; gap: 3px; padding: 14px 0; }
 }
   </style>
 </head>
@@ -88,9 +74,9 @@ dd a, .footer-inner a { text-decoration: none; }
   <a class="skip-link" href="#main">跳至主要内容</a>
   <header class="site-header">
     <div class="container header-inner">
-      <a class="brand" href="index.html">
-        <span class="brand-mark" aria-hidden="true">锦</span>
-        <span>广州锦奕咨询服务有限公司<small>JINYI CONSULTING</small></span>
+      <a class="brand" aria-label="锦奕首页" href="index.html">
+        <span class="brand-mark" aria-hidden="true">锦奕</span>
+        <small>JINYI</small>
       </a>
       <nav class="navigation" aria-label="网站导航">
           <a href="index.html">首页</a>
@@ -103,9 +89,8 @@ dd a, .footer-inner a { text-decoration: none; }
 
   <main id="main" class="container main-content">
       <div class="page-heading">
-        <p class="eyebrow">OUR SERVICES</p>
         <h1>业务介绍</h1>
-        <p class="lead">围绕商业空间及经营需求提供咨询服务。</p>
+        <p class="lead">我们协助经营者了解铺位条件，也为工厂与园区对接用餐服务。查找铺位，请在微信搜索「岭南旺铺」。</p>
       </div>
       <div class="service-list">
         <section id="commercial" class="service-item">
@@ -114,11 +99,15 @@ dd a, .footer-inner a { text-decoration: none; }
         </section>
         <section id="leasing" class="service-item">
           <h2>商户选址咨询</h2>
-          <p>根据商户需求，提供铺位选址相关咨询。</p>
+          <p>结合经营品类、区域与预算，沟通铺位条件与看铺时间。</p>
         </section>
         <section id="assets" class="service-item">
           <h2>商用设备转让咨询</h2>
           <p>提供商用设备转让相关的信息咨询。</p>
+        </section>
+        <section class="service-item">
+          <h2>企业用餐对接</h2>
+          <p>对接驻场食堂或集中配餐，协助现场踏勘与试餐。</p>
         </section>
       </div>
   </main>

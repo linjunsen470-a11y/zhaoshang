@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { resolve4 } from 'node:dns/promises';
 import { get } from 'node:http';
+import { checkHomepage } from './check-homepage.mjs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -83,16 +84,7 @@ const redirect = await publicGet(`http://${domain}/`);
 if (redirect.status !== 301 || redirect.headers.get('location') !== homeUrl) {
   throw new Error('Public HTTP does not redirect to the HTTPS homepage');
 }
-const home = await publicGet(homeUrl);
-const html = await home.text();
-if (home.status !== 200 || !html.includes('id="scene-campus"') || !html.includes('id="lead-form"') ||
-    !/<a [^>]*href="https:\/\/beian\.miit\.gov\.cn\/"[^>]*>粤ICP备2026186178号<\/a>/.test(html)) {
-  throw new Error('Public HTTPS homepage failed its listings, consultation form or ICP link check');
-}
-const css = html.match(/href="(\/_next\/static\/[^"]+\.css[^"]*)"/)?.[1];
-if (!css || (await publicGet(new URL(css, homeUrl))).status !== 200) {
-  throw new Error('Public HTTPS homepage stylesheet is unavailable');
-}
+await checkHomepage(homeUrl);
 
 if (args[0] !== '--skip-github') {
   const result = execFileSync('git', ['ls-remote', '--exit-code', 'origin', 'refs/heads/main'], {
