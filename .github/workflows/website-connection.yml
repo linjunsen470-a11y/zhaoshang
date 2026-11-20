@@ -13,7 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: 5effbbfb31be8516d4362603a1e1e3770f77e5e3
           persist-credentials: false
       - name: Inspect public website
         shell: bash
@@ -55,7 +54,6 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          ref: 5effbbfb31be8516d4362603a1e1e3770f77e5e3
           persist-credentials: false
       - name: Read website release and homepage
         shell: bash

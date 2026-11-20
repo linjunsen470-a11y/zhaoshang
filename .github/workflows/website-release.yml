@@ -6,9 +6,6 @@ on:
         description: Current application image ID confirmed by the website connection check
         type: string
         required: true
-  push:
-    branches: [main]
-    paths: [.github/workflows/website-release.yml]
 
 permissions:
   contents: read
@@ -19,7 +16,7 @@ concurrency:
 
 jobs:
   release:
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.before == '80479cdfe46dd2b954c63587ac1446bdfac5c315')
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: tencent-test
     timeout-minutes: 25
@@ -47,7 +44,7 @@ jobs:
         shell: bash
         env:
           SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          BASE_IMAGE: ${{ inputs.base_image || 'sha256:38a3750f680f8477e0ae9e129ca7beabe748b51f27b0410a3d26ce7eb689123f' }}
+          BASE_IMAGE: ${{ inputs.base_image }}
         run: |
           set -euo pipefail
           [[ "$BASE_IMAGE" =~ ^sha256:[0-9a-f]{64}$ && "$GITHUB_SHA" =~ ^[a-f0-9]{40}$ ]]
