@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import diningRoom from './dining-room.webp'
 import logo from './jinyi.webp'
 import MiniProgramSearch from './MiniProgramSearch'
@@ -9,9 +10,9 @@ export default function Home() {
       <a className="skip" href="#main">跳至主要内容</a>
       <header className="masthead">
         <div className="wrap masthead-inner">
-          <a className="wordmark" href="/" aria-label="锦奕首页">
+          <Link className="wordmark" href="/" prefetch={false} aria-label="锦奕首页">
             <Image src={logo} alt="锦奕" unoptimized />
-          </a>
+          </Link>
           <nav aria-label="主导航">
             <a href="#services">业务范围</a>
             <a href="/about.html">企业信息</a>
