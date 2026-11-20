@@ -11,7 +11,8 @@ domain=jinyifangchan.com
 assets=(index.html about.html services.html contact.html css/style.css js/main.js)
 
 [[ $EUID == 0 && $revision =~ ^[0-9a-f]{40}$ && $release == "$app/releases/$revision" ]]
-exec 9<>"$app/.deploy.lock"
+# A website-only application release already holds this lock on descriptor 9.
+if [[ ! /proc/$$/fd/9 -ef "$app/.deploy.lock" ]]; then exec 9<>"$app/.deploy.lock"; fi
 flock -w 120 9
 [[ $(cat "$app/deployed-revision") == "$revision" ]] || { echo 'Deploy the matching application image first.' >&2; exit 1; }
 [[ -L "$site/current" && -d "$site/current" && -f "$vhost" ]]

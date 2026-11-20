@@ -1,17 +1,13 @@
 name: Website connection check
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: [.github/workflows/website-connection.yml]
 
 permissions:
   contents: read
 
 jobs:
   network:
-    # The initial installation also runs the owner-requested check.
-    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.before == '0fc3a813319de87a27071102abfcfe53adcd0aa3')
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:

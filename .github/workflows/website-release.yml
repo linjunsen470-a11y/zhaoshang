@@ -1,0 +1,90 @@
+name: Release the business website
+on:
+  workflow_dispatch:
+    inputs:
+      base_image:
+        description: Current application image ID confirmed by the website connection check
+        type: string
+        required: true
+  push:
+    branches: [main]
+    paths: [.github/workflows/website-release.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-website
+  cancel-in-progress: false
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.before == 'd83436b25c6ec706600e933c9e0b74fcafdafe1a')
+    runs-on: ubuntu-latest
+    environment: tencent-test
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Build the website bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="$RUNNER_TEMP/website"
+          mkdir -p "$target/bundle"
+          git archive HEAD -- website/{index.html,about.html,services.html,contact.html,css/style.css,js/main.js} \
+            deploy/website/{activate.sh,replace-app.sh,nginx-public.conf,source-manifest.mjs} | tar xf - -C "$target"
+          (cd backend && node ../deploy/website/source-manifest.mjs) > "$target/source.manifest"
+          docker build --target builder -t jinyi-website-builder backend
+          container=$(docker create jinyi-website-builder)
+          trap 'docker rm "$container" >/dev/null' EXIT
+          docker cp "$container:/app/.next/standalone/.next" "$target/bundle/.next"
+          docker cp "$container:/app/.next/static" "$target/bundle/.next/static"
+          docker cp "$container:/app/.next/standalone/server.js" "$target/bundle/server.js"
+          tar -C "$target" -czf "$RUNNER_TEMP/website.tgz" bundle deploy website source.manifest
+      - name: Switch the website
+        shell: bash
+        env:
+          SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          BASE_IMAGE: ${{ inputs.base_image || 'sha256:38a3750f680f8477e0ae9e129ca7beabe748b51f27b0410a3d26ce7eb689123f' }}
+        run: |
+          set -euo pipefail
+          [[ "$BASE_IMAGE" =~ ^sha256:[0-9a-f]{64}$ && "$GITHUB_SHA" =~ ^[a-f0-9]{40}$ ]]
+          umask 077
+          key=$(mktemp)
+          trap 'rm -f "$key"' EXIT
+          printf '%s\n' "$SSH_KEY" | tr -d '\r' > "$key"
+          unset SSH_KEY
+          ssh=(ssh -F /dev/null -T -i "$key" -o BatchMode=yes -o IdentitiesOnly=yes -o ConnectTimeout=15
+            -o ServerAliveInterval=15 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=deploy/known_hosts ubuntu@134.175.44.80)
+          remote=$("${ssh[@]}" mktemp -d /tmp/jinyi-website-XXXXXXXX)
+          [[ "$remote" =~ ^/tmp/jinyi-website-[a-zA-Z0-9]{8}$ ]]
+          trap '"${ssh[@]}" rm -rf -- "$remote"; rm -f "$key"' EXIT
+          archive="$RUNNER_TEMP/website.tgz"
+          digest=$(sha256sum "$archive" | cut -d' ' -f1)
+          "${ssh[@]}" "cat > '$remote/website.tgz'" < "$archive"
+          "${ssh[@]}" bash -s -- "$remote" "$digest" "$GITHUB_SHA" "$BASE_IMAGE" <<'REMOTE'
+          set -euo pipefail
+          cd "$1"
+          printf '%s  website.tgz\n' "$2" | sha256sum -c -
+          tar -xzf website.tgz
+          sudo -n bash deploy/website/replace-app.sh "$3" "$4"
+          REMOTE
+      - name: Verify the public website
+        shell: bash
+        run: |
+          set -euo pipefail
+          origin=https://jinyifangchan.com
+          cd "$RUNNER_TEMP"
+          curl -fsS --retry 2 --max-time 20 "$origin/" -o home
+          grep -Fq 'id="scene-campus"' home
+          grep -Fq 'id="lead-form"' home
+          grep -Eq '<a [^>]*href="https://beian\.miit\.gov\.cn/"[^>]*>粤ICP备2026186178号</a>' home
+          css=$(python3 -c 'import re; print(re.search(r"""href="(/_next/static/[^"]+\.css[^"]*)""", open("home").read())[1])')
+          curl -fsS --max-time 15 "$origin$css" -o /dev/null
+          for page in about.html services.html contact.html; do
+            curl -fsS --max-time 15 "$origin/$page" -o page
+            cmp "website/website/$page" page
+          done
+          echo 'Verified public HTTPS, listing sections, consultation form, ICP link, stylesheet and company pages'
