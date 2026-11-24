@@ -33,6 +33,7 @@ test('company footers link each approved filing number and include the police ba
   const config = loadMiniProgramModule(path.resolve('mp/config/index.js'));
   const checkFooter = html => {
     const footer = html.match(/<footer\b[^>]*>[\s\S]*?<\/footer>/)?.[0] || '';
+    assert.doesNotMatch(footer, /tel:|173\s*2225\s*1752/);
     assert.match(footer, /<a\b[^>]*href="https:\/\/beian\.miit\.gov\.cn\/"[^>]*>粤ICP备2026186178号<\/a>/);
     assert.match(footer, /<a\b[^>]*href="https:\/\/beian\.mps\.gov\.cn\/#\/query\/webSearch\?code=44011802001719"[^>]*>\s*<(?:Image|img)\b[^>]*alt=""[^>]*>\s*<span>粤公网安备44011802001719号<\/span>\s*<\/a>/);
   };
@@ -41,7 +42,7 @@ test('company footers link each approved filing number and include the police ba
   for (const name of ['index', 'about', 'services', 'contact', 'guide', 'privacy']) {
     const html = readFileSync(`website/${name}.html`, 'utf8');
     assert.match(html, /广州锦奕咨询服务有限公司/);
-    assert.ok(html.includes(`tel:${config.ADVISOR_PHONE}`));
+    if (name === 'contact') assert.ok(html.includes(`tel:${config.ADVISOR_PHONE}`));
     checkFooter(html);
   }
 });

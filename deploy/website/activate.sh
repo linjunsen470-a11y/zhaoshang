@@ -21,6 +21,8 @@ flock -w 120 9
 # Check the running homepage before changing the public entry.
 check_home() {
   grep -Fq 'id="mini-program"' "$1" &&
+    grep -Fq 'href="/guide.html"' "$1" &&
+    grep -Fq 'href="/privacy.html"' "$1" &&
     grep -Fq '岭南旺铺' "$1" &&
     grep -Eq '<a [^>]*href="https://beian\.miit\.gov\.cn/"[^>]*>粤ICP备2026186178号</a>' "$1" &&
     grep -Fq 'href="https://beian.mps.gov.cn/#/query/webSearch?code=44011802001719"' "$1" &&

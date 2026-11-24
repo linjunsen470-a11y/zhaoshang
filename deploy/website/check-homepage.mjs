@@ -10,6 +10,11 @@ export async function checkHomepage(homeUrl) {
     throw new Error('Homepage failed its mini-program or filing link check');
   }
 
+  for (const path of ['/guide.html', '/contact.html', '/privacy.html']) {
+    if (!footer.includes(`href="${path}"`)) throw new Error('Missing footer link: ' + path);
+  }
+  if (/tel:|173\s*2225\s*1752/.test(footer)) throw new Error('Unexpected phone number in footer');
+
   const stylesheet = html.match(/href="(\/_next\/static\/[^"]+\.css[^"]*)"/)?.[1];
   const images = Array.from(html.matchAll(/<img\b[^>]*\ssrc="(\/_next\/static\/[^"]+)"/g), match => match[1]);
   if (!stylesheet || new Set(images).size !== 6) throw new Error('Expected a stylesheet, brand logo, filing badge and four photographs');

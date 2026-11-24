@@ -10,7 +10,7 @@ import MiniProgramSearch from './MiniProgramSearch'
 
 const footerGroups = [
   { title: '业务服务', links: [['商铺选址', '/services.html#leasing'], ['企业用餐', '/services.html#catering']] },
-  { title: '获得帮助', links: [['咨询指南', '/guide.html'], ['联系我们', '/contact.html'], ['173 2225 1752', 'tel:17322251752']] },
+  { title: '获得帮助', links: [['咨询指南', '/guide.html'], ['联系我们', '/contact.html']] },
   { title: '关于锦奕', links: [['公司介绍', '/about.html'], ['企业信息', '/about.html#company']] },
 ]
 
