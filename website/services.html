@@ -39,27 +39,26 @@ img { display: block; max-width: 100%; }
 .navigation { display: flex; gap: clamp(17px, 2.5vw, 42px); }
 .navigation a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; }
 .navigation a[aria-current="page"] { text-decoration: underline; text-underline-offset: 6px; }
-.site-footer {
-  display: grid;
-  justify-items: center;
-  gap: 4px;
-  margin-inline: var(--edge);
-  padding: 18px 0 22px;
-  border-top: 1px solid var(--rule);
-  color: #586459;
-  font-size: 13px;
-  line-height: 1.6;
-  text-align: center;
+.site-footer { margin-inline: var(--edge); padding: 0 clamp(6px, 1.5vw, 24px) 26px; border-top: 1px solid #cdd2c5; color: #526057; font-size: 13px; line-height: 1.6; }
+.footer-groups { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding-block: clamp(32px, 4vw, 64px); }
+.footer-group strong, .footer-group summary { font-size: 15px; font-weight: 600; color: var(--ink); }
+.footer-list { display: grid; justify-items: start; gap: 8px; margin-top: 17px; }
+.footer-list a, .filing-links a { display: inline-flex; align-items: center; min-height: 28px; }
+.footer-group details { display: none; }
+.filing-links { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 22px; }
+.filing-links a { gap: 5px; white-space: nowrap; }
+.filing-links img { width: auto; height: 18px; }
+@media (max-width: 640px) {
+  .footer-groups { display: block; padding-block: 12px 20px; }
+  .footer-desktop { display: none; }
+  .footer-group details { display: block; border-bottom: 1px solid #d9ddd4; }
+  .footer-group summary { display: flex; align-items: center; justify-content: space-between; padding-block: 17px; cursor: pointer; list-style: none; }
+  .footer-group summary::-webkit-details-marker { display: none; }
+  .footer-group summary::after { content: ""; width: 8px; height: 8px; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); margin-right: 4px; }
+  .footer-group details[open] summary::after { transform: rotate(225deg); }
+  .footer-list { margin: 0 0 17px; }
+  .filing-links { flex-direction: column; align-items: flex-start; gap: 5px; }
 }
-.filing-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 24px; }
-.filing-links a { display: inline-flex; align-items: center; gap: 5px; min-height: 28px; white-space: nowrap; }
-.filing-links img { display: block; width: auto; height: 20px; }
-@media (max-width: 480px) {
-  .filing-links { flex-direction: column; align-items: center; }
-}
-.footer-contact { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 16px; }
-.site-footer p { font: inherit; color: inherit; }
-.footer-contact a { display: inline-flex; align-items: center; min-height: 28px; }
 .intro { font-size: clamp(17px, 1.6vw, 23px); line-height: 1.8; }
 .text-link { display: inline-block; border-bottom: 1px solid #718471; margin-top: 20px; padding: 4px 0; font-size: 14px; }
 .text-link span { margin-left: 8px; }
@@ -128,6 +127,11 @@ dd { font-size: 15px; overflow-wrap: anywhere; }
   .navigation { gap: 13px; }
   .navigation a { font-size: 13px; }
 }
+
+.reader { width: min(680px, calc(100% - 48px)); margin: clamp(32px, 6vw, 80px) auto; }
+.reader > p { margin-top: 12px; }
+.reader section { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--rule); }
+.reader section h2 { font-size: 23px; margin-bottom: 8px; }
   </style>
 </head>
 <body>
@@ -175,11 +179,55 @@ dd { font-size: 15px; overflow-wrap: anywhere; }
     </section>
   </main>
   <footer class="site-footer">
-    <div class="footer-contact">
-      <p>广州锦奕咨询服务有限公司</p>
-      <a href="tel:17322251752">咨询电话 173 2225 1752</a>
+    <div class="footer-groups">
+      <div class="footer-group">
+        <div class="footer-desktop"><strong>业务服务</strong>
+          <div class="footer-list">
+            <a href="services.html#leasing">商铺选址</a>
+            <a href="services.html#catering">企业用餐</a>
+          </div>
+        </div>
+        <details open><summary>业务服务</summary>
+          <div class="footer-list">
+            <a href="services.html#leasing">商铺选址</a>
+            <a href="services.html#catering">企业用餐</a>
+          </div>
+        </details>
+      </div>
+      <div class="footer-group">
+        <div class="footer-desktop"><strong>获得帮助</strong>
+          <div class="footer-list">
+            <a href="guide.html">咨询指南</a>
+            <a href="contact.html">联系我们</a>
+            <a href="tel:17322251752">173 2225 1752</a>
+          </div>
+        </div>
+        <details><summary>获得帮助</summary>
+          <div class="footer-list">
+            <a href="guide.html">咨询指南</a>
+            <a href="contact.html">联系我们</a>
+            <a href="tel:17322251752">173 2225 1752</a>
+          </div>
+        </details>
+      </div>
+      <div class="footer-group">
+        <div class="footer-desktop"><strong>关于锦奕</strong>
+          <div class="footer-list">
+            <a href="about.html">公司介绍</a>
+            <a href="about.html#company">企业信息</a>
+          </div>
+        </div>
+        <details><summary>关于锦奕</summary>
+          <div class="footer-list">
+            <a href="about.html">公司介绍</a>
+            <a href="about.html#company">企业信息</a>
+          </div>
+        </details>
+      </div>
     </div>
     <div class="filing-links">
+      <span>© 2026 广州锦奕咨询服务有限公司</span>
+      <a href="privacy.html">隐私说明</a>
       <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026186178号</a>
       <a href="https://beian.mps.gov.cn/#/query/webSearch?code=44011802001719" target="_blank" rel="noopener noreferrer">
         <img src="images/police-filing.webp" alt="" width="19" height="20">

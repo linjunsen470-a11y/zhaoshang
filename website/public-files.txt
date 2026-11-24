@@ -2,6 +2,8 @@ index.html
 about.html
 services.html
 contact.html
+guide.html
+privacy.html
 css/style.css
 js/main.js
 images/jinyi.webp

@@ -38,7 +38,7 @@ test('company footers link each approved filing number and include the police ba
   };
   const home = readFileSync('backend/app/(frontend)/page.tsx', 'utf8');
   checkFooter(home);
-  for (const name of ['index', 'about', 'services', 'contact']) {
+  for (const name of ['index', 'about', 'services', 'contact', 'guide', 'privacy']) {
     const html = readFileSync(`website/${name}.html`, 'utf8');
     assert.match(html, /广州锦奕咨询服务有限公司/);
     assert.ok(html.includes(`tel:${config.ADVISOR_PHONE}`));
@@ -49,7 +49,7 @@ test('company footers link each approved filing number and include the police ba
 test('each company page includes the current shared stylesheet', () => {
   const normalize = text => text.replace(/\r\n/g, '\n');
   const css = normalize(readFileSync('website/css/style.css', 'utf8')).trimEnd();
-  for (const name of ['index', 'about', 'services', 'contact']) {
+  for (const name of ['index', 'about', 'services', 'contact', 'guide', 'privacy']) {
     const html = normalize(readFileSync(`website/${name}.html`, 'utf8'));
     const styles = [...html.matchAll(/<style data-source="css\/style\.css">\n([\s\S]*?)\n  <\/style>/g)];
     assert.equal(styles.length, 1, `${name}: expected one inline stylesheet`);

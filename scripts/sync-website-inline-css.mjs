@@ -12,7 +12,7 @@ if (/<\/style/i.test(css)) throw new Error('CSS contains a closing style tag');
 const embedded = `  <style data-source="css/style.css">\n${css}\n  </style>`;
 const existing = /^  <style data-source="css\/style\.css">\n[\s\S]*?^  <\/style>$/gm;
 const updates = [];
-for (const page of ['index', 'about', 'services', 'contact']) {
+for (const page of ['index', 'about', 'services', 'contact', 'guide', 'privacy']) {
   const file = new URL(`../website/${page}.html`, import.meta.url);
   const html = normalize(await readFile(file, 'utf8'));
   if ([...html.matchAll(existing)].length !== 1) {

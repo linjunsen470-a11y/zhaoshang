@@ -8,6 +8,12 @@ import policeFiling from './police-filing.webp'
 import servingCounter from './serving-counter.webp'
 import MiniProgramSearch from './MiniProgramSearch'
 
+const footerGroups = [
+  { title: '业务服务', links: [['商铺选址', '/services.html#leasing'], ['企业用餐', '/services.html#catering']] },
+  { title: '获得帮助', links: [['咨询指南', '/guide.html'], ['联系我们', '/contact.html'], ['173 2225 1752', 'tel:17322251752']] },
+  { title: '关于锦奕', links: [['公司介绍', '/about.html'], ['企业信息', '/about.html#company']] },
+]
+
 export default function Home() {
   return (
     <>
@@ -56,8 +62,27 @@ export default function Home() {
       </main>
 
       <footer className="site-footer">
-        <p>广州锦奕咨询服务有限公司</p>
+        <div className="footer-groups">
+          {footerGroups.map(({ title, links }, index) => {
+            const list = (
+              <div className="footer-list">
+                {links.map(([label, href]) => <a key={href} href={href}>{label}</a>)}
+              </div>
+            )
+            return (
+              <div className="footer-group" key={title}>
+                <div className="footer-desktop"><strong>{title}</strong>{list}</div>
+                <details open={index === 0}>
+                  <summary>{title}</summary>
+                  {list}
+                </details>
+              </div>
+            )
+          })
+        </div>
         <div className="filing-links">
+          <span>© 2026 广州锦奕咨询服务有限公司</span>
+          <a href="/privacy.html">隐私说明</a>
           <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026186178号</a>
           <a href="https://beian.mps.gov.cn/#/query/webSearch?code=44011802001719" target="_blank" rel="noopener noreferrer">
             <Image src={policeFiling} alt="" width={19} height={20} unoptimized />
