@@ -78,7 +78,7 @@ export default function Home() {
                 </details>
               </div>
             )
-          })
+          })}
         </div>
         <div className="filing-links">
           <span>© 2026 广州锦奕咨询服务有限公司</span>
