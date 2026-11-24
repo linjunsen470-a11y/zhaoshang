@@ -6,7 +6,10 @@
 
 ## 核对备案信息
 
-项目方已确认网站 ICP 首次备案通过，提供的广东主体备案号为 **粤ICP备2026186178号**。业务首页及四个静态页面在页脚中央提供工信部链接。切换前在腾讯云「我的备案 → 互联网信息服务」核对域名、主办单位、网站名称和服务内容。若登记信息随网站更替而改变，按订单要求办理变更，维持腾讯云备案接入。[广东管局备案要求](https://cloud.tencent.com/document/product/243/51709) · [广东备案号悬挂说明](https://support.huaweicloud.com/icp_faq/icp_05_0205.html)
+项目方已确认两项备案通过。业务首页和四个静态页面统一悬挂以下编号，桌面端并排居中，窄屏逐项居中显示。
+
+- **粤ICP备2026186178号** 链接至[工信部备案首页](https://beian.miit.gov.cn/)。广东使用主体备案号。[腾讯云悬挂说明](https://cloud.tencent.com/document/product/243/61412)
+- **粤公网安备44011802001719号** 链接至[公安部备案查询页](https://beian.mps.gov.cn/#/query/webSearch?code=44011802001719)。编号前使用[公安部平台图标](https://beian.mps.gov.cn/img/logo01.dd7ff50e.png)，首页与静态页各自打包本地图标。
 
 ## 发布和切换
 
@@ -20,7 +23,7 @@
    ```
 
 3. 核对域名管理平台的当前解析。2026-11-01 的记录曾指向 Railway，切换时以实际权威记录为准。源站检查通过后，如根域名尚未直达腾讯云，将 `@` 指向 **A 134.175.44.80**。处理同名冲突的 CNAME、旧 A 或指向其他服务的 AAAA，保留原值及 TTL 以便回退。其他子域名、MX 和验证 TXT 独立管理。
-4. 从外网打开正式首页，检查小程序名称复制、画册照片和页脚工信部链接，并检查原企业信息页。[正式首页](https://jinyifangchan.com/) · [企业信息](https://jinyifangchan.com/about.html)
+4. 从外网打开正式首页，检查小程序名称复制、画册照片、公安备案图标和两项备案链接，并检查原企业信息页。[正式首页](https://jinyifangchan.com/) · [企业信息](https://jinyifangchan.com/about.html)
 
 服务器已有独立 Nginx 配置和根域名证书。脚本沿用现有 HAProxy SNI 路由。静态预览监听 `127.0.0.1:18081`，裸 IP 的 HTTP 入口提供静态企业页面。静态资源与当前版本记录分别位于 `/var/www/jinyi-website/current` 和 `/var/www/jinyi-website/deployed-revision`。发布包只取 Git 提交中明确列出的公开文件；服务器上的应用环境变量沿用既有部署配置。
 
@@ -45,7 +48,3 @@ node deploy/website/verify.mjs
 首次切换后如需临时恢复静态首页，可在 VPS 上将该次备份的 `nginx-public.conf` 恢复为 `/etc/nginx/sites-available/jinyi-website-public.conf`，运行 `sudo nginx -t && sudo systemctl reload nginx`。保留刚发布的静态目录即可继续展示备案号。DNS 若已正确指向腾讯云，恢复静态首页只需改此虚拟主机。业务镜像的回退见[后端回退说明](../../docs/ci-deployment.md#手动回退)。
 
 2026-11-01 的运维记录显示根域名证书通过手动 DNS 验证签发，到期日为 2027-01-30。切换时用 `sudo certbot certificates` 核实实况。若仍使用手动验证，根域名指向 VPS 且公网 ACME 路径可达后，可运行 `sudo certbot reconfigure --cert-name jinyifangchan.com --webroot --webroot-path /var/www/letsencrypt` 并检查定时任务及 Nginx 重载钩子。现有配置覆盖根域名，启用 www 需要相应域名路由和证书。
-
-## 公安联网备案
-
-网站开通之日起 30 日内，由主办单位登录全国互联网安全管理服务平台提交公安联网备案申请。可用腾讯云提供的数据码导入主体和网站信息，再补充接入商、域名注册商等信息。数据码自获取之日起有效期为 30 天，仅在申报平台使用。审核通过后 30 日内，从平台取得正式公安备案号、图标和链接，按平台代码添加到业务首页及静态页面页脚。[全国互联网安全管理服务平台](https://beian.mps.gov.cn/) · [腾讯云办理指引](https://cloud.tencent.com/document/product/243/19142) · [数据码使用说明](https://cloud.tencent.com/document/product/243/120137)

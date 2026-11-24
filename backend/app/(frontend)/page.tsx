@@ -4,6 +4,7 @@ import claypotMeal from './claypot-meal.webp'
 import diningRoom from './dining-room.webp'
 import logo from './jinyi.webp'
 import lunchHour from './lunch-hour.webp'
+import policeFiling from './police-filing.webp'
 import servingCounter from './serving-counter.webp'
 import MiniProgramSearch from './MiniProgramSearch'
 
@@ -56,7 +57,13 @@ export default function Home() {
 
       <footer className="site-footer">
         <p>广州锦奕咨询服务有限公司</p>
-        <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026186178号</a>
+        <div className="filing-links">
+          <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026186178号</a>
+          <a href="https://beian.mps.gov.cn/#/query/webSearch?code=44011802001719" target="_blank" rel="noopener noreferrer">
+            <Image src={policeFiling} alt="" width={19} height={20} unoptimized />
+            <span>粤公网安备44011802001719号</span>
+          </a>
+        </div>
       </footer>
     </>
   )

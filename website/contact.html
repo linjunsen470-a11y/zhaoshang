@@ -39,9 +39,27 @@ img { display: block; max-width: 100%; }
 .navigation { display: flex; gap: clamp(17px, 2.5vw, 42px); }
 .navigation a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; }
 .navigation a[aria-current="page"] { text-decoration: underline; text-underline-offset: 6px; }
-.site-footer { border-top: 1px solid var(--rule); margin-inline: var(--edge); padding-block: 24px; display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: center; color: #586759; font-size: 12px; }
+.site-footer {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  margin-inline: var(--edge);
+  padding: 18px 0 22px;
+  border-top: 1px solid var(--rule);
+  color: #586459;
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: center;
+}
+.filing-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 24px; }
+.filing-links a { display: inline-flex; align-items: center; gap: 5px; min-height: 28px; white-space: nowrap; }
+.filing-links img { display: block; width: auto; height: 20px; }
+@media (max-width: 480px) {
+  .filing-links { flex-direction: column; align-items: center; }
+}
+.footer-contact { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0 16px; }
 .site-footer p { font: inherit; color: inherit; }
-.footer-tel { justify-self: end; }
+.footer-contact a { display: inline-flex; align-items: center; min-height: 28px; }
 .intro { font-size: clamp(17px, 1.6vw, 23px); line-height: 1.8; }
 .text-link { display: inline-block; border-bottom: 1px solid #718471; margin-top: 20px; padding: 4px 0; font-size: 14px; }
 .text-link span { margin-left: 8px; }
@@ -103,11 +121,9 @@ dd { font-size: 15px; overflow-wrap: anywhere; }
   .contact-layout h1 { grid-row: 1; margin-bottom: 16px; }
   .contact-photo { grid-row: 2; height: auto; aspect-ratio: 2; }
   .contact-block { margin-top: 20px; }
-  .site-footer { display: flex; flex-wrap: wrap; justify-content: center; text-align: center; gap: 6px 18px; }
 }
 @media (max-width: 500px) {
   .small-pair { grid-template-columns: 1fr; gap: 19px; }
-  .site-footer { flex-direction: column; padding-block: 17px; }
   .rows div { grid-template-columns: 76px 1fr; gap: 10px; }
   .navigation { gap: 13px; }
   .navigation a { font-size: 13px; }
@@ -147,9 +163,17 @@ dd { font-size: 15px; overflow-wrap: anywhere; }
     <div class="address inner"><strong>广州锦奕咨询服务有限公司</strong><span>登记地址 · 广州市增城区宁西街香山大道55号之二506单元（自编A栋506-2单元）</span></div>
   </main>
   <footer class="site-footer">
-    <p>广州锦奕咨询服务有限公司</p>
-    <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026186178号</a>
-    <a class="footer-tel" href="tel:17322251752">咨询电话 173 2225 1752</a>
+    <div class="footer-contact">
+      <p>广州锦奕咨询服务有限公司</p>
+      <a href="tel:17322251752">咨询电话 173 2225 1752</a>
+    </div>
+    <div class="filing-links">
+      <a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">粤ICP备2026186178号</a>
+      <a href="https://beian.mps.gov.cn/#/query/webSearch?code=44011802001719" target="_blank" rel="noopener noreferrer">
+        <img src="images/police-filing.webp" alt="" width="19" height="20">
+        <span>粤公网安备44011802001719号</span>
+      </a>
+    </div>
   </footer>
   <script defer src="js/main.js"></script>
 </body>

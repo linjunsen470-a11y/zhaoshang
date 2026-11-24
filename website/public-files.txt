@@ -10,3 +10,4 @@ images/menu-counter.webp
 images/tea-table.webp
 images/ingredients.webp
 images/dining-tables.webp
+images/police-filing.webp

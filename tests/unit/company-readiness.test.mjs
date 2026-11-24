@@ -29,16 +29,20 @@ test('advisor contact uses the configured phone without assuming it is a WeChat 
   assert.equal(sheet.itemList[1], '复制电话');
 });
 
-test('company pages publish the approved Guangdong ICP number in the footer', () => {
+test('company footers link each approved filing number and include the police badge', () => {
   const config = loadMiniProgramModule(path.resolve('mp/config/index.js'));
-  const filingLink = /<a\b[^>]*href="https:\/\/beian\.miit\.gov\.cn\/"[^>]*>粤ICP备2026186178号<\/a>/;
+  const checkFooter = html => {
+    const footer = html.match(/<footer\b[^>]*>[\s\S]*?<\/footer>/)?.[0] || '';
+    assert.match(footer, /<a\b[^>]*href="https:\/\/beian\.miit\.gov\.cn\/"[^>]*>粤ICP备2026186178号<\/a>/);
+    assert.match(footer, /<a\b[^>]*href="https:\/\/beian\.mps\.gov\.cn\/#\/query\/webSearch\?code=44011802001719"[^>]*>\s*<(?:Image|img)\b[^>]*alt=""[^>]*>\s*<span>粤公网安备44011802001719号<\/span>\s*<\/a>/);
+  };
   const home = readFileSync('backend/app/(frontend)/page.tsx', 'utf8');
-  assert.match(home.match(/<footer\b[^>]*>[\s\S]*?<\/footer>/)?.[0] || '', filingLink);
+  checkFooter(home);
   for (const name of ['index', 'about', 'services', 'contact']) {
     const html = readFileSync(`website/${name}.html`, 'utf8');
     assert.match(html, /广州锦奕咨询服务有限公司/);
     assert.ok(html.includes(`tel:${config.ADVISOR_PHONE}`));
-    assert.match(html.match(/<footer\b[^>]*>[\s\S]*?<\/footer>/)?.[0] || '', filingLink, name);
+    checkFooter(html);
   }
 });
 
