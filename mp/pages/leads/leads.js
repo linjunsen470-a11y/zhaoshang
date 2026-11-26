@@ -1,7 +1,7 @@
 const api = require('../../services/api.js');
 const { getLeadTypeLabel } = require('../../utils/form.js');
 const { normalizeAttachments, previewUrls } = require('../../utils/attachment.js');
-const { allowedValue, encodeRouteValue } = require('../../utils/navigation.js');
+const { allowedValue, encodeRouteValue, safeIdentifier } = require('../../utils/navigation.js');
 
 function formatDateTime(value) {
   const date = new Date(value || Date.now());
@@ -10,6 +10,17 @@ function formatDateTime(value) {
 
 function formatLeadId(id) {
   return id == null ? '' : String(id);
+}
+
+async function findSubmittedLead(rows, id) {
+  const found = rows.find(lead => String(lead.id) === id);
+  if (found) return found;
+  try {
+    return await api.getLead(id);
+  } catch (error) {
+    if (error.statusCode === 403 || error.statusCode === 404) return null;
+    throw error;
+  }
 }
 
 Page({
@@ -26,11 +37,9 @@ Page({
     }
   },
 
-  onLoad() {
-    // onLoad is followed immediately by onShow in WeChat mini-program page lifecycles.
-    // We only perform refreshLeads inside onShow to avoid concurrent duplicate requests.
+  onLoad(options = {}) {
+    this._submittedLeadId = safeIdentifier(options.leadId);
   },
-
 
   onPullDownRefresh() {
     this.refreshLeads(() => {
@@ -59,11 +68,20 @@ Page({
     this.setData({ phone });
 
     return api.getLeadPage(page)
-      .then(res => {
+      .then(async res => {
         if (requestId !== this._requestId) return;
-        const formatted = res.docs.map(lead => ({
+        const submittedId = !append && this._submittedLeadId;
+        let rows = res.docs;
+        if (submittedId) {
+          const lead = await findSubmittedLead(rows, submittedId);
+          if (requestId !== this._requestId) return;
+          this._submittedLeadId = '';
+          if (lead) rows = [lead, ...rows.filter(row => String(row.id) !== submittedId)];
+          else wx.showToast({ title: '该咨询记录已不可查看', icon: 'none' });
+        }
+        const formatted = rows.map(lead => ({
           ...lead,
-          expanded: false,
+          expanded: String(lead.id) === submittedId,
           attachments: normalizeAttachments(lead.attachments),
           displayId: formatLeadId(lead.id),
           leadTypeLabel: getLeadTypeLabel(lead.leadType),

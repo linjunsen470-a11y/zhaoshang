@@ -1,47 +1,47 @@
 .success-container {
-  padding: 80rpx 32rpx 64rpx;
+  padding: 64rpx 32rpx calc(40rpx + env(safe-area-inset-bottom));
 }
 
 .success-card {
-  border: 0;
-  padding: 48rpx 24rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 48rpx 32rpx 32rpx;
+  border-radius: 20rpx;
+  background: var(--wash);
   text-align: center;
 }
 
-.success-icon {
-  margin-bottom: 32rpx;
-}
-
 .success-title {
+  margin-top: 24rpx;
   font-size: 40rpx;
   font-weight: 600;
 }
 
 .success-desc {
-  max-width: 560rpx;
-  margin-top: 24rpx;
+  max-width: 520rpx;
+  margin: 16rpx auto 40rpx;
   color: var(--muted);
   font-size: 28rpx;
-  line-height: 1.8;
-}
-
-.btn-group {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-  margin-top: 40rpx;
+  line-height: 1.7;
 }
 
 .action-btn {
   width: 100%;
 }
 
-.btn-group .btn-outline {
-  border: 0;
-  color: var(--pine);
+.receipt-links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 24rpx;
+  margin-top: 16rpx;
 }
 
-.next-steps { padding: 28rpx; background: var(--wash); border-radius: 16rpx; color: var(--muted); font-size: 25rpx; }
-.next-title { color: var(--ink); font-size: 28rpx; font-weight: 600; margin-bottom: 20rpx; }
-.next-steps > view + view { display: flex; align-items: flex-start; gap: 16rpx; margin-top: 16rpx; }
-.step-num { flex-shrink: 0; display: inline-flex; justify-content: center; align-items: center; width: 36rpx; height: 36rpx; border-radius: 50%; color: var(--pine); background: #e1ece5; font-size: 22rpx; }
+.receipt-links button {
+  min-height: 44px;
+  padding: 12rpx 24rpx;
+  background: transparent;
+  color: var(--pine);
+  font-size: 26rpx;
+}

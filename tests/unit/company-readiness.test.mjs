@@ -27,3 +27,28 @@ test('advisor contact uses the configured phone without assuming it is a WeChat 
   assert.equal(sheet.itemList[0], `呼叫顾问：${app.globalData.advisorPhone}`);
   assert.equal(sheet.itemList[1], '复制电话');
 });
+
+test('cancelling or failing a call preserves the clipboard until the user chooses to copy', () => {
+  let app;
+  let sheet;
+  let call;
+  let clipboard = '设备资料';
+  const toasts = [];
+  const wx = {
+    showActionSheet: options => { sheet = options; },
+    makePhoneCall: options => { call = options; },
+    setClipboardData: options => { clipboard = options.data; },
+    showToast: options => toasts.push(options.title)
+  };
+  loadMiniProgramModule(path.resolve('mp/app.js'), { globals: { App: value => { app = value; }, wx } });
+  app.callAdvisor();
+  sheet.success({ tapIndex: 0 });
+  call.fail({ errMsg: 'makePhoneCall:fail cancel' });
+  assert.equal(clipboard, '设备资料');
+  assert.equal(toasts.length, 0);
+  call.fail({ errMsg: 'makePhoneCall:fail' });
+  assert.equal(clipboard, '设备资料');
+  assert.equal(toasts.length, 1);
+  sheet.success({ tapIndex: 1 });
+  assert.equal(clipboard, app.globalData.advisorPhone);
+});
