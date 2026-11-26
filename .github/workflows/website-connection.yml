@@ -1,61 +1,19 @@
 name: Website connection check
-on:
-  workflow_dispatch:
-
+on: workflow_dispatch
 permissions:
   contents: read
-
+concurrency: production-website
 jobs:
-  network:
+  retire:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 3
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
-        with:
-          persist-credentials: false
-      - name: Inspect public website
-        shell: bash
-        run: |
-          getent ahostsv4 jinyifangchan.com | awk '{print $1}' | sort -u
-          for target in domain origin; do
-            options=()
-            if [[ "$target" == origin ]]; then
-              options+=(--resolve jinyifangchan.com:443:134.175.44.80)
-            fi
-            if curl -sS --connect-timeout 6 --max-time 12 "${options[@]}" \
-              -o "$RUNNER_TEMP/home" -w "$target HTTPS %{http_code}\n" https://jinyifangchan.com/; then
-              if grep -Fq '岭南旺铺' "$RUNNER_TEMP/home"; then echo "$target business homepage found"; fi
-              if grep -Fq '>粤ICP备2026186178号</a>' "$RUNNER_TEMP/home"; then echo "$target ICP link found"; fi
-            fi
-          done
-      - name: Check SSH connection and pinned server identity
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          import socket
-          with socket.create_connection(("134.175.44.80", 22), timeout=10) as connection:
-              banner = connection.recv(255)
-              if not banner.startswith(b"SSH-"):
-                  raise SystemExit("TCP connected, but no SSH banner")
-              print("TCP connected and SSH server responded")
-          PY
-          ssh-keyscan -T 10 -t ed25519 134.175.44.80 > "$RUNNER_TEMP/server.pub"
-          expected=$(ssh-keygen -lf deploy/known_hosts | awk '{print $2}')
-          observed=$(ssh-keygen -lf "$RUNNER_TEMP/server.pub" | awk '{print $2}')
-          [[ -n "$expected" && "$expected" == "$observed" ]] || { echo 'Host identity mismatch'; exit 1; }
-          echo 'SSH host identity matches deploy/known_hosts'
-
-  inspect:
-    needs: network
-    runs-on: ubuntu-latest
     environment: tencent-test
-    timeout-minutes: 3
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Read website release and homepage
+      - name: Inspect or retire the dedicated website resources
         shell: bash
         env:
           SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -70,31 +28,20 @@ jobs:
           ssh -F /dev/null -T -p 22 -i "$key" -o BatchMode=yes -o IdentitiesOnly=yes \
             -o ConnectTimeout=12 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=deploy/known_hosts \
             ubuntu@134.175.44.80 bash -s <<'REMOTE'
-          set -eu
-          echo 'SSH authentication succeeded'
-          for file in /opt/zhaoshang-test/deployed-revision /var/www/jinyi-website/deployed-revision; do
-            if [[ -r "$file" ]]; then
-              rev=$(cat "$file")
-              if [[ "$rev" =~ ^[a-f0-9]{40}$ ]]; then echo "$file $rev"; fi
-            fi
+          set -euo pipefail
+          hostname
+          sudo -n nginx -t
+          sudo -n haproxy -c -f /etc/haproxy/haproxy.cfg
+          sudo -n ls -l /etc/nginx/sites-enabled/ /etc/nginx/sites-available/ /etc/nginx/conf.d/
+          sudo -n grep -nE '(^[[:space:]]*(frontend|backend|bind|default_backend|use_backend|acl) |jinyi)' /etc/haproxy/haproxy.cfg
+          for file in /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do
+            [[ -f "$file" ]] || continue
+            echo "$file"
+            sudo -n grep -E '^[[:space:]]*(listen|server_name|root|proxy_pass|ssl_certificate) ' "$file" | sed -E 's!://[^/@ ]+@!://***@!g' || true
           done
-          cd /opt/zhaoshang-test
-          id=$(sudo -n docker compose -f compose.yml ps -q payload)
-          image=$(sudo -n docker inspect --format '{{.Config.Image}}' "$id")
-          printf 'Application image: %s\n' "$image"
-          sudo -n docker inspect --format 'Network {{range $name, $_ := .NetworkSettings.Networks}}{{$name}} {{end}}' "$id"
-          sudo -n docker inspect --format 'Image identity {{.Image}}' "$id"
-          awk '/MemAvailable:/ { print "Available memory KiB", $2 }' /proc/meminfo
-          df -Pm /var/lib/docker /var/www | awk 'NR>1 {print "Available disk MiB", $4}'
-          sudo -n readlink -f /etc/nginx/sites-enabled/jinyi-website-public.conf
-          sudo -n readlink -f /var/www/jinyi-website/current
-          if sudo -n test -f /opt/zhaoshang-test/deployed-revision; then
-            rev=$(sudo -n cat /opt/zhaoshang-test/deployed-revision)
-            if [[ "$rev" =~ ^[a-f0-9]{40}$ ]]; then echo "Privileged application revision $rev"; fi
-          fi
-          page=$(mktemp)
-          trap 'rm -f "$page"' EXIT
-          curl -fsS --noproxy '*' --max-time 15 http://127.0.0.1:3300/ -o "$page"
-          if grep -Fq '岭南旺铺' "$page"; then echo 'Upstream has business website'; fi
-          if grep -Fq '>粤ICP备2026186178号</a>' "$page"; then echo 'Upstream has approved ICP link'; fi
+          sudo -n docker ps -a --format '{{.Names}} {{.Ports}} {{.Status}}'
+          sudo -n ss -lntp | awk 'NR>1 {print $4,$6}'
+          systemctl list-unit-files --type=service,timer,socket --no-pager | grep -Ei 'jinyi|website|nginx|haproxy|certbot|pm2' || true
+          sudo -n grep -rilE 'jinyi-website|jinyifangchan\.com' /etc/nginx /etc/haproxy /etc/systemd/system /etc/cron.d /etc/letsencrypt/renewal /etc/letsencrypt/renewal-hooks --exclude='*.pem' 2>/dev/null || true
+          sudo -n ls -lad /var/www/jinyi* /var/backups/jinyi* /etc/letsencrypt/live/* || true
           REMOTE
