@@ -29,19 +29,27 @@ jobs:
             -o ConnectTimeout=12 -o StrictHostKeyChecking=yes -o UserKnownHostsFile=deploy/known_hosts \
             ubuntu@134.175.44.80 bash -s <<'REMOTE'
           set -euo pipefail
-          hostname
-          sudo -n nginx -t
-          sudo -n haproxy -c -f /etc/haproxy/haproxy.cfg
-          sudo -n ls -l /etc/nginx/sites-enabled/ /etc/nginx/sites-available/ /etc/nginx/conf.d/
-          sudo -n grep -nE '(^[[:space:]]*(frontend|backend|bind|default_backend|use_backend|acl) |jinyi)' /etc/haproxy/haproxy.cfg
-          for file in /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do
-            [[ -f "$file" ]] || continue
-            echo "$file"
-            sudo -n grep -E '^[[:space:]]*(listen|server_name|root|proxy_pass|ssl_certificate) ' "$file" | sed -E 's!://[^/@ ]+@!://***@!g' || true
+          echo 'Shared HTTPS router'
+          sudo -n awk '/^frontend shared_https/{p=1} p && /^backend /{exit} p{print}' /etc/haproxy/haproxy.cfg
+          echo 'Project certificate subjects'
+          sudo -n openssl x509 -in /etc/letsencrypt/live/jinyifangchan.com/fullchain.pem -noout -ext subjectAltName
+          sudo -n test -f /etc/letsencrypt/renewal/jinyifangchan.com.conf
+          echo 'PM2 dedicated website process count'
+          sudo -n python3 - <<'PY'
+          from pathlib import Path
+          import json
+          for f in [Path('/home/ubuntu/.pm2/dump.pm2'),Path('/root/.pm2/dump.pm2')]:
+           if f.exists():
+            apps=json.loads(f.read_text())
+            for a in apps:
+             fields=[str(a.get(k,'')) for k in ('name','pm_exec_path','pm_cwd')]
+             dedicated=any('jinyi-website' in x or 'jinyifangchan.com' in x for x in fields)
+             print('website-specific' if dedicated else 'other',a.get('name'), 'cwd', a.get('pm_cwd'))
+          PY
+          echo 'Dedicated files in the active site directory'
+          sudo -n find /var/www/jinyi-website -mindepth 1 -maxdepth 1 -printf '%f %y\n'
+          echo 'Origin status with pinned domain'
+          for host in api.cqwushi.com api.jinyifangchan.com; do
+            curl -fsS --noproxy '*' --resolve "$host:443:127.0.0.1" "https://$host/api/projects?limit=1" -o /dev/null
           done
-          sudo -n docker ps -a --format '{{.Names}} {{.Ports}} {{.Status}}'
-          sudo -n ss -lntp | awk 'NR>1 {print $4,$6}'
-          systemctl list-unit-files --type=service,timer,socket --no-pager | grep -Ei 'jinyi|website|nginx|haproxy|certbot|pm2' || true
-          sudo -n grep -rilE 'jinyi-website|jinyifangchan\.com' /etc/nginx /etc/haproxy /etc/systemd/system /etc/cron.d /etc/letsencrypt/renewal /etc/letsencrypt/renewal-hooks --exclude='*.pem' 2>/dev/null || true
-          sudo -n ls -lad /var/www/jinyi* /var/backups/jinyi* /etc/letsencrypt/live/* || true
           REMOTE
