@@ -6,13 +6,14 @@
 - 开发版、体验版和正式版共用 `https://api.cqwushi.com/api`。在微信开发者工具中导入并上传 `mp/`，再到微信公众平台设置体验版。提审前按[小程序发布清单](docs/miniprogram-launch-checklist.md)核对合法域名及真机访问。
 - GitHub 主仓库、Gitee 手动发布、备份和回退见 [持续部署说明](docs/ci-deployment.md)。日常操作见 [CMS 指南](docs/payload-cms-quickstart.md)。
 
+企业官网已拆至独立仓库，由 EdgeOne Pages 接入该仓库的 `main` 分支。[锦奕官网代码与部署配置](https://github.com/linjunsen470-a11y/jinyi-website)
+
 ## 结构
 
 | 目录 | 用途 |
 | --- | --- |
 | `mp/` | 微信小程序，使用 `mp/project.config.json` 打开 |
-| `backend/` | Payload CMS、Next.js 网站及 API |
-| `website/` | 独立公司网站，不随后端流水线部署；见 [官网部署与同步](deploy/website/README.md) |
+| `backend/` | Payload CMS 员工后台及小程序 API |
 | `deploy/` | SSH 发布、上线检查及 Nginx 配置参考 |
 | `docker-compose.yml` | 唯一云端编排：PostgreSQL、后台、维护工具和可选同步进程 |
 | `server.js`、`data.json` | 本地 Mock API 与示例数据 |
