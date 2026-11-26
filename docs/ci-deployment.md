@@ -1,6 +1,6 @@
 # 构建、部署与回退
 
-更新日期：2026-11-05。GitHub 为主仓库；用户手动处理 Gitee 同步及流水线。助手默认只推送 GitHub，不操作 Gitee，除非用户另行明确要求。
+更新日期：2026-11-26。GitHub 为主仓库；用户手动处理 Gitee 同步及流水线。助手默认只推送 GitHub，不操作 Gitee，除非用户另行明确要求。
 
 ## 当前流程
 
@@ -8,8 +8,13 @@
 - 用户同步目标提交至 Gitee 后，手动运行 main 的 `.workflow/gitee-verify.yml`。两个 BuildKit 任务成功后，自动执行 SSH 部署阶段。
 - 镜像经腾讯 CCR 到 VPS；不再使用 VPS registry 或镜像 tar 直传。试验 registry 容器和 Nginx `/v2/` 入口已移除，数据卷暂保留。
 - 腾讯云后台由用户设置自动清理，保留最近 **10 个版本**。仓库不再维护清理脚本或要求 CAM 删除凭据。回退前应确认目标标签仍在 CCR 或本机。
-- 仅更新官网首页或样式时，可以手动使用 GitHub 的 `Website connection check` 和 `Release the business website`。操作步骤见[官网单独发布](../deploy/website/README.md#使用-github-actions-单独更新官网)。
-- 常规 Gitee 发布中，正式域名的招商首页随应用镜像发布。流水线额外准备同版本的静态企业页面与 Nginx 配置，官网流量切换由实例终端单独执行。[官网切换、验收与回退](../deploy/website/README.md)
+- 官网在独立仓库维护，发布目标为 EdgeOne Pages。[官网仓库及接入说明](https://github.com/linjunsen470-a11y/jinyi-website)
+
+## 官网拆分记录
+
+2026-11-26 已下线旧官网。VPS 撤除了官网域名、裸 IP 和回环预览的站点配置，归档了静态发布目录，移除了根域名证书及其续期。为避免旧流量落入同机其他站点，旧域名和裸 IP 的 HTTP 请求返回 410，HAProxy 拒绝根域名的 TLS 握手。两个 API 域名沿用各自的证书与路由。
+
+回退材料位于 VPS 的 `/var/backups/jinyi-website/retired-nku9Ry4O/`。`site/` 为原站点目录，`config.tar.gz` 保存切换前的相关配置和官网证书，仅限管理员读取。恢复时应比对当前共享配置，只还原官网相关段落，并校验和重载 Nginx、HAProxy。[退役和验证记录](https://github.com/linjunsen470-a11y/zhaoshang/actions/runs/45839531424)
 
 ## 构建与凭据
 
