@@ -1,5 +1,5 @@
 const cloudApi = {
-  apiUrl: 'https://api.cqwushi.com/api',
+  apiUrl: 'https://api.jinyifangchan.com/api',
   useLocalMock: false,
   allowDevOpenId: false
 };

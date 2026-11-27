@@ -25,9 +25,14 @@ function publicHttps(value) {
   } catch { return false }
 }
 
+const serverUrl = process.env.PAYLOAD_PUBLIC_SERVER_URL
 for (const version of ['trial', 'release']) {
   const env = environments[version]
   check(publicHttps(env?.apiUrl), `${version} API 地址须填写真实 HTTPS 域名`)
+  if (publicHttps(serverUrl)) {
+    const expectedApi = new URL('/api', serverUrl).href
+    check(env?.apiUrl === expectedApi, `${version} API 地址须与当前后台一致：${expectedApi}`)
+  }
   check(!env?.useLocalMock && !env?.allowDevOpenId, `${version} 必须关闭本地 Mock 和开发 OpenID`)
 }
 check(/^1[3-9]\d{9}$/.test(phone || '') && phone !== '18888888888', '顾问电话须替换占位号码')
@@ -54,7 +59,7 @@ for (const file of ['project.private.config.json', 'mp/project.private.config.js
 }
 check(process.env.WECHAT_APPID === project.appid, 'WECHAT_APPID 必须与小程序 appid 一致')
 check(process.env.WECHAT_CODE_ENV_VERSION === 'release', 'WECHAT_CODE_ENV_VERSION 必须为 release')
-check(publicHttps(process.env.PAYLOAD_PUBLIC_SERVER_URL), 'PAYLOAD_PUBLIC_SERVER_URL 须使用真实 HTTPS 域名')
+check(publicHttps(serverUrl), 'PAYLOAD_PUBLIC_SERVER_URL 须使用真实 HTTPS 域名')
 check(process.env.PAYLOAD_DB_PUSH === 'false', '正常生产启动须显式设置 PAYLOAD_DB_PUSH=false')
 check(!placeholder(process.env.DATABASE_URI) && /^postgres(?:ql)?:\/\//.test(process.env.DATABASE_URI || ''), 'DATABASE_URI 须配置 PostgreSQL 连接')
 

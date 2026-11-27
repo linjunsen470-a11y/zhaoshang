@@ -10,7 +10,7 @@ test('all WeChat environments use the cloud API without enabling mock data or de
   for (version of ['develop', 'trial', 'release']) {
     const runtime = config.refreshRuntimeConfig();
     assert.equal(runtime.ENV_VERSION, version);
-    assert.equal(runtime.API_URL, 'https://api.cqwushi.com/api');
+    assert.equal(runtime.API_URL, 'https://api.jinyifangchan.com/api');
     assert.equal(runtime.CONFIG_ERROR, '');
     assert.equal(runtime.USE_LOCAL_MOCK, false);
     assert.equal(runtime.ALLOW_DEV_OPEN_ID, false);
