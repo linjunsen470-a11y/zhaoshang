@@ -32,7 +32,7 @@ export function mapProperty(record: SheetRecord) {
   }
   const city = value('城市').replace(/市$/, '')
   const regions = (options.regionsByCity as Record<string, string[]>)[city]
-  if (!regions) throw new Error('城市：不在广东省地区字典中')
+  if (!regions) throw new Error('城市：尚未配置该城市的地区字典')
   const rawDistrict = value('行政区')
   const district = regions.find(name => name === rawDistrict || [name + '区', name + '镇', name + '街道'].includes(rawDistrict) || name.replace(/(?:市|县)$/, '') === rawDistrict)
   if (!district) throw new Error(`行政区：${rawDistrict} 不属于 ${city} 或尚未配置`)

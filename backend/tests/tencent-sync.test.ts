@@ -89,6 +89,19 @@ test('property import leaves unavailable details empty without inventing placeho
   assert.doesNotMatch(JSON.stringify(data), /待核实|待确认|面议/)
 })
 
+test('property import accepts Pingxiang and a Foshan listing without a confirmed district', () => {
+  for (const [city, district] of [['萍乡', '经开区'], ['佛山', '区待确认']]) {
+    const row = { record_id: 'region', field_values: [
+      textCell('城市', city + '市'), textCell('行政区', district), textCell('场所名称', '餐厅'),
+      textCell('场景', '工业园区'), textCell('招租状态', '招租中'),
+      { field: '商铺图片', image_value: { items: [{ image_id: 'image-1' }] } },
+    ] }
+    const { data } = mapProperty(row)
+    assert.equal(data.city, city)
+    assert.equal(data.district, district)
+  }
+})
+
 test('workplace rows use the explicit source scene and venue with a required source scene', () => {
   for (const [label, expected] of [['工业园区', 'industrial_park'], ['写字楼', 'office']]) {
     const mapped = mapProperty({ record_id: 'workplace', field_values: [
