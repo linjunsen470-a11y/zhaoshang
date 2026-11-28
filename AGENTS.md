@@ -11,6 +11,12 @@ This repository has four main surfaces:
 
 Docs belong in `docs/`; `docs/ci-deployment.md` is the deployment source of truth. GitHub is the primary repository. `.github/workflows/ci.yml` runs manual code checks only, without image builds or deployment. `.workflow/gitee-verify.yml` manually builds images to Tencent CCR and deploys through `deploy/gitee-deploy.sh` and `deploy/deploy.sh`. Push only to GitHub by default. The owner handles Gitee synchronization and pipeline runs manually; do not perform either unless explicitly requested.
 
+## 房源上架配图
+
+- 有视频时，从对应房源的原视频挑选 1 至 3 张能看清铺位的原始画面，优先展示铺面、档口或内部布局。不要擅自给画面中的路人打马赛克。
+- 没有视频但有实拍照片时，使用该房源的实拍照片。
+- 没有实拍图时，统一使用用户指定的[「图片待补充」插画](docs/assets/房源图片待补充.png)。
+
 ## Build, Test, and Development Commands
 
 - `pnpm dev`: starts the Next/Payload backend.
