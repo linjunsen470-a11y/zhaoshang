@@ -329,17 +329,71 @@ test('home service sheet opens and closes and dispatches all three service route
   assert.equal(page.data.showServices, false);
 });
 
-test('general workplace request leaves the scene unspecified and preserves an explicit scene', () => {
+test('empty results remove one restriction and carry editable preferences into a general inquiry', () => {
+  const { page: list, navigations } = listPage();
+  list.setFilters({ q: '咖啡', district: '天河', sceneGroup: 'workplace', area: '50to100', rent: 'under5000' });
+  list.onSubmitNeed();
+  const options = Object.fromEntries(new URL(navigations.at(-1), 'https://example.test').searchParams);
+  assert.equal(list.data.relaxFilter.key, 'rent');
+  list.onRemoveFilter(event({ key: list.data.relaxFilter.key }));
+  assert.equal(list.data.filters.rent, '全部');
+  assert.equal(list.data.filters.area, '50to100');
+  assert.equal(list.data.filters.district, '天河');
+  assert.equal(list.data.keyword, '咖啡');
+
   let definition;
   loadMiniProgramModule(path.resolve('mp/pages/apply/apply.js'), {
     globals: { Page: value => { definition = value; }, getApp: () => ({}), wx: { ...createStorage(), setNavigationBarTitle() {} }, Behavior: value => value },
     stubs: { '../../services/api.js': {}, '../../utils/formBehavior.js': {} }
   });
   const page = { ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); }, initCommonData() {} };
-  page.onLoad({ sceneGroup: 'workplace' });
+  page.onLoad(options);
   assert.equal(page.data.businessScene, '');
-  page.onLoad({ businessScene: 'office' });
+  assert.equal(page.data.regionPreference, '天河');
+  assert.equal(page.data.remark, '园区或写字楼，基础月租5000元以下，面积50—100㎡');
+  page.onLoad({ businessScene: 'office', district: 'unknown', rent: 'unknown' });
   assert.equal(page.data.businessScene, 'office');
+  assert.equal(page.data.regionPreference, '');
+  assert.equal(page.data.remark, '');
+});
+
+test('a submission receipt opens the matching inquiry even when it is outside the first page', async () => {
+  let definition;
+  let url;
+  const toasts = [];
+  const wx = { ...createStorage(), navigateTo: options => { url = options.url; }, showToast: options => toasts.push(options.title) };
+  const globals = { Page: value => { definition = value; }, wx, getApp: () => ({ globalData: {} }) };
+  const makePage = () => ({ ...definition, data: structuredClone(definition.data), setData(patch) { Object.assign(this.data, patch); } });
+  loadMiniProgramModule(path.resolve('mp/pages/success/success.js'), { globals });
+  const receipt = makePage();
+  receipt.onLoad({ leadId: '15', leadType: 'equipment_sell' });
+  assert.equal(receipt.data.title, '设备出售已提交');
+  assert.match(receipt.data.nextStep, /审核/);
+  receipt.onViewLeads();
+  assert.equal(url, '/pages/leads/leads?leadId=15');
+
+  const target = { id: 15, leadType: 'equipment_sell', status: 'new' };
+  let detailRequests = 0;
+  const api = {
+    async getLeadPage(page) { return { docs: page === 1 ? [{ ...target, id: 25 }] : [target], page, hasNextPage: page === 1 }; },
+    async getLead(id) { detailRequests++; return id === '15' ? target : null; }
+  };
+  loadMiniProgramModule(path.resolve('mp/pages/leads/leads.js'), { globals, stubs: { '../../services/api.js': api } });
+  const history = makePage();
+  history.onLoad({ leadId: '15' });
+  await history.refreshLeads();
+  assert.equal(history.data.leadsList[0].id, 15);
+  assert.equal(history.data.leadsList[0].expanded, true);
+  await history.refreshLeads(null, true);
+  assert.equal(history.data.leadsList.length, 2);
+  history.onLoad({ leadId: '25' });
+  await history.refreshLeads();
+  assert.equal(history.data.leadsList[0].expanded, true);
+  assert.equal(detailRequests, 1);
+  history.onLoad({ leadId: 'gone' });
+  await history.refreshLeads();
+  assert.equal(history.data.leadsList[0].expanded, false);
+  assert.equal(toasts.at(-1), '该咨询记录已不可查看');
 });
 
 test('form validation reports all fields, locates the first visible error and blocks duplicate submission', () => {

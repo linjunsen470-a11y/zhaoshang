@@ -72,7 +72,10 @@ Page({
     const moreCount = filterTabs.filter(f => ['listingKind', 'opportunityType', 'business', 'status', 'projectType', 'businessScene'].includes(f.key) && f.active).length;
     const selectedChips = filterTabs.filter(f => f.active && f.key !== 'sceneGroup');
     if (this.data.isRecommendedOnly) selectedChips.push({ key: 'recommended', label: '重点推荐' });
+    const relaxFilter = selectedChips.find(f => f.key === 'rent') || selectedChips.find(f => f.key === 'area')
+      || selectedChips[0] || filterTabs.find(f => f.active);
     this.setData({
+      relaxFilter: relaxFilter || null,
       filterTabs,
       primaryTabs: ['district', 'rent', 'area'].map(key => filterTabs.find(f => f.key === key)).concat({ key: 'more', label: moreCount ? '更多 · ' + moreCount : '更多', active: moreCount > 0 }),
       selectedChips,
@@ -212,9 +215,14 @@ Page({
     if (index >= 0 && !this.data.projectList[index].coverImageError) this.setData({ ['projectList[' + index + '].coverImageError']: true });
   },
   onSubmitNeed() {
-    const { sceneGroup, businessScene } = this.data.filters;
-    const query = businessScene !== ALL ? '?businessScene=' + encodeURIComponent(businessScene) : sceneGroup === 'workplace' ? '?sceneGroup=workplace' : '';
-    wx.navigateTo({ url: '/pages/apply/apply' + query });
+    const { sceneGroup, businessScene, district, rent, area } = this.data.filters;
+    const params = [];
+    if (businessScene !== ALL) params.push('businessScene=' + encodeURIComponent(businessScene));
+    else if (sceneGroup === 'workplace') params.push('sceneGroup=workplace');
+    if (district !== ALL) params.push('district=' + encodeURIComponent(district));
+    if (rent !== ALL) params.push('rent=' + encodeURIComponent(rent));
+    if (area !== ALL) params.push('area=' + encodeURIComponent(area));
+    wx.navigateTo({ url: '/pages/apply/apply' + (params.length ? '?' + params.join('&') : '') });
   },
   onProjectDetail(e) { wx.navigateTo({ url: '/pages/detail/detail?id=' + encodeURIComponent(e.currentTarget.dataset.id) }); },
   onShareAppMessage() {

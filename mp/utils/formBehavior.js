@@ -1,4 +1,5 @@
 const api = require('../services/api.js');
+const { encodeRouteValue } = require('./navigation.js');
 const upload = require('../services/upload.js');
 const { authorizeWechatPhone, rememberContact } = require('./wechatContact.js');
 const { normalizeAttachments, previewUrls } = require('./attachment.js');
@@ -44,7 +45,10 @@ module.exports = Behavior({
       }
       return { ...payload, submissionId: this._submissionId };
     },
-    finishCreating(url) {
+    finishCreating(lead) {
+      const url = '/pages/success/success?leadId=' + encodeRouteValue(lead.id)
+        + '&leadType=' + encodeRouteValue(lead.leadType)
+        + (lead.projectId ? '&projectId=' + encodeRouteValue(lead.projectId) : '');
       // Keep the completed form locked even if navigation fails.
       wx.redirectTo({
         url,

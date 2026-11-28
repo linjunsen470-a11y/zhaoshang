@@ -74,10 +74,11 @@
       <view class="state-box empty-state" wx:else>
         <image class="line-icon" src="/images/icons/shops.png" />
         <text class="state-title">{{isRecentOnly ? (hasFilters ? '没有匹配的浏览记录' : '还没有浏览记录') : (isFavoritesOnly ? '还没有收藏房源' : (hasFilters ? '没有找到匹配的空间' : '房源正在整理中'))}}</text>
-        <text class="state-desc">{{isRecentOnly ? '浏览过的房源会自动保存在这里，方便再次比较。' : (isFavoritesOnly ? '看到合适的项目或铺位，点收藏就能留在这里。' : (hasFilters ? '试试放宽区域、月租或面积条件。' : '可以先提交需求，让顾问协助匹配。'))}}</text>
-        <button class="btn btn-secondary" wx:if="{{hasFilters && !isFavoritesOnly}}" bindtap="onResetFilters">放宽筛选</button>
+        <text class="state-desc">{{isRecentOnly ? '浏览过的房源会自动保存在这里，方便再次比较。' : (isFavoritesOnly ? '看到合适的项目或铺位，点收藏就能留在这里。' : (hasFilters ? '试试移除一个条件，或让顾问帮你找铺。' : '可以先提交需求，让顾问协助匹配。'))}}</text>
+        <button class="btn btn-primary" wx:if="{{relaxFilter && !isFavoritesOnly}}" data-key="{{relaxFilter.key}}" bindtap="onRemoveFilter">移除「{{relaxFilter.label}}」</button>
+        <button class="btn btn-primary" wx:elif="{{keyword && !isFavoritesOnly}}" bindtap="onClearKeyword">清除搜索词</button>
         <button class="btn btn-primary" wx:if="{{isFavoritesOnly || isRecentOnly}}" bindtap="onBrowseAll">查看全部房源</button>
-        <button class="btn btn-primary" wx:else bindtap="onSubmitNeed">帮我找铺</button>
+        <button class="btn {{hasFilters ? 'btn-secondary' : 'btn-primary'}}" wx:else bindtap="onSubmitNeed">帮我找铺</button>
       </view>
       <view class="empty-tip" wx:if="{{loadingMore}}">正在加载更多…</view>
       <button class="text-link" wx:elif="{{moreError}}" bindtap="onLoadMore">加载失败，点击重试</button>

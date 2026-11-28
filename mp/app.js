@@ -44,17 +44,9 @@ App({
           wx.makePhoneCall({
             phoneNumber: phone,
             success: () => wx.showToast({ title: '正在拨打...', icon: 'none', duration: 1500 }),
-            fail: () => {
-              wx.setClipboardData({
-                data: phone,
-                success: () => {
-                  wx.showToast({
-                    title: '拨打失败，号码已复制',
-                    icon: 'none',
-                    duration: 2500
-                  });
-                }
-              });
+            fail: error => {
+              if (/cancel/i.test(error.errMsg || '')) return;
+              wx.showToast({ title: '未能拨通，可选择复制电话', icon: 'none' });
             }
           });
         } else if (res.tapIndex === 1) {

@@ -31,10 +31,21 @@ Page({
     }));
     if (!leadId) {
       const businessScene = allowedValue(options.businessScene, commercialOptions.scenes.map(scene => scene.value), '');
-      this.setData({ leadType: 'leasing', businessScene });
+      this.setData({ businessScene });
       if (projectId) {
         this.setData({ projectId });
         this.loadProjectTitle(projectId);
+      } else {
+        const rent = commercialOptions.rents.find(item => item.value === options.rent);
+        const area = commercialOptions.areas.find(item => item.value === options.area);
+        const preferences = [];
+        if (!businessScene && options.sceneGroup === 'workplace') preferences.push('园区或写字楼');
+        if (rent) preferences.push('基础月租' + rent.label);
+        if (area) preferences.push('面积' + area.label);
+        this.setData({
+          regionPreference: allowedValue(options.district, commercialOptions.districts),
+          remark: preferences.join('，')
+        });
       }
     }
   },
@@ -80,7 +91,7 @@ Page({
       if (this.data.isEditMode) {
         this.finishEditing();
       } else {
-        this.finishCreating(`/pages/success/success?projectId=${projectId || ''}&leadId=${res.id}`);
+        this.finishCreating(res);
       }
     }).catch(err => {
       console.error(err);
